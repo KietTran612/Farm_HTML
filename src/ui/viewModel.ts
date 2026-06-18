@@ -19,6 +19,8 @@ export type PlotViewModel = {
   remainingGrowMs: number;
   cropClass: string | null;
   templateClass: string | null;
+  tileClass: string;
+  zClass: string;
 };
 
 export type AppViewModel = {
@@ -92,7 +94,9 @@ export function createViewModel(
         canHarvest: derived.canHarvest,
         remainingGrowMs: derived.remainingGrowMs,
         cropClass: crop ? `crop--${crop.id}` : null,
-        templateClass: crop ? `crop--${crop.template}` : null
+        templateClass: crop ? `crop--${crop.template}` : null,
+        tileClass: `tile-r${plot.row}-c${plot.column}`,
+        zClass: `tile-z${plot.row + plot.column}`
       };
     }),
     costs: {

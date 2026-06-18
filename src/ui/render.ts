@@ -6,15 +6,25 @@ function formatSeconds(ms: number): string {
 
 function plotContent(plot: PlotViewModel, selectedSeed: string): string {
   if (!plot.unlocked) {
-    return `<button class="plot locked" data-action="unlock-plot" data-plot-id="${plot.id}">Mở ô</button>`;
+    return `
+      <article class="iso-tile ${plot.tileClass} ${plot.zClass}">
+        <button class="iso-tile__ground plot locked" data-action="unlock-plot" data-plot-id="${plot.id}">
+          <span class="iso-tile__content">Mở ô</span>
+        </button>
+      </article>
+    `;
   }
 
   if (!plot.cropId) {
     return `
-      <div class="plot empty">
-        <button data-action="plant" data-plot-id="${plot.id}">Gieo ${selectedSeed}</button>
-        <button data-action="upgrade-soil" data-plot-id="${plot.id}">Nâng đất (Lvl ${plot.soilLevel})</button>
-      </div>
+      <article class="iso-tile ${plot.tileClass} ${plot.zClass}">
+        <div class="iso-tile__ground plot empty">
+          <div class="iso-tile__content plot-empty-actions">
+            <button data-action="plant" data-plot-id="${plot.id}">Gieo ${selectedSeed}</button>
+            <button data-action="upgrade-soil" data-plot-id="${plot.id}">Nâng đất (Lvl ${plot.soilLevel})</button>
+          </div>
+        </div>
+      </article>
     `;
   }
 
@@ -30,19 +40,25 @@ function plotContent(plot: PlotViewModel, selectedSeed: string): string {
     .join(" ");
 
   return `
-    <div class="plot planted">
-      <div class="${classes}"></div>
-      <strong>${plot.cropName}</strong>
-      <span>${plot.growthState ?? ""}</span>
-      <small>${plot.canHarvest ? "Sẵn sàng" : formatSeconds(plot.remainingGrowMs)}</small>
-      <div class="plot-actions">
-        <button data-action="water" data-plot-id="${plot.id}">Tưới</button>
-        <button data-action="remove-pest" data-plot-id="${plot.id}" ${plot.hasPest ? "" : "disabled"}>Bắt sâu</button>
-        <button data-action="harvest" data-plot-id="${plot.id}" ${plot.canHarvest ? "" : "disabled"}>Thu</button>
-        <button data-action="clear-dead" data-plot-id="${plot.id}" ${plot.isDead ? "" : "disabled"}>Dọn</button>
-        <button data-action="upgrade-soil" data-plot-id="${plot.id}">Nâng đất (Lvl ${plot.soilLevel})</button>
+    <article class="iso-tile ${plot.tileClass} ${plot.zClass}">
+      <div class="iso-tile__ground plot planted">
+        <div class="iso-tile__crop">
+          <div class="${classes}"></div>
+        </div>
+        <div class="iso-tile__content plot-content">
+          <strong>${plot.cropName}</strong>
+          <span>${plot.growthState ?? ""}</span>
+          <small>${plot.canHarvest ? "Sẵn sàng" : formatSeconds(plot.remainingGrowMs)}</small>
+          <div class="plot-actions">
+            <button data-action="water" data-plot-id="${plot.id}">Tưới</button>
+            <button data-action="remove-pest" data-plot-id="${plot.id}" ${plot.hasPest ? "" : "disabled"}>Bắt sâu</button>
+            <button data-action="harvest" data-plot-id="${plot.id}" ${plot.canHarvest ? "" : "disabled"}>Thu</button>
+            <button data-action="clear-dead" data-plot-id="${plot.id}" ${plot.isDead ? "" : "disabled"}>Dọn</button>
+            <button data-action="upgrade-soil" data-plot-id="${plot.id}">Nâng đất (Lvl ${plot.soilLevel})</button>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
   `;
 }
 
@@ -56,7 +72,7 @@ export function renderApp(root: HTMLElement, viewModel: AppViewModel): void {
       </header>
 
       <section class="game-layout">
-        <section class="farm-board farm-board--cols-${viewModel.layout.columns}">
+        <section class="farm-board farm-board--isometric farm-board--cols-${viewModel.layout.columns}">
           ${viewModel.plots.map((plot) => plotContent(plot, viewModel.selectedSeed)).join("")}
         </section>
 

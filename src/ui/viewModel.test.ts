@@ -13,6 +13,10 @@ describe("createViewModel", () => {
     expect(viewModel.selectedSeed).toBe("carrot");
     expect(viewModel.plots[0]).toMatchObject({
       id: "plot-0-0",
+      row: 0,
+      column: 0,
+      tileClass: "tile-r0-c0",
+      zClass: "tile-z0",
       unlocked: true,
       cropId: "carrot",
       cropName: "Cà rốt",

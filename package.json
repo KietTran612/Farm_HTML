@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "powershell -ExecutionPolicy Bypass -File ./run_dev.ps1",
     "build": "tsc && vite build",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -11,4 +11,6 @@
 | **Task 6: Execute Phase 1 Core Gameplay** | [x] | Completed derived growth logic, gameplay actions, and XP progression logic with unit tests. |
 | **Task 7: Execute Phase 2 Persistence** | [x] | Completed LocalStorageSaveRepository boundary and implementation with unit tests. |
 | **Task 8: Execute Phase 3 UI And Wiring** | [x] | Completed view model, DOM renderer, SCSS styles, app event wiring, and verified gameplay loops in the browser. |
-
+| **Task 9: Isometric Farm Board UI Plan** | [x] | Created a focused plan for converting the farm board to 2.5D/isometric DOM + SCSS. |
+| **Task 10: Execute Isometric Farm Board UI** | [x] | Converted the farm board to 2.5D/isometric DOM + SCSS and fixed review issues in tile content/readability. |
+| **Task 11: Controlled Dev Server Script** | [x] | Added `run_dev.ps1` and routed `npm run dev` through fixed local Vite host/port settings. |
