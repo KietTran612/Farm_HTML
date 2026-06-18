@@ -137,37 +137,22 @@ button:disabled {
   transition: filter 0.2s ease, transform 0.2s ease;
 }
 
-.plot.empty {
-  padding: 12px;
-}
-
-.plot-empty-actions {
-  align-content: center;
-  min-height: 100%;
-
-  button {
-    width: 80px;
-    font-size: 11px;
-    padding: 2px 4px;
-    min-height: 28px;
-  }
-}
-
 .plot.locked {
-  display: grid;
-  place-items: center;
   color: #fff8dc;
   filter: grayscale(0.5) brightness(0.8);
-  cursor: pointer;
 }
 
 .plot.locked:hover {
   filter: grayscale(0.2) brightness(1.0);
 }
 
+.plot.empty,
+.plot.locked,
 .plot.planted {
+  display: block;
   padding: 8px;
   color: #fff8dc;
+  cursor: pointer;
 
   strong {
     font-size: 12px;
@@ -185,27 +170,19 @@ button:disabled {
   }
 }
 
-.plot-content {
+.plot-summary {
   align-content: end;
   min-height: 100%;
+  text-align: center;
 }
 
-.plot-actions {
+.popup-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  width: 120px;
-  margin-top: 4px;
-  z-index: 5;
+  gap: 8px;
+  margin-top: 12px;
 
-  button {
-    min-height: 24px;
-    font-size: 9px;
-    padding: 2px 0;
-    border-radius: 4px;
-  }
-
-  button[data-action="upgrade-soil"] {
+  button:last-child:nth-child(odd) {
     grid-column: span 2;
   }
 }
@@ -299,6 +276,70 @@ button:disabled {
   border-radius: 8px;
   background: #fff8dc;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar p {
+  margin: 0;
+}
+
+.shop-button {
+  width: 100%;
+  font-weight: 700;
+}
+
+.popup-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(44, 35, 21, 0.24);
+}
+
+.popup-card {
+  width: min(100%, 360px);
+  max-height: min(680px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(184, 169, 120, 0.8);
+  border-radius: 8px;
+  background: #fff8dc;
+  box-shadow: 0 18px 40px rgba(34, 26, 14, 0.22);
+}
+
+.popup-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.popup-card__close {
+  min-width: 36px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.plot-popup__status,
+.shop-popup__upgrades {
+  display: grid;
+  gap: 6px;
+}
+
+.shop-popup__upgrades {
+  margin-top: 18px;
+
+  h3,
+  p {
+    margin: 0;
+  }
 }
 
 .seed-option-row {

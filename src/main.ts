@@ -25,9 +25,11 @@ if (!app) {
 const saveRepository = new LocalStorageSaveRepository();
 let state: GameState = saveRepository.load() ?? createInitialGameState();
 let selectedSeed = state.progression.unlockedCrops[0] ?? "carrot";
+let activePlotId: string | null = null;
+let shopOpen = false;
 
 function render(): void {
-  renderApp(app!, createViewModel(state, Date.now(), selectedSeed));
+  renderApp(app!, createViewModel(state, Date.now(), selectedSeed), { activePlotId, shopOpen });
 }
 
 function persistAndRender(): void {
@@ -54,6 +56,27 @@ app.addEventListener("click", (event) => {
   const action = button.dataset.action;
   const plotId = button.dataset.plotId;
   const cropId = button.dataset.cropId;
+
+  if (action === "open-plot" && plotId) {
+    activePlotId = plotId;
+    shopOpen = false;
+    render();
+    return;
+  }
+
+  if (action === "open-shop") {
+    activePlotId = null;
+    shopOpen = true;
+    render();
+    return;
+  }
+
+  if (action === "close-popup") {
+    activePlotId = null;
+    shopOpen = false;
+    render();
+    return;
+  }
 
   if (action === "select-seed" && cropId) {
     selectedSeed = cropId;

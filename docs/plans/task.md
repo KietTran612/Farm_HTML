@@ -14,3 +14,4 @@
 | **Task 9: Isometric Farm Board UI Plan** | [x] | Created a focused plan for converting the farm board to 2.5D/isometric DOM + SCSS. |
 | **Task 10: Execute Isometric Farm Board UI** | [x] | Converted the farm board to 2.5D/isometric DOM + SCSS and fixed review issues in tile content/readability. |
 | **Task 11: Controlled Dev Server Script** | [x] | Added `run_dev.ps1` and routed `npm run dev` through fixed local Vite host/port settings. |
+| **Task 12: Move Tile And Shop Controls To Popups** | [x] | Moved plot actions and shop contents into click-opened popup panels to avoid overlap on the 2.5D board. |

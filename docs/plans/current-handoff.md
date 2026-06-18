@@ -19,6 +19,9 @@
 - Implemented CSS grid layouts, HSL gradient designs, and CSS keyframe animations for crop growth cycles in `src/styles/main.scss`.
 - Wired game logic actions, browser event listener delegation, local storage auto-saving, and real-time tick cycles in `src/main.ts`.
 - Completed an end-to-end automated browser smoke test covering seed purchase, planting, watering, growth phase updates, and harvesting.
+- Moved plot action controls into a click-opened plot popup so the 2.5D board no longer has overlapping buttons on tiles.
+- Moved seed shop and upgrade details into a click-opened shop popup, leaving the sidebar as a compact shop entry point.
+- Added renderer regression coverage proving tile/sidebar controls stay out of the default board layout and only render inside popups.
 
 ## Verification
 
@@ -29,11 +32,14 @@
 - Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; no server started).
 - NPM dev script check: `npm run dev -- -Check` (Passed; no server started).
 - Dev script argument guard: unknown extra argument was rejected by the script parameter binding.
-- Visual screenshot/browser smoke review was not completed in this session; manual UI review is still recommended before committing the isometric pass.
+- Popup renderer regression test: `npm test -- src/ui/render.test.ts` (Passed 4/4 tests after RED/GREEN cycle).
+- Production build after popup changes: `npm run build` (Completed successfully with zero compilation errors).
+- Browser smoke review through Chrome headless/CDP: captured and inspected initial board, plot popup, and shop popup states; verified no action buttons render inside `.iso-tile` or `.sidebar` by default.
 
 ## Known Warnings Or Blockers
 
 - Last commit: `dc08f79 feat: implement farm progression MVP`.
+- Codex in-app browser plugin failed to initialize in this environment due `EPERM` while accessing `C:\Users\Hoang.H\AppData`; Chrome headless/CDP was used instead for browser smoke testing.
 
 ## Current Uncommitted Scope
 
@@ -43,6 +49,7 @@
 - `docs/plans/index.md`
 - `package.json`
 - `run_dev.ps1`
+- `src/main.ts`
 - `src/styles/main.scss`
 - `src/ui/render.ts`
 - `src/ui/render.test.ts`
@@ -51,4 +58,4 @@
 
 ## Recommended Next Task
 
-- Run a visual browser review for the isometric board, then commit the current Task 10 and Task 11 changes if approved.
+- Review the popup interaction in the regular browser session and commit the current UI/dev-script changes if approved.
