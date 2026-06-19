@@ -1,0 +1,64 @@
+.crop-art {
+  display: block;
+  width: 116px;
+  height: 88px;
+  overflow: visible;
+  transform-origin: 50% 76%;
+  pointer-events: none;
+  contain: layout;
+}
+
+.crop-soil {
+  transform-box: view-box;
+  transform-origin: 120px 132px;
+}
+
+.crop-soil__shadow {
+  fill: rgba(83, 50, 24, 0.22);
+}
+
+.crop-soil__top {
+  fill: #a96b3f;
+  stroke: #87522f;
+  stroke-width: 3;
+}
+
+.crop-soil__inner {
+  fill: #b97a49;
+  opacity: 0.72;
+}
+
+.crop-soil__front-rim {
+  fill: #7c4a2d;
+  opacity: 0.86;
+}
+
+.crop-soil__crack {
+  fill: none;
+  stroke: #5e3823;
+  stroke-linecap: round;
+  stroke-width: 4;
+  opacity: 0;
+}
+
+.soil-dry .crop-soil__top {
+  fill: #9a6b45;
+}
+
+.soil-dry .crop-soil__crack {
+  opacity: 0.72;
+}
+
+.soil-upgraded .crop-soil__inner {
+  fill: #c48952;
+}
+
+.soil-neglected .crop-soil {
+  filter: saturate(0.65) brightness(0.8);
+}
+
+.crop-plant,
+.carrot-layer {
+  transform-box: view-box;
+  transform-origin: 120px 132px;
+}

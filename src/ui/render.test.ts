@@ -14,9 +14,24 @@ describe("renderApp", () => {
     expect(root.querySelector(".farm-board--isometric")).not.toBeNull();
     expect(root.querySelector(".tile-r0-c0.tile-z0")).not.toBeNull();
     expect(root.querySelector(".iso-tile__ground")).not.toBeNull();
-    expect(root.querySelector(".iso-tile__crop .crop--carrot")).not.toBeNull();
+    expect(root.querySelector(".iso-tile__crop .crop-art.crop-art--carrot")).not.toBeNull();
     expect(root.querySelector("[style]")).toBeNull();
   });
+
+  it("renders planted plots with crop art SVG including crop-owned soil patch", () => {
+    const root = document.createElement("div");
+    const state = plantSeed(createInitialGameState(1_000), "plot-0-0", "carrot", 2_000);
+
+    renderApp(root, createViewModel(state, 62_000, "carrot"));
+
+    const cropArt = root.querySelector(".crop-art.crop-art--carrot");
+    expect(cropArt).not.toBeNull();
+    expect(cropArt?.querySelector(".crop-soil")).not.toBeNull();
+    expect(cropArt?.querySelector(".crop-plant--carrot")).not.toBeNull();
+    expect(root.querySelector(".iso-tile__crop > .crop")).toBeNull();
+    expect(root.innerHTML).not.toContain("style=");
+  });
+
 
   it("keeps locked tile label in a readable content layer", () => {
     const root = document.createElement("div");
@@ -58,5 +73,22 @@ describe("renderApp", () => {
     expect(root.querySelector(".sidebar [data-action='buy-seed']")).toBeNull();
     expect(root.querySelector(".shop-popup [data-action='buy-seed']")).not.toBeNull();
     expect(root.querySelector(".shop-popup [data-action='select-seed']")).not.toBeNull();
+  });
+
+  it("renders dry and pest state classes on the crop art element", () => {
+    const root = document.createElement("div");
+    const state = plantSeed(createInitialGameState(1_000), "plot-0-0", "carrot", 2_000);
+    const plot = state.farm.plots.find((p) => p.id === "plot-0-0");
+    if (plot && plot.crop) {
+      plot.crop.wateredAt = 2_000;
+      plot.crop.pestAppearedAt = 100_000;
+    }
+
+    renderApp(root, createViewModel(state, 120_000, "carrot"));
+
+    const cropArt = root.querySelector(".crop-art.crop-art--carrot");
+    expect(cropArt).not.toBeNull();
+    expect(cropArt?.classList.contains("soil-dry")).toBe(true);
+    expect(cropArt?.classList.contains("has-pest")).toBe(true);
   });
 });

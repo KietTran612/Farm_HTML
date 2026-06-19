@@ -22,40 +22,48 @@
 - Moved plot action controls into a click-opened plot popup so the 2.5D board no longer has overlapping buttons on tiles.
 - Moved seed shop and upgrade details into a click-opened shop popup, leaving the sidebar as a compact shop entry point.
 - Added renderer regression coverage proving tile/sidebar controls stay out of the default board layout and only render inside popups.
+- Created standalone crop art demos for CSS/SVG exploration, including `crop-svg-demo.html` and `crop-carrot-states-demo.html`.
+- Installed and configured SVGO for SVG source-to-optimized asset workflow.
+- Iterated the carrot states demo with smoother generated SVG leaf curves, explicit curved stems from a shared crown, a half-root carrot cap, and a separate brown dead-state stem style.
+- Created `docs/plans/2026-06-19-crop-art-system-setup.md` for a reusable SCSS/native SVG crop art renderer with crop-owned 2.5D soil patches and stable state anchors.
+- Reviewed and fixed the crop art setup plan for executable details: unique inline SVG gradient ids, nullable planted-plot fields, `noUnusedLocals` cleanup, Sass `@use` ordering, and removal of an unbacked `wet` soil state.
+- Incorporated crop art polish constraints into the plan: shared `viewBox="0 0 240 180"` and `data-crop-anchor="120 132"` for future crops, non-scaling cartoon strokes, and `paint-order: stroke fill` on the carrot root cap.
+- **Implemented Task 15 (Crop Art Type Boundary):** Created `src/ui/crop-art/cropArtTypes.ts` defining normalized crop art states, sanitizers, and crop interfaces.
+- **Implemented Task 16 (Reusable 2.5D Soil Patch Renderer):** Created `src/ui/crop-art/soilPatch.ts` to render semantic 2.5D soil patch vector layers.
+- **Implemented Task 17 (Carrot Crop SVG Renderer):** Created `src/ui/crop-art/carrotCrop.ts` rendering multi-state carrot SVG layers.
+- **Implemented Task 18 (Public Crop Art Renderer):** Created `src/ui/crop-art/cropArt.ts` combining soil patches and plant layers under randomized gradient IDs.
+- **Implemented Task 19 (Replace Placeholder Crop Markup):** Refactored `src/ui/render.ts` and `src/ui/render.test.ts` to replace old crop wrapper divs with the SVG `renderCropArt` helper.
+- **Implemented Task 20 (Add SCSS Crop Art Foundation):** Created `src/styles/crop-art/_base.scss` and `src/styles/crop-art/_carrot.scss`, imported them at the top of `src/styles/main.scss`, and cleaned up the old CSS crop placeholders and keyframes.
+- **Implemented Task 21 (Stabilize Crop Positioning):** Updated `.iso-tile__crop` positioning and transform in `src/styles/main.scss`, changed `.crop-plant` and `.crop-soil` SCSS to align transforms with SVG's `view-box` coordinate system and the stable `(120, 132)` anchor.
+- **Implemented Task 22 (Add Focused Renderer Regression Coverage):** Wrote unit tests in `src/ui/crop-art/cropArt.test.ts` to verify no inline `style` attributes are emitted. Wrote integration tests in `src/ui/render.test.ts` verifying `soil-dry` and `has-pest` classes are correctly rendered on the SVG element.
+- **Implemented Task 23 (Verify Build):** Verified successfully compiled production builds and local dev checks.
 
 ## Verification
 
-- Run focused core tests: `npm test -- src/core/actions.test.ts src/core/growth.test.ts` (Passed 21/21 tests across 2 test suites).
-- Run full unit tests: `npm test` (Passed 29/29 tests across 6 test suites).
-- Run production build: `npm run build` (Build completed successfully with zero compilation errors).
+- Run focused crop art unit tests: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 8/8 tests across 4 test suites).
+- Run focused board renderer tests: `npm test -- src/ui/render.test.ts` (Passed 6/6 tests).
+- Run full unit tests: `npm test` (Passed 41/41 tests across 7 test suites).
+- Run production build: `npm run build` (Sass and TypeScript compiled successfully with zero compiler warnings or errors).
 - Local HTTP check: `http://127.0.0.1:3000` returned status 200.
-- Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; no server started).
-- NPM dev script check: `npm run dev -- -Check` (Passed; no server started).
-- Dev script argument guard: unknown extra argument was rejected by the script parameter binding.
-- Popup renderer regression test: `npm test -- src/ui/render.test.ts` (Passed 4/4 tests after RED/GREEN cycle).
-- Production build after popup changes: `npm run build` (Completed successfully with zero compilation errors).
-- Browser smoke review through Chrome headless/CDP: captured and inspected initial board, plot popup, and shop popup states; verified no action buttons render inside `.iso-tile` or `.sidebar` by default.
+- Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; check finished without errors).
 
 ## Known Warnings Or Blockers
 
-- Last commit: `dc08f79 feat: implement farm progression MVP`.
+- Last commit: `2984354 fix: move farm controls into popups`.
 - Codex in-app browser plugin failed to initialize in this environment due `EPERM` while accessing `C:\Users\Hoang.H\AppData`; Chrome headless/CDP was used instead for browser smoke testing.
 
 ## Current Uncommitted Scope
 
-- `docs/plans/2026-06-18-isometric-farm-board-ui-implementation.md`
-- `docs/plans/task.md`
-- `docs/plans/current-handoff.md`
-- `docs/plans/index.md`
-- `package.json`
-- `run_dev.ps1`
-- `src/main.ts`
-- `src/styles/main.scss`
-- `src/ui/render.ts`
-- `src/ui/render.test.ts`
-- `src/ui/viewModel.ts`
-- `src/ui/viewModel.test.ts`
+- `package.json` and `package-lock.json` include SVGO setup.
+- `crop-carrot-states-demo.html`, `crop-svg-demo.html`, `crop-style-companion.html`, preview PNGs, and `demo-review/` contain local visual demo artifacts.
+- `src/assets/crops/source/carrot.svg`, `src/assets/crops/optimized/carrot.svg`, and `svgo.config.mjs` contain the demo SVG optimization workflow.
+- `docs/Crops/` and `.superpowers/` are untracked local exploration artifacts.
+- `docs/plans/task.md` and `docs/plans/current-handoff.md` were updated for the crop art implementation.
+- `docs/plans/2026-06-19-crop-art-system-setup.md` and `docs/plans/index.md` were added/updated for the crop art plan extension.
+- `src/ui/crop-art/` contains the new crop art types (`cropArtTypes.ts`), soil patch renderer (`soilPatch.ts`), carrot SVG renderer (`carrotCrop.ts`), public API (`cropArt.ts`), and unit tests (`cropArt.test.ts`).
+- `src/ui/render.ts` and `src/ui/render.test.ts` contain board-renderer integration changes.
+- `src/styles/main.scss` and `src/styles/crop-art/` contain SCSS styles for the new crop art layers.
 
 ## Recommended Next Task
 
-- Review the popup interaction in the regular browser session and commit the current UI/dev-script changes if approved.
+- Start implementing Task 24 (Implement Corn SVG Renderer And Styles) and Tasks 25-29 for the remaining crops (Potato, Pumpkin, Strawberry, Tomato, Wheat) to fully complete the new vector visual upgrade.

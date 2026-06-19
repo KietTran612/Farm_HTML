@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File ./run_dev.ps1",
     "build": "tsc && vite build",
+    "svg:optimize": "svgo -f src/assets/crops/source -o src/assets/crops/optimized --config svgo.config.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -13,6 +14,7 @@
     "@vitest/ui": "^3.2.4",
     "jsdom": "^26.1.0",
     "sass": "^1.89.2",
+    "svgo": "^4.0.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.0",
     "vitest": "^3.2.4"

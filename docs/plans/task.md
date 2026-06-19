@@ -15,3 +15,23 @@
 | **Task 10: Execute Isometric Farm Board UI** | [x] | Converted the farm board to 2.5D/isometric DOM + SCSS and fixed review issues in tile content/readability. |
 | **Task 11: Controlled Dev Server Script** | [x] | Added `run_dev.ps1` and routed `npm run dev` through fixed local Vite host/port settings. |
 | **Task 12: Move Tile And Shop Controls To Popups** | [x] | Moved plot actions and shop contents into click-opened popup panels to avoid overlap on the 2.5D board. |
+| **Task 13: Procedural Carrot Crop Demo** | [x] | Created and iterated the standalone 2.5D SVG carrot crop states demo with smoother connected leaves and half-root presentation. |
+| **Task 14: Crop Art System Setup Plan** | [x] | Created the implementation plan for reusable SCSS/native SVG crop art with crop-owned 2.5D soil patches. |
+| **Task 15: Add Crop Art Type Boundary** | [x] | Add crop art types, state normalization and sanitizer functions with tests. |
+| **Task 16: Add Reusable 2.5D Soil Patch Renderer** | [x] | Add soilPatch.ts and renderSoilPatch function with tests. |
+| **Task 17: Add Carrot Crop SVG Renderer With Stable Anchors** | [x] | Add carrotCrop.ts and renderCarrotCrop function with tests. |
+| **Task 18: Add Public Crop Art Renderer** | [x] | Add cropArt.ts and renderCropArt function with tests. |
+| **Task 19: Replace Placeholder Crop Markup In Board Renderer** | [x] | Modify render.ts and render.test.ts to use renderCropArt. |
+| **Task 20: Add SCSS Crop Art Foundation** | [x] | Add base and carrot SCSS partials and import into main.scss. |
+| **Task 21: Stabilize Crop Positioning Inside 2.5D Tiles** | [x] | Align crop-art and crop-plant transforms to stable 2.5D board baseline. |
+| **Task 22: Add Focused Renderer Regression Coverage** | [x] | Add no-inline-style and dry/pest class integration unit tests. |
+| **Task 23: Verify Build And Focused Browser Smoke** | [x] | Verify successful production build and manual/automated browser smoke checks. |
+| **Task 24: Implement Corn SVG Renderer And Styles** | [ ] | Register corn and add SVG renderer and sway SCSS with tests. |
+| **Task 25: Implement Potato SVG Renderer And Styles** | [ ] | Register potato and add SVG renderer and tuber SCSS with tests. |
+| **Task 26: Implement Pumpkin SVG Renderer And Styles** | [ ] | Register pumpkin and add SVG renderer and orange fruit SCSS with tests. |
+| **Task 27: Implement Strawberry SVG Renderer And Styles** | [ ] | Register strawberry and add SVG renderer and red berries SCSS with tests. |
+| **Task 28: Implement Tomato SVG Renderer And Styles** | [ ] | Register tomato and add SVG renderer and tall bush SCSS with tests. |
+| **Task 29: Implement Wheat SVG Renderer And Styles** | [ ] | Register wheat and add SVG renderer and golden ears SCSS with tests. |
+| **Task 30: Update Handoff And Commit On Approval** | [x] | Update task tracker, current handoff and git commit changes. |
+
+

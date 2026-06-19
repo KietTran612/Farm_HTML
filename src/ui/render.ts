@@ -1,4 +1,5 @@
 import type { AppViewModel, PlotViewModel } from "./viewModel";
+import { renderCropArt } from "./crop-art/cropArt";
 
 export type RenderUiState = {
   activePlotId: string | null;
@@ -30,22 +31,28 @@ function plotContent(plot: PlotViewModel): string {
     `;
   }
 
-  const classes = [
-    "crop",
-    plot.cropClass ?? "",
-    plot.templateClass ?? "",
-    plot.growthState ? `state-${plot.growthState}` : "",
-    plot.isDry ? "is-dry" : "",
-    plot.hasPest ? "has-pest" : ""
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const cropId = plot.cropId;
+  const cropName = plot.cropName ?? plot.cropId;
+  const growthState = plot.growthState;
+
+  if (!growthState) {
+    return "";
+  }
 
   return `
     <article class="iso-tile ${plot.tileClass} ${plot.zClass}">
       <button class="iso-tile__ground plot planted" data-action="open-plot" data-plot-id="${plot.id}">
         <div class="iso-tile__crop">
-          <div class="${classes}"></div>
+          ${renderCropArt({
+            instanceId: plot.id,
+            cropId,
+            cropName,
+            growthState,
+            soilLevel: plot.soilLevel,
+            isDry: plot.isDry,
+            hasPest: plot.hasPest,
+            isDead: plot.isDead
+          })}
         </div>
         <div class="iso-tile__content plot-summary">
           <strong>${plot.cropName}</strong>
@@ -56,6 +63,7 @@ function plotContent(plot: PlotViewModel): string {
     </article>
   `;
 }
+
 
 function plotPopup(plot: PlotViewModel, selectedSeed: string): string {
   if (!plot.unlocked) {

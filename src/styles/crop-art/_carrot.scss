@@ -1,0 +1,116 @@
+.crop-plant--carrot {
+  .carrot-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .carrot-stem,
+  .carrot-dead-stem {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .carrot-stem {
+    stroke: #357c2c;
+    stroke-width: 8;
+  }
+
+  .carrot-leaf {
+    fill: #67b83d;
+    stroke: #225c22;
+    stroke-linejoin: round;
+    stroke-width: 5;
+    paint-order: stroke fill;
+  }
+
+  .carrot-root-cap {
+    stroke: #a94818;
+    stroke-width: 5;
+    paint-order: stroke fill;
+  }
+
+  .carrot-root-highlight {
+    fill: #ffd59a;
+    opacity: 0.72;
+    transform: rotate(22deg);
+    transform-origin: center;
+  }
+
+  .carrot-root-line {
+    fill: none;
+    stroke: #b64e17;
+    stroke-linecap: round;
+    stroke-width: 3;
+    opacity: 0.34;
+  }
+
+  .carrot-seed {
+    fill: #8a5b35;
+    stroke: #5f3b20;
+    stroke-width: 2;
+  }
+
+  .carrot-dead-stem {
+    stroke: #86642d;
+    stroke-width: 8;
+  }
+
+  .carrot-dead-leaf {
+    fill: #c5a247;
+    stroke: #7b642e;
+    stroke-linejoin: round;
+    stroke-width: 5;
+  }
+}
+
+.crop-art--seed .carrot-layer--seed,
+.crop-art--sprout .carrot-layer--sprout,
+.crop-art--mature .carrot-layer--mature,
+.crop-art--ready .carrot-layer--mature,
+.crop-art--ready .carrot-layer--ready,
+.crop-art--dead .carrot-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--carrot {
+  transform: translateY(4px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--carrot {
+  transform: translateY(0) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--carrot {
+  transform: translateY(-8px) scale(0.86);
+}
+
+.crop-art--ready .crop-plant--carrot {
+  transform: translateY(-10px) scale(0.92);
+}
+
+.crop-art--dead .crop-plant--carrot {
+  transform: translateY(0) scale(0.82) rotate(-3deg);
+}
+
+.crop-art--ready .carrot-layer--mature {
+  animation: carrot-leaf-sway 2.4s ease-in-out infinite;
+}
+
+.crop-art.has-pest {
+  filter: drop-shadow(0 0 5px rgba(82, 58, 30, 0.38));
+}
+
+@keyframes carrot-leaf-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.4deg);
+  }
+}
