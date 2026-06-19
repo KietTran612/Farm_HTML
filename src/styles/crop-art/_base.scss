@@ -8,29 +8,51 @@
   contain: layout;
 }
 
+.crop-art path,
+.crop-art ellipse {
+  vector-effect: non-scaling-stroke;
+}
+
 .crop-soil {
   transform-box: view-box;
   transform-origin: 120px 132px;
 }
 
 .crop-soil__shadow {
-  fill: rgba(83, 50, 24, 0.22);
+  fill: rgba(83, 50, 24, 0.18);
 }
 
 .crop-soil__top {
-  fill: #a96b3f;
-  stroke: #87522f;
+  fill: #b97843;
+  stroke: #87502c;
   stroke-width: 3;
 }
 
 .crop-soil__inner {
-  fill: #b97a49;
-  opacity: 0.72;
+  fill: #c88954;
+  opacity: 0.64;
+}
+
+.crop-soil__top-highlight {
+  fill: #d39a65;
+  opacity: 0.22;
 }
 
 .crop-soil__front-rim {
-  fill: #7c4a2d;
-  opacity: 0.86;
+  fill: #7a4729;
+  opacity: 0.82;
+}
+
+.crop-soil__front-highlight {
+  fill: #a0643a;
+  opacity: 0.28;
+}
+
+.crop-soil__grain {
+  fill: none;
+  stroke: rgba(91, 52, 25, 0.32);
+  stroke-linecap: round;
+  stroke-width: 2;
 }
 
 .crop-soil__crack {
@@ -42,7 +64,12 @@
 }
 
 .soil-dry .crop-soil__top {
-  fill: #9a6b45;
+  fill: #9e704d;
+}
+
+.soil-dry .crop-soil__inner {
+  fill: #b28a63;
+  opacity: 0.5;
 }
 
 .soil-dry .crop-soil__crack {
@@ -50,7 +77,12 @@
 }
 
 .soil-upgraded .crop-soil__inner {
-  fill: #c48952;
+  fill: #d69b5e;
+  opacity: 0.76;
+}
+
+.soil-upgraded .crop-soil__top-highlight {
+  opacity: 0.34;
 }
 
 .soil-neglected .crop-soil {

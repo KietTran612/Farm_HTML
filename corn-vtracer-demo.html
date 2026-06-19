@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Corn VTracer Crop Demo</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      :root {
+        color-scheme: light;
+        --page-bg: #f7f1df;
+        --panel-bg: #fff9e8;
+        --panel-border: #e4d6ad;
+        --ink: #173c27;
+        --muted: #63715c;
+        --green: #3e8542;
+        --green-dark: #245d32;
+        --soil-top: #a86d39;
+        --soil-rim: #7a4a2c;
+        --soil-side: #5c3c2c;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.82), transparent 28%),
+          linear-gradient(180deg, #fbf8ee 0%, var(--page-bg) 100%);
+      }
+
+      .demo-shell {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+      }
+
+      .demo-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 20px;
+        border-bottom: 1px dashed rgba(120, 90, 45, 0.28);
+        padding-bottom: 16px;
+      }
+
+      .demo-title {
+        margin: 0 0 6px;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.05;
+        color: var(--green-dark);
+      }
+
+      .demo-subtitle {
+        margin: 0;
+        max-width: 720px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .state-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .state-button {
+        border: 1px solid rgba(55, 114, 52, 0.32);
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--green-dark);
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .state-button.is-active {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+        box-shadow: 0 0 0 4px rgba(62, 133, 66, 0.16);
+      }
+
+      .state-button.is-active::after {
+        content: "";
+        display: block;
+        height: 2px;
+        margin-top: 4px;
+        border-radius: 999px;
+        background: currentColor;
+        animation: state-progress 2.8s linear infinite;
+        transform-origin: left center;
+      }
+
+      .hero-board {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 24px;
+        align-items: stretch;
+        margin-bottom: 28px;
+      }
+
+      .stage-card,
+      .notes-card,
+      .state-card {
+        background: linear-gradient(180deg, rgba(255, 253, 246, 0.98), var(--panel-bg));
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
+        box-shadow: 0 18px 42px rgba(74, 52, 24, 0.08);
+      }
+
+      .stage-card {
+        min-height: 520px;
+        padding: 24px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+
+      .crop-stage {
+        position: relative;
+        width: min(620px, 100%);
+        aspect-ratio: 1.18;
+        display: grid;
+        place-items: center;
+      }
+
+      .soil-shadow {
+        position: absolute;
+        left: 50%;
+        bottom: 15%;
+        width: 58%;
+        height: 13%;
+        transform: translateX(-50%) skewX(-18deg);
+        border-radius: 50%;
+        background: rgba(69, 48, 28, 0.24);
+        filter: blur(2px);
+        animation: soil-shadow-breathe 2.8s ease-in-out infinite;
+      }
+
+      .soil-patch {
+        position: absolute;
+        left: 50%;
+        bottom: 17%;
+        width: 56%;
+        aspect-ratio: 1.92;
+        transform: translateX(-50%) rotate(45deg) skew(-15deg, -15deg);
+        transform-origin: center;
+        animation: soil-patch-breathe 2.8s ease-in-out infinite;
+      }
+
+      .soil-patch::before,
+      .soil-patch::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 8px;
+      }
+
+      .soil-patch::before {
+        background:
+          radial-gradient(ellipse at 36% 34%, rgba(255, 192, 112, 0.3), transparent 30%),
+          linear-gradient(135deg, #c18447 0%, var(--soil-top) 52%, #8d5631 100%);
+        border: 5px solid var(--soil-rim);
+        box-shadow:
+          inset 7px 7px 0 rgba(255, 214, 139, 0.1),
+          inset -8px -8px 0 rgba(77, 42, 24, 0.12);
+      }
+
+      .soil-patch::after {
+        transform: translate(15px, 15px);
+        z-index: -1;
+        background: linear-gradient(135deg, #72482e, var(--soil-side));
+        border-radius: 8px;
+      }
+
+      .corn-crop {
+        position: absolute;
+        left: 50%;
+        bottom: 15%;
+        width: 47%;
+        height: 82%;
+        transform: translateX(-50%);
+        transform-origin: 50% 100%;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 280ms ease,
+          transform 280ms ease,
+          filter 280ms ease;
+        filter: drop-shadow(0 13px 12px rgba(40, 32, 18, 0.18));
+        object-fit: contain;
+        object-position: 50% 100%;
+      }
+
+      .demo-shell[data-state="seed"] .corn-crop--seed,
+      .demo-shell[data-state="sprout"] .corn-crop--sprout,
+      .demo-shell[data-state="young"] .corn-crop--young,
+      .demo-shell[data-state="ready"] .corn-crop--ready,
+      .demo-shell[data-state="dead"] .corn-crop--dead {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .crop-stage .corn-crop--seed,
+      .crop-stage .corn-crop--sprout,
+      .crop-stage .corn-crop--young,
+      .crop-stage .corn-crop--ready {
+        animation:
+          corn-state-pop 520ms cubic-bezier(0.19, 1, 0.22, 1),
+          corn-idle-sway 2.6s ease-in-out 520ms infinite;
+      }
+
+      .crop-stage .corn-crop--dead {
+        animation:
+          corn-state-pop 520ms cubic-bezier(0.19, 1, 0.22, 1),
+          corn-dead-droop 3.2s ease-in-out 520ms infinite;
+      }
+
+      .corn-crop--seed {
+        width: 23%;
+        height: 30%;
+        bottom: 22%;
+      }
+
+      .corn-crop--sprout {
+        width: 32%;
+        height: 45%;
+        bottom: 20%;
+      }
+
+      .corn-crop--young {
+        width: 43%;
+        height: 66%;
+        bottom: 17%;
+      }
+
+      .corn-crop--ready {
+        width: 62%;
+        height: 94%;
+        bottom: 12%;
+      }
+
+      .corn-crop--dead {
+        width: 54%;
+        height: 74%;
+        bottom: 15%;
+        filter: drop-shadow(0 12px 10px rgba(50, 36, 20, 0.18)) saturate(0.92);
+      }
+
+      .notes-card {
+        padding: 22px;
+      }
+
+      .notes-card h2 {
+        margin: 0 0 14px;
+        color: var(--green-dark);
+      }
+
+      .review-list {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .review-list li {
+        padding-left: 16px;
+        border-left: 3px solid rgba(62, 133, 66, 0.34);
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .state-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+        gap: 14px;
+      }
+
+      .state-card {
+        padding: 14px;
+        text-align: center;
+      }
+
+      .mini-stage {
+        position: relative;
+        height: 176px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(145, 114, 69, 0.18);
+        border-radius: 8px;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse at 50% 77%, rgba(69, 48, 28, 0.18), transparent 35%),
+          linear-gradient(180deg, #fff9e8, #f1e4c5);
+      }
+
+      .mini-stage .soil-shadow {
+        bottom: 19px;
+        width: 112px;
+        height: 20px;
+      }
+
+      .mini-stage .soil-patch {
+        bottom: 24px;
+        width: 110px;
+      }
+
+      .mini-stage .corn-crop {
+        opacity: 1;
+        visibility: visible;
+        animation: none;
+      }
+
+      @keyframes corn-state-pop {
+        0% {
+          transform: translateX(-50%) translateY(18px) scale(0.82);
+          opacity: 0;
+        }
+        68% {
+          transform: translateX(-50%) translateY(-4px) scale(1.035);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(-50%) translateY(0) scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes corn-idle-sway {
+        0%,
+        100% {
+          transform: translateX(-50%) rotate(-1.8deg) translateY(0);
+        }
+        50% {
+          transform: translateX(-50%) rotate(2.2deg) translateY(-5px);
+        }
+      }
+
+      @keyframes corn-dead-droop {
+        0%,
+        100% {
+          transform: translateX(-50%) rotate(-0.8deg) translateY(1px);
+        }
+        50% {
+          transform: translateX(-50%) rotate(1deg) translateY(5px);
+        }
+      }
+
+      @keyframes soil-patch-breathe {
+        0%,
+        100% {
+          transform: translateX(-50%) rotate(45deg) skew(-15deg, -15deg) scale(1);
+        }
+        50% {
+          transform: translateX(-50%) rotate(45deg) skew(-15deg, -15deg) scale(1.018);
+        }
+      }
+
+      @keyframes soil-shadow-breathe {
+        0%,
+        100% {
+          opacity: 0.72;
+          transform: translateX(-50%) skewX(-18deg) scaleX(1);
+        }
+        50% {
+          opacity: 0.9;
+          transform: translateX(-50%) skewX(-18deg) scaleX(1.08);
+        }
+      }
+
+      @keyframes state-progress {
+        0% {
+          transform: scaleX(0);
+        }
+        100% {
+          transform: scaleX(1);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .corn-crop,
+        .soil-patch,
+        .soil-shadow,
+        .state-button.is-active::after {
+          animation: none !important;
+        }
+      }
+
+      .state-name {
+        margin: 0 0 4px;
+        font-weight: 800;
+        color: var(--green-dark);
+      }
+
+      .state-meta {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      @media (max-width: 780px) {
+        body {
+          padding: 16px;
+        }
+
+        .demo-header,
+        .hero-board {
+          grid-template-columns: 1fr;
+        }
+
+        .demo-header {
+          display: grid;
+          align-items: start;
+        }
+
+        .state-controls {
+          justify-content: flex-start;
+        }
+
+        .stage-card {
+          min-height: 420px;
+          padding: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="demo-shell" data-state="ready">
+      <header class="demo-header">
+        <div>
+          <h1 class="demo-title">Corn VTracer SVG Demo</h1>
+          <p class="demo-subtitle">
+            Demo dùng trực tiếp SVG export từ VTracer, đặt lên mảnh đất 2.5D để kiểm tra cảm giác game, anchor, scale và độ đồng nhất giữa các state.
+          </p>
+        </div>
+        <nav class="state-controls" aria-label="Corn states">
+          <button class="state-button" data-state-button="seed" type="button">Stage 00</button>
+          <button class="state-button" data-state-button="sprout" type="button">Stage 01</button>
+          <button class="state-button" data-state-button="young" type="button">Stage 02</button>
+          <button class="state-button is-active" data-state-button="ready" type="button">Stage 03</button>
+          <button class="state-button" data-state-button="dead" type="button">Dead</button>
+        </nav>
+      </header>
+
+      <section class="hero-board" aria-label="Corn state preview">
+        <article class="stage-card">
+          <div class="crop-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--seed" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage00.svg" alt="Corn stage 00" />
+            <img class="corn-crop corn-crop--sprout" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage01.svg" alt="Corn stage 01" />
+            <img class="corn-crop corn-crop--young" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage02.svg" alt="Corn stage 02" />
+            <img class="corn-crop corn-crop--ready" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage03.svg" alt="Corn stage 03" />
+            <img class="corn-crop corn-crop--dead" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Dead.svg" alt="Dead corn" />
+          </div>
+        </article>
+
+        <aside class="notes-card">
+          <h2>Review nhanh</h2>
+          <ul class="review-list">
+            <li>Visual từ PNG trace giữ được nhiều chi tiết hơn crop procedural hiện tại, đặc biệt ở Stage03.</li>
+            <li>SVG raw còn nặng: Stage03 khoảng 539KB, cần optimize/cleanup trước khi đưa vào app chính.</li>
+            <li>Các file cùng viewBox 768x1024 nên dễ scale đồng nhất, nhưng cần chuẩn hóa anchor để state không nhảy.</li>
+            <li>Giai đoạn tiếp theo nên tách crop body khỏi khoảng trắng lớn và normalize về viewBox 240x180.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="state-grid" aria-label="All corn states">
+        <article class="state-card">
+          <div class="mini-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--seed" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage00.svg" alt="Corn seed state" />
+          </div>
+          <p class="state-name">Stage 00</p>
+          <p class="state-meta">Mầm rất nhỏ, cần scale thấp để không trôi khỏi đất.</p>
+        </article>
+        <article class="state-card">
+          <div class="mini-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--sprout" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage01.svg" alt="Corn sprout state" />
+          </div>
+          <p class="state-name">Stage 01</p>
+          <p class="state-meta">Lá non rõ, phù hợp làm sprout state.</p>
+        </article>
+        <article class="state-card">
+          <div class="mini-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--young" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage02.svg" alt="Corn young state" />
+          </div>
+          <p class="state-name">Stage 02</p>
+          <p class="state-meta">Độ chi tiết tốt, nhưng file đã hơn 200KB.</p>
+        </article>
+        <article class="state-card">
+          <div class="mini-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--ready" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Stage03.svg" alt="Corn ready state" />
+          </div>
+          <p class="state-name">Stage 03</p>
+          <p class="state-meta">Đẹp nhất, nhưng raw trace đang quá nặng cho runtime.</p>
+        </article>
+        <article class="state-card">
+          <div class="mini-stage">
+            <div class="soil-shadow"></div>
+            <div class="soil-patch"></div>
+            <img class="corn-crop corn-crop--dead" src="docs/Crops/Corn/SVG/World_Crop_Corn_Body_Dead.svg" alt="Dead corn state" />
+          </div>
+          <p class="state-name">Dead</p>
+          <p class="state-meta">Màu héo ổn, nên cleanup riêng để giảm noise.</p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const shell = document.querySelector(".demo-shell");
+      const buttons = Array.from(document.querySelectorAll("[data-state-button]"));
+      const states = ["seed", "sprout", "young", "ready", "dead"];
+      let stateIndex = states.indexOf(shell.dataset.state);
+      let timerId = window.setInterval(showNextState, 2800);
+
+      function setState(state) {
+        shell.dataset.state = state;
+        buttons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.stateButton === state);
+        });
+        stateIndex = states.indexOf(state);
+      }
+
+      function showNextState() {
+        stateIndex = (stateIndex + 1) % states.length;
+        setState(states[stateIndex]);
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          window.clearInterval(timerId);
+          setState(button.dataset.stateButton);
+          timerId = window.setInterval(showNextState, 2800);
+        });
+      });
+    </script>
+  </body>
+</html>

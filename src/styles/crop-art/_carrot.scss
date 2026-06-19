@@ -12,6 +12,7 @@
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
   }
 
   .carrot-stem {
@@ -25,12 +26,14 @@
     stroke-linejoin: round;
     stroke-width: 5;
     paint-order: stroke fill;
+    vector-effect: non-scaling-stroke;
   }
 
   .carrot-root-cap {
     stroke: #a94818;
     stroke-width: 5;
     paint-order: stroke fill;
+    vector-effect: non-scaling-stroke;
   }
 
   .carrot-root-highlight {
@@ -46,12 +49,14 @@
     stroke-linecap: round;
     stroke-width: 3;
     opacity: 0.34;
+    vector-effect: non-scaling-stroke;
   }
 
   .carrot-seed {
     fill: #8a5b35;
     stroke: #5f3b20;
     stroke-width: 2;
+    vector-effect: non-scaling-stroke;
   }
 
   .carrot-dead-stem {
@@ -64,6 +69,8 @@
     stroke: #7b642e;
     stroke-linejoin: round;
     stroke-width: 5;
+    paint-order: stroke fill;
+    vector-effect: non-scaling-stroke;
   }
 }
 

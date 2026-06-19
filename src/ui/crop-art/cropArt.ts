@@ -33,6 +33,7 @@ export function renderCropArt(input: CropArtInput): string {
     .join(" ");
 
   let plantHtml = "";
+  let defsHtml = "";
   switch (input.cropId) {
     case "corn":
       plantHtml = renderCornCrop(artState);
@@ -53,18 +54,21 @@ export function renderCropArt(input: CropArtInput): string {
       plantHtml = renderWheatCrop(artState);
       break;
     default:
+      defsHtml = `
+        <defs>
+          <linearGradient id="${rootGradientId}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffbd61" />
+            <stop offset="100%" stop-color="#e5651e" />
+          </linearGradient>
+        </defs>
+      `;
       plantHtml = renderCarrotCrop(artState, { rootGradientId });
       break;
   }
 
   return `
     <svg class="${stateClasses}" viewBox="0 0 240 180" role="img" aria-label="${escapeAttribute(input.cropName)}" focusable="false">
-      <defs>
-        <linearGradient id="${rootGradientId}" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#ffbd61" />
-          <stop offset="100%" stop-color="#e5651e" />
-        </linearGradient>
-      </defs>
+      ${defsHtml}
       ${renderSoilPatch(soilState)}
       ${plantHtml}
     </svg>

@@ -55,9 +55,11 @@ const states: { name: string; desc: string; input: Partial<CropArtInput> }[] = [
   }
 ];
 
-function initReview() {
+export function initReview() {
   const container = document.getElementById("review-container");
   if (!container) return;
+  if (container.dataset.reviewInitialized === "true") return;
+  container.dataset.reviewInitialized = "true";
 
   crops.forEach((crop) => {
     // Tạo crop section
@@ -115,21 +117,15 @@ function initReview() {
   const toggleSwayBtn = document.getElementById("toggle-sway");
   if (toggleSwayBtn) {
     toggleSwayBtn.addEventListener("click", () => {
-      const active = toggleSwayBtn.classList.toggle("active");
-      const plants = document.querySelectorAll(".crop-plant, .carrot-layer, .corn-ear, .potato-tuber, .pumpkin-rib, .strawberry-berry, .tomato-fruit");
+      const paused = document.body.classList.toggle("review-animations-paused");
+      toggleSwayBtn.classList.toggle("active", !paused);
       
-      if (active) {
+      if (!paused) {
         toggleSwayBtn.innerText = "Bật/Tắt Animation Đung Đưa";
         // Khôi phục animation bằng cách xóa style đè
-        plants.forEach((p) => {
-          (p as HTMLElement).style.animation = "";
-        });
       } else {
         toggleSwayBtn.innerText = "Đã Tắt Animation (Tĩnh)";
         // Đè animation thành none để dừng chuyển động
-        plants.forEach((p) => {
-          (p as HTMLElement).style.animation = "none";
-        });
       }
     });
   }

@@ -33,5 +33,7 @@
 | **Task 28: Implement Tomato SVG Renderer And Styles** | [x] | Register tomato and add SVG renderer and tall bush SCSS with tests. |
 | **Task 29: Implement Wheat SVG Renderer And Styles** | [x] | Register wheat and add SVG renderer and golden ears SCSS with tests. |
 | **Task 30: Update Handoff And Commit On Approval** | [x] | Update task tracker, current handoff and ready for user commit. |
-
-
+| **Task 31: Review And Polish Crop Art Review UI** | [x] | Fixed review page visual spacing, mobile overflow, animation toggling, soil detail, and crop art contracts. |
+| **Task 32: Corn VTracer SVG Demo Review** | [x] | Reviewed exported corn SVG weights and created a standalone 2.5D demo using the VTracer outputs. |
+| **Task 33: Add Corn VTracer Demo Animation** | [x] | Added visible crop sway, state pop, soil breathing, and active-state progress animation to the standalone corn demo. |
+| **Task 34: VTracer CLI Crop Pipeline Plan** | [x] | Created a setup and usage plan for local VTracer CLI conversion, SVG optimization, metrics, and per-part animation preparation. |

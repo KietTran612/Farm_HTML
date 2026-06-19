@@ -9,6 +9,8 @@ import { renderPumpkinCrop } from "./pumpkinCrop";
 import { renderStrawberryCrop } from "./strawberryCrop";
 import { renderTomatoCrop } from "./tomatoCrop";
 import { renderWheatCrop } from "./wheatCrop";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 describe("crop art types", () => {
   it("normalizes core growth states into crop art states", () => {
@@ -110,6 +112,22 @@ describe("renderCropArt", () => {
     expect(html).toContain("crop-soil--dry");
   });
 
+  it("does not emit carrot-only defs for non-carrot crops", () => {
+    const html = renderCropArt({
+      instanceId: "plot-corn",
+      cropId: "corn",
+      cropName: "Corn",
+      growthState: "harvestable",
+      soilLevel: 1,
+      isDry: false,
+      hasPest: false,
+      isDead: false
+    });
+
+    expect(html).not.toContain("carrot-root");
+    expect(html).not.toContain("<defs>");
+  });
+
   it("does not emit inline style attributes for crop art states", () => {
     for (const growthState of ["seeded", "sprout", "grown", "preHarvest", "harvestable", "dead"] as const) {
       const html = renderCropArt({
@@ -125,6 +143,14 @@ describe("renderCropArt", () => {
 
       expect(html).not.toContain("style=");
     }
+  });
+});
+
+describe("crop art SCSS contracts", () => {
+  it("keeps carrot outline strokes consistent while crop states scale", () => {
+    const scss = readFileSync(resolve("src/styles/crop-art/_carrot.scss"), "utf8");
+
+    expect(scss).toContain("vector-effect: non-scaling-stroke");
   });
 });
 
@@ -217,6 +243,5 @@ describe("renderWheatCrop", () => {
     expect(html).not.toContain("style=");
   });
 });
-
 
 

@@ -43,6 +43,16 @@
 - **Implemented Task 27 (Implement Strawberry SVG Renderer And Styles):** Created `src/ui/crop-art/strawberryCrop.ts` and `src/styles/crop-art/_strawberry.scss`, registered Strawberry crop renderer and red berries SCSS with unit tests.
 - **Implemented Task 28 (Implement Tomato SVG Renderer And Styles):** Created `src/ui/crop-art/tomatoCrop.ts` and `src/styles/crop-art/_tomato.scss`, registered Tomato crop renderer and tall bush SCSS with unit tests.
 - **Implemented Task 29 (Implement Wheat SVG Renderer And Styles):** Created `src/ui/crop-art/wheatCrop.ts` and `src/styles/crop-art/_wheat.scss`, registered Wheat crop renderer and golden ears SCSS with unit tests.
+- **Implemented Task 31 (Review And Polish Crop Art Review UI):** Improved `review.html` crop preview cards, mobile layout, and animation pause behavior.
+- Added soil patch detail layers and SCSS polish for warmer 2.5D depth, non-scaling cartoon strokes, and carrot root paint ordering.
+- Fixed `renderCropArt` so non-carrot crops no longer emit carrot-only SVG defs.
+- Added focused review UI tests and crop art contract tests for no inline animation styles, mobile single-column layout, carrot defs isolation, and non-scaling carrot strokes.
+- **Implemented Task 32 (Corn VTracer SVG Demo Review):** Reviewed the exported VTracer corn SVG files and created `corn-vtracer-demo.html` to preview all five corn states on a 2.5D soil patch.
+- Confirmed the VTracer corn art is visually much richer than the procedural placeholder, while the raw SVG sizes still need optimization before app integration.
+- **Implemented Task 33 (Add Corn VTracer Demo Animation):** Added visible crop state pop, idle sway, dead droop, soil breathing, and active state progress animation to `corn-vtracer-demo.html`.
+- **Implemented Task 34 (VTracer CLI Crop Pipeline Plan):** Created `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md` for local VTracer CLI setup, repeatable presets, SVGO optimization, SVG metrics, batch conversion, inline SVG preparation, and per-part animation demo.
+- Updated the VTracer CLI plan to require visual review for each source PNG before accepting its SVG preset, and added a planned `scripts/vtracer/setup-vtracer.ps1` auto-setup script for official `visioncortex/vtracer` CLI setup.
+- Incorporated VTracer plan review feedback: pathcount reduction is treated as a visual-quality tradeoff, candidates must be reviewed at 80/100/120px tile sizes, metrics handle non-hex color formats, SVGO keeps colors easier to count, and inline SVG preparation prefixes referenced IDs to avoid gradient collisions.
 
 ## Verification
 
@@ -51,18 +61,33 @@
 - Run production build: `npm run build` (Sass and TypeScript compiled successfully with zero compiler warnings or errors).
 - Local HTTP check: `http://127.0.0.1:3000` returned status 200.
 - Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; check finished without errors).
+- Run focused crop art review after polish: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 16/16 tests).
+- Run focused review page tests: `npm test -- src/review.test.ts` (Passed 2/2 tests).
+- Run focused board renderer tests after polish: `npm test -- src/ui/render.test.ts` (Passed 6/6 tests).
+- Run production build after polish: `npm run build` (Passed).
+- Chrome headless visual review: captured desktop and mobile screenshots under `demo-review/`; mobile measurement confirmed `scrollWidth` equals `clientWidth` at 390px with no overflowing elements.
+- Chrome headless corn demo smoke: captured `demo-review/corn-vtracer-demo.png`, confirmed no failed SVG requests, all corn SVG images loaded, and desktop layout had no horizontal overflow.
+- Browser animation check: confirmed active corn crop uses `corn-state-pop, corn-idle-sway`, soil uses `soil-patch-breathe`, and computed transform changes over time.
+- Chrome headless screenshot after animation: `demo-review/corn-vtracer-demo-animated.png`.
+- Docs-only plan update for VTracer CLI setup: no app validation run.
 
 ## Known Warnings Or Blockers
 
 - Last commit: `2984354 fix: move farm controls into popups`.
 - Codex in-app browser plugin failed to initialize in this environment due `EPERM` while accessing `C:\Users\Hoang.H\AppData`; Chrome headless/CDP was used instead for browser smoke testing.
+- Crop art is visually cleaner for review, but the crop shapes are still procedural prototype art and will need a dedicated art pass to match the provided high-detail mockups.
+- Corn VTracer raw SVG sizes are large: Stage00 ~79KB, Stage01 ~113KB, Stage02 ~202KB, Stage03 ~539KB, Dead ~206KB.
+- VTracer CLI is not yet installed or executed by this plan task; execution will require user approval for any dependency installation or external binary setup.
 
 ## Current Uncommitted Scope
 
-- All newly implemented crop art files and styles (`src/ui/crop-art/*` and `src/styles/crop-art/*`).
-- Updates to `src/ui/crop-art/cropArt.ts`, `src/styles/main.scss`, and `src/ui/crop-art/cropArt.test.ts`.
-- `docs/plans/task.md` and `docs/plans/current-handoff.md` were updated for the crop art implementation.
+- Review polish files: `review.html`, `src/review.ts`, `src/review.test.ts`, and `src/node-test-shims.d.ts`.
+- Crop art polish files: `src/ui/crop-art/cropArt.ts`, `src/ui/crop-art/soilPatch.ts`, `src/ui/crop-art/cropArt.test.ts`, `src/styles/crop-art/_base.scss`, and `src/styles/crop-art/_carrot.scss`.
+- Generated review screenshots under `demo-review/`.
+- Standalone VTracer demo: `corn-vtracer-demo.html`.
+- VTracer CLI setup plan: `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md`.
+- Existing untracked `.superpowers/` and `docs/Crops/` remain untouched.
 
 ## Recommended Next Task
 
-- Request user approval to commit the completed crop art system visual upgrade.
+- If the user approves, execute `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md` starting with VTracer CLI installation/verification and a Corn Stage03 preset comparison.
