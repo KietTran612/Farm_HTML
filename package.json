@@ -8,7 +8,13 @@
     "build": "tsc && vite build",
     "svg:optimize": "svgo -f src/assets/crops/source -o src/assets/crops/optimized --config svgo.config.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "crop:vtracer:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/vtracer/setup-vtracer.ps1",
+    "crop:vtracer:check": "node scripts/vtracer/check-vtracer.mjs",
+    "crop:vtracer:convert": "node scripts/vtracer/convert-crop.mjs",
+    "crop:vtracer:batch": "node scripts/vtracer/convert-crop-batch.mjs",
+    "crop:vtracer:review": "node scripts/vtracer/review-crop-candidates.mjs",
+    "crop:vtracer:inline": "node scripts/vtracer/prepare-inline-svg.mjs"
   },
   "devDependencies": {
     "@vitest/ui": "^3.2.4",

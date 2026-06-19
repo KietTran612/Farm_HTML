@@ -1,0 +1,273 @@
+<style>
+  .crop-board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .crop-card {
+    cursor: pointer;
+  }
+
+  .crop-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    min-height: 170px;
+    padding: 18px;
+    border-radius: 10px;
+    background: #f5f0df;
+  }
+
+  .mini-tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 118px;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 34% 32%, rgba(255, 255, 255, 0.2), transparent 30%),
+      linear-gradient(145deg, #b87947, #76513b);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+  }
+
+  .mock-crop {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    filter: drop-shadow(0 8px 5px rgba(49, 34, 20, 0.2));
+  }
+
+  .a-carrot::before,
+  .a-carrot::after,
+  .a-strawberry::before,
+  .a-strawberry::after,
+  .a-rice::before,
+  .a-rice::after {
+    position: absolute;
+    content: "";
+  }
+
+  .a-carrot::before {
+    left: 18px;
+    top: 4px;
+    width: 38px;
+    height: 30px;
+    border-radius: 50% 50% 42% 42%;
+    background:
+      radial-gradient(ellipse at 28% 45%, #75d55f 0 22%, transparent 24%),
+      radial-gradient(ellipse at 52% 18%, #58b947 0 28%, transparent 30%),
+      radial-gradient(ellipse at 72% 48%, #3d9c39 0 22%, transparent 24%);
+  }
+
+  .a-carrot::after {
+    left: 26px;
+    top: 30px;
+    width: 22px;
+    height: 34px;
+    border-radius: 50% 50% 58% 58%;
+    background:
+      linear-gradient(90deg, transparent 0 42%, rgba(122, 55, 14, 0.28) 43% 48%, transparent 49%),
+      linear-gradient(160deg, #ff9b38, #e65f1e);
+    box-shadow: -13px 2px 0 -5px #f27a2a, 13px 3px 0 -6px #d85b1f;
+  }
+
+  .a-strawberry::before {
+    left: 16px;
+    top: 12px;
+    width: 42px;
+    height: 30px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 24% 50%, #70c957 0 18%, transparent 20%),
+      radial-gradient(circle at 50% 28%, #4caf50 0 24%, transparent 26%),
+      radial-gradient(circle at 76% 52%, #398f3f 0 18%, transparent 20%);
+  }
+
+  .a-strawberry::after {
+    left: 12px;
+    top: 34px;
+    width: 48px;
+    height: 28px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 24% 36%, #fff3c4 0 4%, transparent 5%),
+      radial-gradient(circle at 48% 64%, #fff3c4 0 4%, transparent 5%),
+      radial-gradient(circle at 70% 34%, #fff3c4 0 4%, transparent 5%),
+      #d93838;
+    box-shadow: 0 -12px 0 -8px #fff0f5;
+  }
+
+  .a-rice::before {
+    left: 28px;
+    bottom: 10px;
+    width: 8px;
+    height: 56px;
+    border-radius: 999px;
+    background: #669334;
+    box-shadow: -12px 8px 0 -2px #7aa342, 14px 10px 0 -3px #87a94c;
+    transform: rotate(-7deg);
+  }
+
+  .a-rice::after {
+    left: 12px;
+    top: 8px;
+    width: 44px;
+    height: 36px;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse at 20% 50%, #e8c85a 0 10%, transparent 11%),
+      radial-gradient(ellipse at 40% 34%, #f1d973 0 10%, transparent 11%),
+      radial-gradient(ellipse at 62% 56%, #d7b54a 0 10%, transparent 11%),
+      radial-gradient(ellipse at 80% 40%, #e8c85a 0 9%, transparent 10%);
+  }
+
+  .parts-crop {
+    display: grid;
+    place-items: center;
+  }
+
+  .parts-crop .leaf {
+    position: absolute;
+    top: 9px;
+    width: 16px;
+    height: 32px;
+    border-radius: 999px 999px 0 999px;
+    background: linear-gradient(#79d162, #3f9d3d);
+    transform-origin: bottom center;
+  }
+
+  .parts-crop .leaf:nth-child(1) { transform: rotate(-34deg); }
+  .parts-crop .leaf:nth-child(2) { transform: rotate(0deg); }
+  .parts-crop .leaf:nth-child(3) { transform: rotate(34deg); }
+
+  .parts-crop .fruit {
+    position: absolute;
+    top: 36px;
+    width: 22px;
+    height: 32px;
+    border-radius: 50% 50% 60% 60%;
+    background: linear-gradient(160deg, #ff9d39, #dd5d1f);
+    box-shadow: -16px 1px 0 -5px #f27a2a, 16px 3px 0 -6px #d85b1f;
+  }
+
+  .parts-crop.berry .fruit {
+    top: 34px;
+    width: 48px;
+    height: 28px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 24% 40%, #ffeeb4 0 4%, transparent 5%),
+      radial-gradient(circle at 48% 62%, #ffeeb4 0 4%, transparent 5%),
+      radial-gradient(circle at 72% 42%, #ffeeb4 0 4%, transparent 5%),
+      linear-gradient(#e94848, #b92d2d);
+  }
+
+  .parts-crop.rice .stem {
+    position: absolute;
+    bottom: 8px;
+    width: 7px;
+    height: 60px;
+    border-radius: 999px;
+    background: #668f38;
+    box-shadow: -14px 8px 0 -2px #7aa342, 14px 7px 0 -2px #7aa342;
+  }
+
+  .parts-crop.rice .grain {
+    position: absolute;
+    top: 10px;
+    width: 9px;
+    height: 18px;
+    border-radius: 999px;
+    background: #e8c85a;
+    box-shadow: -16px 10px 0 #f2d976, -6px 4px 0 #d6b94c, 10px 8px 0 #e8c85a, 20px 14px 0 #d6b94c;
+  }
+
+  .sprite-crop {
+    width: 82px;
+    height: 82px;
+    image-rendering: pixelated;
+    border-radius: 6px;
+    background:
+      linear-gradient(90deg, transparent 0 28px, #58b947 28px 38px, transparent 38px),
+      linear-gradient(90deg, transparent 0 36px, #f27a2a 36px 48px, transparent 48px),
+      linear-gradient(transparent 0 26px, #58b947 26px 36px, transparent 36px),
+      linear-gradient(transparent 0 42px, #f27a2a 42px 66px, transparent 66px);
+    box-shadow:
+      inset 30px 16px 0 -10px #3f9d3d,
+      inset 43px 47px 0 -12px #ff9d39,
+      inset -22px -18px 0 -16px rgba(87, 51, 23, 0.32);
+  }
+
+  .sprite-crop.berry {
+    background:
+      radial-gradient(circle at 38% 52%, #d93838 0 18%, transparent 19%),
+      radial-gradient(circle at 58% 52%, #d93838 0 18%, transparent 19%),
+      radial-gradient(circle at 50% 24%, #4caf50 0 22%, transparent 23%);
+  }
+
+  .sprite-crop.rice {
+    background:
+      linear-gradient(78deg, transparent 0 42%, #7aa342 43% 48%, transparent 49%),
+      linear-gradient(104deg, transparent 0 50%, #668f38 51% 56%, transparent 57%),
+      radial-gradient(ellipse at 48% 22%, #e8c85a 0 24%, transparent 25%);
+  }
+
+  .crop-card .content h3 {
+    margin-top: 14px;
+  }
+</style>
+
+<h2>Chọn hướng thiết kế crop SCSS</h2>
+<p class="subtitle">Mục tiêu: crop nhìn rõ hơn trên board 2.5D, có khác biệt giữa cà rốt/dâu/lúa và thể hiện growth state tốt hơn.</p>
+
+<div class="cards crop-board">
+  <div class="card crop-card" data-choice="a-scss-only" onclick="toggleSelect(this)">
+    <div class="card-image crop-preview">
+      <div class="mini-tile"><div class="mock-crop a-carrot"></div></div>
+      <div class="mini-tile"><div class="mock-crop a-strawberry"></div></div>
+      <div class="mini-tile"><div class="mock-crop a-rice"></div></div>
+    </div>
+    <div class="card-body">
+      <h3>A. SCSS-only nâng cấp từ DOM hiện tại</h3>
+      <p>Dùng ::before/::after, gradients và box-shadow nhiều lớp. Nhanh, ít rủi ro, không đổi renderer.</p>
+    </div>
+  </div>
+
+  <div class="card crop-card" data-choice="b-dom-parts" onclick="toggleSelect(this)">
+    <div class="card-image crop-preview">
+      <div class="mini-tile">
+        <div class="mock-crop parts-crop">
+          <span class="leaf"></span><span class="leaf"></span><span class="leaf"></span><span class="fruit"></span>
+        </div>
+      </div>
+      <div class="mini-tile">
+        <div class="mock-crop parts-crop berry">
+          <span class="leaf"></span><span class="leaf"></span><span class="leaf"></span><span class="fruit"></span>
+        </div>
+      </div>
+      <div class="mini-tile">
+        <div class="mock-crop parts-crop rice">
+          <span class="stem"></span><span class="grain"></span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Crop gồm nhiều phần semantic</h3>
+      <p>Renderer thêm span leaf/fruit/stem/grain; SCSS điều khiển từng phần. Đẹp và dễ mở rộng nhất.</p>
+    </div>
+  </div>
+
+  <div class="card crop-card" data-choice="c-css-sprite" onclick="toggleSelect(this)">
+    <div class="card-image crop-preview">
+      <div class="mini-tile"><div class="sprite-crop"></div></div>
+      <div class="mini-tile"><div class="sprite-crop berry"></div></div>
+      <div class="mini-tile"><div class="sprite-crop rice"></div></div>
+    </div>
+    <div class="card-body">
+      <h3>C. CSS sprite-like/pixel art</h3>
+      <p>Trông game hơn, rõ từ xa, nhưng khó tinh chỉnh và dễ lệch phong cách mềm hiện tại.</p>
+    </div>
+  </div>
+</div>

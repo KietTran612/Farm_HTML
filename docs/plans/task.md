@@ -37,3 +37,19 @@
 | **Task 32: Corn VTracer SVG Demo Review** | [x] | Reviewed exported corn SVG weights and created a standalone 2.5D demo using the VTracer outputs. |
 | **Task 33: Add Corn VTracer Demo Animation** | [x] | Added visible crop sway, state pop, soil breathing, and active-state progress animation to the standalone corn demo. |
 | **Task 34: VTracer CLI Crop Pipeline Plan** | [x] | Created a setup and usage plan for local VTracer CLI conversion, SVG optimization, metrics, and per-part animation preparation. |
+| **Task 35: Auto Setup And Verify VTracer CLI** | [x] | Added setup/check scripts, package.json entries, and verified CLI is callable. |
+| **Task 36: Add Repeatable VTracer Presets** | [x] | Created presets JSON, added SVG metrics helper, and verified with unit tests. |
+| **Task 37: Convert One PNG With Preset, Optimize, And Report** | [x] | Created single-image converter script, generated stage03 corn SVG outputs, and verified SVGO. |
+| **Task 38: Batch Convert One Crop Folder** | [x] | Created batch conversion script and ran it successfully on Corn PNG folder. |
+| **Task 39: Review Each PNG And Choose The Right Export Preset** | [x] | Generated review.html and documented chosen presets in _preset-review.md. |
+| **Task 40: Prepare One Inline SVG Candidate For Per-Part Animation** | [/] | Implement inline prep script, prefix internal IDs, and manually classify corn parts. |
+| **Task 41: Demo Per-Part Animation With Inline SVG** | [ ] | Create corn-vtracer-parts-demo.html showing independent CSS-animated crop parts. |
+| **Task 42: Decide Whether To Replace The Procedural Corn Renderer** | [ ] | Compare visual quality, path count, and compile a final integration decision. |
+| **Task 43: Tune VTracer Presets For Higher Quality** | [x] | Updated vtracer-presets.json with higher color precision, lower speckle filtering, and smoother gradients. |
+| **Task 44: Re-run Batch Conversion For Corn** | [x] | Executed batch conversion using all updated presets (gameClean, gameDetailed, animationCandidate, tinyRuntime). |
+| **Task 45: Update Review Page And Verify Visual Details** | [x] | Regenerated review.html and confirmed Stage03 has options ranging from tinyRuntime (215KB, 511 paths) up to gameDetailed (962KB, 5482 paths). |
+| **Task 46: Integrate Vite Middleware API** | [ ] | Add api endpoints for listing crops, running VTracer CLI live, and saving selected SVGs. |
+| **Task 47: Create HTML Crop Editor UI Layout** | [ ] | Implement crop-editor.html and editor.scss with responsive layout, stages panel, and sliders. |
+| **Task 48: Implement Client-side Logic and Validation** | [ ] | Write src/editor.ts to handle tracing requests, validation checking, warning display, and save mapping. |
+| **Task 49: Verify HTML Crop Editor E2E** | [ ] | Test the entire flow from PNG selection, custom parameter tuning, duplicate validation, to saving crop files. |
+

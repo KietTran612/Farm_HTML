@@ -1,0 +1,34 @@
+{
+  "input": "D:\\soflware\\Unity\\Source\\Farm_HTML\\docs\\Crops\\Corn\\World_Crop_Corn_Body_Stage03.png",
+  "presetName": "gameClean",
+  "preset": {
+    "colormode": "color",
+    "mode": "spline",
+    "hierarchical": "stacked",
+    "color_precision": 7,
+    "filter_speckle": 5,
+    "gradient_step": 14,
+    "corner_threshold": 60,
+    "segment_length": 4,
+    "splice_threshold": 45,
+    "path_precision": 2
+  },
+  "rawSvg": "D:\\soflware\\Unity\\Source\\Farm_HTML\\docs\\Crops\\Corn\\SVG\\Generated\\raw\\World_Crop_Corn_Body_Stage03.gameClean.raw.svg",
+  "optimizedSvg": "D:\\soflware\\Unity\\Source\\Farm_HTML\\docs\\Crops\\Corn\\SVG\\Generated\\optimized\\World_Crop_Corn_Body_Stage03.gameClean.svg",
+  "raw": {
+    "bytes": 844508,
+    "pathCount": 1815,
+    "groupCount": 0,
+    "inlineStyleCount": 0,
+    "uniqueFillCount": 1800,
+    "viewBox": null
+  },
+  "optimized": {
+    "bytes": 485816,
+    "pathCount": 1815,
+    "groupCount": 0,
+    "inlineStyleCount": 0,
+    "uniqueFillCount": 1800,
+    "viewBox": "0 0 768 1024"
+  }
+}

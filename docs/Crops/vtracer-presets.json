@@ -1,0 +1,50 @@
+{
+  "gameClean": {
+    "colormode": "color",
+    "mode": "spline",
+    "hierarchical": "stacked",
+    "color_precision": 7,
+    "filter_speckle": 5,
+    "gradient_step": 14,
+    "corner_threshold": 60,
+    "segment_length": 4.0,
+    "splice_threshold": 45,
+    "path_precision": 2
+  },
+  "gameDetailed": {
+    "colormode": "color",
+    "mode": "spline",
+    "hierarchical": "stacked",
+    "color_precision": 8,
+    "filter_speckle": 3,
+    "gradient_step": 6,
+    "corner_threshold": 60,
+    "segment_length": 3.5,
+    "splice_threshold": 45,
+    "path_precision": 2
+  },
+  "animationCandidate": {
+    "colormode": "color",
+    "mode": "spline",
+    "hierarchical": "stacked",
+    "color_precision": 7,
+    "filter_speckle": 6,
+    "gradient_step": 14,
+    "corner_threshold": 60,
+    "segment_length": 4.0,
+    "splice_threshold": 45,
+    "path_precision": 2
+  },
+  "tinyRuntime": {
+    "colormode": "color",
+    "mode": "spline",
+    "hierarchical": "stacked",
+    "color_precision": 6,
+    "filter_speckle": 8,
+    "gradient_step": 20,
+    "corner_threshold": 70,
+    "segment_length": 4.5,
+    "splice_threshold": 50,
+    "path_precision": 2
+  }
+}

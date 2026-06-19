@@ -11,6 +11,8 @@
 - `2026-06-18-isometric-farm-board-ui-implementation.md` - Plan for converting the farm board UI to 2.5D/isometric DOM + SCSS.
 - `2026-06-19-crop-art-system-setup.md` - Plan for reusable SCSS/native SVG crop art with crop-owned 2.5D soil patches.
 - `2026-06-19-vtracer-cli-crop-pipeline.md` - Plan for setting up a repeatable local VTracer CLI crop PNG-to-SVG pipeline with metrics, optimization, and per-part animation preparation.
+- `2026-06-19-vtracer-preset-tuning.md` - Plan for tuning VTracer presets to output higher quality and detail SVGs.
+- `2026-06-19-html-crop-editor-implementation.md` - Plan for building an in-browser HTML Crop Art Editor with dynamic stage mapping and live tracing API.
 
 ## Planned Next
 

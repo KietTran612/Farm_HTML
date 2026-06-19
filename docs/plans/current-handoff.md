@@ -49,16 +49,15 @@
 - Added focused review UI tests and crop art contract tests for no inline animation styles, mobile single-column layout, carrot defs isolation, and non-scaling carrot strokes.
 - **Implemented Task 32 (Corn VTracer SVG Demo Review):** Reviewed the exported VTracer corn SVG files and created `corn-vtracer-demo.html` to preview all five corn states on a 2.5D soil patch.
 - Confirmed the VTracer corn art is visually much richer than the procedural placeholder, while the raw SVG sizes still need optimization before app integration.
-- **Implemented Task 33 (Add Corn VTracer Demo Animation):** Added visible crop state pop, idle sway, dead droop, soil breathing, and active state progress animation to `corn-vtracer-demo.html`.
-- **Implemented Task 34 (VTracer CLI Crop Pipeline Plan):** Created `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md` for local VTracer CLI setup, repeatable presets, SVGO optimization, SVG metrics, batch conversion, inline SVG preparation, and per-part animation demo.
-- Updated the VTracer CLI plan to require visual review for each source PNG before accepting its SVG preset, and added a planned `scripts/vtracer/setup-vtracer.ps1` auto-setup script for official `visioncortex/vtracer` CLI setup.
-- Incorporated VTracer plan review feedback: pathcount reduction is treated as a visual-quality tradeoff, candidates must be reviewed at 80/100/120px tile sizes, metrics handle non-hex color formats, SVGO keeps colors easier to count, and inline SVG preparation prefixes referenced IDs to avoid gradient collisions.
+- **Implemented Task 43 (Tune VTracer Presets For Higher Quality):** Updated `vtracer-presets.json` configurations to use higher color precision (up to 8 bit), lower speckle filtering (minimum 3 px), and smoother gradients (gradient step down to 6).
+- **Implemented Task 44 (Re-run Batch Conversion For Corn):** Executed batch conversion on the Corn crop PNG directory using the new `gameClean`, `gameDetailed`, `animationCandidate`, and `tinyRuntime` presets.
+- **Implemented Task 45 (Update Review Page And Verify Visual Details):** Regenerated `review.html` showing the updated candidate paths and sizes, and verified visual improvements using a browser subagent (confirmed Stage03 now scales from 215KB/511 paths up to 962KB/5482 paths).
 
 ## Verification
 
-- Run focused crop art unit tests: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 14/14 tests across 10 test suites).
-- Run focused board renderer tests: `npm test -- src/ui/render.test.ts` (Passed 6/6 tests).
-- Run production build: `npm run build` (Sass and TypeScript compiled successfully with zero compiler warnings or errors).
+- Run batch conversion commands for presets successfully.
+- Run review page regeneration successfully: `npm run crop:vtracer:review`.
+- Verified in-browser quality: navigated to `http://localhost:3000/docs/Crops/Corn/SVG/Generated/review.html`, confirmed candidates are fully rendered with clear details, and captured a screenshot at `C:\Users\Hoang.H\.gemini\antigravity-ide\brain\1cc611ad-5a3b-4b10-84d1-ce4eb343128c\stage03_candidates_1781868211041.png`.
 - Local HTTP check: `http://127.0.0.1:3000` returned status 200.
 - Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; check finished without errors).
 - Run focused crop art review after polish: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 16/16 tests).
@@ -90,4 +89,5 @@
 
 ## Recommended Next Task
 
-- If the user approves, execute `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md` starting with VTracer CLI installation/verification and a Corn Stage03 preset comparison.
+- The user should open `review.html` and visually inspect the newly generated high-detail Corn SVG files across different presets (especially comparing gameDetailed, gameClean, and animationCandidate), then select the final preset for each growth stage.
+- Once chosen, proceed with Task 40 to prepare the inline SVG for Corn Stage03 and manual part classification.
