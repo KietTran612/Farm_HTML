@@ -1,4 +1,10 @@
 import { renderCarrotCrop } from "./carrotCrop";
+import { renderCornCrop } from "./cornCrop";
+import { renderPotatoCrop } from "./potatoCrop";
+import { renderPumpkinCrop } from "./pumpkinCrop";
+import { renderStrawberryCrop } from "./strawberryCrop";
+import { renderTomatoCrop } from "./tomatoCrop";
+import { renderWheatCrop } from "./wheatCrop";
 import { getSoilPatchState, normalizeCropArtState, sanitizeSvgId, type CropArtInput } from "./cropArtTypes";
 import { renderSoilPatch } from "./soilPatch";
 
@@ -26,6 +32,31 @@ export function renderCropArt(input: CropArtInput): string {
     .filter(Boolean)
     .join(" ");
 
+  let plantHtml = "";
+  switch (input.cropId) {
+    case "corn":
+      plantHtml = renderCornCrop(artState);
+      break;
+    case "potato":
+      plantHtml = renderPotatoCrop(artState);
+      break;
+    case "pumpkin":
+      plantHtml = renderPumpkinCrop(artState);
+      break;
+    case "strawberry":
+      plantHtml = renderStrawberryCrop(artState);
+      break;
+    case "tomato":
+      plantHtml = renderTomatoCrop(artState);
+      break;
+    case "wheat":
+      plantHtml = renderWheatCrop(artState);
+      break;
+    default:
+      plantHtml = renderCarrotCrop(artState, { rootGradientId });
+      break;
+  }
+
   return `
     <svg class="${stateClasses}" viewBox="0 0 240 180" role="img" aria-label="${escapeAttribute(input.cropName)}" focusable="false">
       <defs>
@@ -35,7 +66,7 @@ export function renderCropArt(input: CropArtInput): string {
         </linearGradient>
       </defs>
       ${renderSoilPatch(soilState)}
-      ${renderCarrotCrop(artState, { rootGradientId })}
+      ${plantHtml}
     </svg>
   `;
 }

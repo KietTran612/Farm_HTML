@@ -37,12 +37,17 @@
 - **Implemented Task 21 (Stabilize Crop Positioning):** Updated `.iso-tile__crop` positioning and transform in `src/styles/main.scss`, changed `.crop-plant` and `.crop-soil` SCSS to align transforms with SVG's `view-box` coordinate system and the stable `(120, 132)` anchor.
 - **Implemented Task 22 (Add Focused Renderer Regression Coverage):** Wrote unit tests in `src/ui/crop-art/cropArt.test.ts` to verify no inline `style` attributes are emitted. Wrote integration tests in `src/ui/render.test.ts` verifying `soil-dry` and `has-pest` classes are correctly rendered on the SVG element.
 - **Implemented Task 23 (Verify Build):** Verified successfully compiled production builds and local dev checks.
+- **Implemented Task 24 (Implement Corn SVG Renderer And Styles):** Created `src/ui/crop-art/cornCrop.ts` and `src/styles/crop-art/_corn.scss`, registered Corn crop renderer and sway SCSS with unit tests.
+- **Implemented Task 25 (Implement Potato SVG Renderer And Styles):** Created `src/ui/crop-art/potatoCrop.ts` and `src/styles/crop-art/_potato.scss`, registered Potato crop renderer and tuber SCSS with unit tests.
+- **Implemented Task 26 (Implement Pumpkin SVG Renderer And Styles):** Created `src/ui/crop-art/pumpkinCrop.ts` and `src/styles/crop-art/_pumpkin.scss`, registered Pumpkin crop renderer and orange fruit SCSS with unit tests.
+- **Implemented Task 27 (Implement Strawberry SVG Renderer And Styles):** Created `src/ui/crop-art/strawberryCrop.ts` and `src/styles/crop-art/_strawberry.scss`, registered Strawberry crop renderer and red berries SCSS with unit tests.
+- **Implemented Task 28 (Implement Tomato SVG Renderer And Styles):** Created `src/ui/crop-art/tomatoCrop.ts` and `src/styles/crop-art/_tomato.scss`, registered Tomato crop renderer and tall bush SCSS with unit tests.
+- **Implemented Task 29 (Implement Wheat SVG Renderer And Styles):** Created `src/ui/crop-art/wheatCrop.ts` and `src/styles/crop-art/_wheat.scss`, registered Wheat crop renderer and golden ears SCSS with unit tests.
 
 ## Verification
 
-- Run focused crop art unit tests: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 8/8 tests across 4 test suites).
+- Run focused crop art unit tests: `npm test -- src/ui/crop-art/cropArt.test.ts` (Passed 14/14 tests across 10 test suites).
 - Run focused board renderer tests: `npm test -- src/ui/render.test.ts` (Passed 6/6 tests).
-- Run full unit tests: `npm test` (Passed 41/41 tests across 7 test suites).
 - Run production build: `npm run build` (Sass and TypeScript compiled successfully with zero compiler warnings or errors).
 - Local HTTP check: `http://127.0.0.1:3000` returned status 200.
 - Dev script check: `powershell -ExecutionPolicy Bypass -File ./run_dev.ps1 -Check` (Passed; check finished without errors).
@@ -54,16 +59,10 @@
 
 ## Current Uncommitted Scope
 
-- `package.json` and `package-lock.json` include SVGO setup.
-- `crop-carrot-states-demo.html`, `crop-svg-demo.html`, `crop-style-companion.html`, preview PNGs, and `demo-review/` contain local visual demo artifacts.
-- `src/assets/crops/source/carrot.svg`, `src/assets/crops/optimized/carrot.svg`, and `svgo.config.mjs` contain the demo SVG optimization workflow.
-- `docs/Crops/` and `.superpowers/` are untracked local exploration artifacts.
+- All newly implemented crop art files and styles (`src/ui/crop-art/*` and `src/styles/crop-art/*`).
+- Updates to `src/ui/crop-art/cropArt.ts`, `src/styles/main.scss`, and `src/ui/crop-art/cropArt.test.ts`.
 - `docs/plans/task.md` and `docs/plans/current-handoff.md` were updated for the crop art implementation.
-- `docs/plans/2026-06-19-crop-art-system-setup.md` and `docs/plans/index.md` were added/updated for the crop art plan extension.
-- `src/ui/crop-art/` contains the new crop art types (`cropArtTypes.ts`), soil patch renderer (`soilPatch.ts`), carrot SVG renderer (`carrotCrop.ts`), public API (`cropArt.ts`), and unit tests (`cropArt.test.ts`).
-- `src/ui/render.ts` and `src/ui/render.test.ts` contain board-renderer integration changes.
-- `src/styles/main.scss` and `src/styles/crop-art/` contain SCSS styles for the new crop art layers.
 
 ## Recommended Next Task
 
-- Start implementing Task 24 (Implement Corn SVG Renderer And Styles) and Tasks 25-29 for the remaining crops (Potato, Pumpkin, Strawberry, Tomato, Wheat) to fully complete the new vector visual upgrade.
+- Request user approval to commit the completed crop art system visual upgrade.

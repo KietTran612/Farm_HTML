@@ -1,0 +1,157 @@
+.crop-plant--tomato {
+  .tomato-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .tomato-stem,
+  .tomato-dead-stem,
+  .tomato-fruit-stem,
+  .tomato-dead-fruit-stem {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .tomato-stem {
+    stroke: #377033;
+    stroke-width: 6.5;
+  }
+
+  .tomato-leaf {
+    fill: #4b9243;
+    stroke: #1f4f1a;
+    stroke-linejoin: round;
+    stroke-width: 4;
+    paint-order: stroke fill;
+  }
+
+  .tomato-seed {
+    fill: #8a7c5c;
+    stroke: #5a503a;
+    stroke-width: 2;
+  }
+
+  .tomato-flower-petal {
+    fill: #ffd438;
+    stroke: #c2951b;
+    stroke-width: 1.8;
+    paint-order: stroke fill;
+  }
+
+  .tomato-flower-center {
+    fill: #e5901e;
+    stroke: #a25c10;
+    stroke-width: 1.2;
+  }
+
+  .tomato-fruit-stem {
+    stroke: #4b9243;
+    stroke-width: 2.8;
+  }
+
+  .tomato-fruit-calyx {
+    fill: #4b9243;
+    stroke: #1f4f1a;
+    stroke-width: 1.5;
+    paint-order: stroke fill;
+  }
+
+  .tomato-fruit {
+    stroke-width: 3.5;
+    paint-order: stroke fill;
+
+    &--red-1 {
+      fill: #ff4d4d;
+      stroke: #b31a1a;
+    }
+
+    &--red-2 {
+      fill: #ff7043;
+      stroke: #c63f17;
+    }
+
+    &--green {
+      fill: #9ec45a;
+      stroke: #5e7c2e;
+    }
+  }
+
+  .tomato-fruit-highlight {
+    fill: #ffffff;
+    opacity: 0.65;
+  }
+
+  .tomato-dead-stem {
+    stroke: #867954;
+    stroke-width: 6.5;
+  }
+
+  .tomato-dead-fruit-stem {
+    stroke: #7c6838;
+    stroke-width: 2.8;
+  }
+
+  .tomato-dead-fruit {
+    fill: #a26c5a;
+    stroke: #5e3b30;
+    stroke-width: 3.5;
+    paint-order: stroke fill;
+  }
+
+  .tomato-dead-leaf {
+    fill: #bfa570;
+    stroke: #7c6c42;
+    stroke-linejoin: round;
+    stroke-width: 4;
+    paint-order: stroke fill;
+  }
+}
+
+.crop-art--seed .tomato-layer--seed,
+.crop-art--sprout .tomato-layer--sprout,
+.crop-art--mature .tomato-layer--mature,
+.crop-art--ready .tomato-layer--mature,
+.crop-art--ready .tomato-layer--ready,
+.crop-art--dead .tomato-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--tomato {
+  transform: translateY(6px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--tomato {
+  transform: translateY(4px) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--tomato {
+  transform: translateY(-4px) scale(0.86);
+}
+
+.crop-art--ready .crop-plant--tomato {
+  transform: translateY(-8px) scale(0.92);
+}
+
+.crop-art--dead .crop-plant--tomato {
+  transform: translateY(4px) scale(0.82) rotate(-4deg);
+}
+
+.crop-art--ready .tomato-layer--ready {
+  animation: tomato-fruit-sway 2.8s ease-in-out infinite;
+  transform-origin: 120px 90px;
+}
+
+@keyframes tomato-fruit-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(2deg);
+  }
+}

@@ -1,0 +1,120 @@
+.crop-plant--pumpkin {
+  .pumpkin-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .pumpkin-stem,
+  .pumpkin-dead-stem,
+  .pumpkin-stem-fruit {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .pumpkin-stem {
+    stroke: #3c7a30;
+    stroke-width: 6;
+  }
+
+  .pumpkin-stem-fruit {
+    fill: #4c8a38;
+    stroke: #255418;
+    stroke-width: 3.5;
+    paint-order: stroke fill;
+  }
+
+  .pumpkin-leaf {
+    fill: #5a9e3d;
+    stroke: #205417;
+    stroke-linejoin: round;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+  }
+
+  .pumpkin-seed {
+    fill: #86725c;
+    stroke: #5a4b3d;
+    stroke-width: 2;
+  }
+
+  .pumpkin-rib {
+    fill: #f59331;
+    stroke: #c25f13;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+    transition: transform 0.2s ease;
+
+    &--outer {
+      fill: #e57d23;
+    }
+
+    &--middle {
+      fill: #f59331;
+    }
+
+    &--inner {
+      fill: #ffaa42;
+    }
+  }
+
+  .pumpkin-dead-stem {
+    stroke: #8e7a4f;
+    stroke-width: 6;
+  }
+
+  .pumpkin-dead-leaf {
+    fill: #bc9e5c;
+    stroke: #7c6838;
+    stroke-linejoin: round;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+  }
+}
+
+.crop-art--seed .pumpkin-layer--seed,
+.crop-art--sprout .pumpkin-layer--sprout,
+.crop-art--mature .pumpkin-layer--mature,
+.crop-art--ready .pumpkin-layer--mature,
+.crop-art--ready .pumpkin-layer--ready,
+.crop-art--dead .pumpkin-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--pumpkin {
+  transform: translateY(6px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--pumpkin {
+  transform: translateY(4px) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--pumpkin {
+  transform: translateY(-2px) scale(0.88);
+}
+
+.crop-art--ready .crop-plant--pumpkin {
+  transform: translateY(-6px) scale(0.94);
+}
+
+.crop-art--dead .crop-plant--pumpkin {
+  transform: translateY(4px) scale(0.84) rotate(-3deg);
+}
+
+.crop-art--ready .pumpkin-layer--ready {
+  animation: pumpkin-fruit-bounce 3s ease-in-out infinite;
+}
+
+@keyframes pumpkin-fruit-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.03) translateY(-1px);
+  }
+}

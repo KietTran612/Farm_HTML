@@ -3,6 +3,12 @@ import { normalizeCropArtState, sanitizeSvgId, type CropArtInput } from "./cropA
 import { renderSoilPatch } from "./soilPatch";
 import { renderCarrotCrop } from "./carrotCrop";
 import { renderCropArt } from "./cropArt";
+import { renderCornCrop } from "./cornCrop";
+import { renderPotatoCrop } from "./potatoCrop";
+import { renderPumpkinCrop } from "./pumpkinCrop";
+import { renderStrawberryCrop } from "./strawberryCrop";
+import { renderTomatoCrop } from "./tomatoCrop";
+import { renderWheatCrop } from "./wheatCrop";
 
 describe("crop art types", () => {
   it("normalizes core growth states into crop art states", () => {
@@ -119,6 +125,96 @@ describe("renderCropArt", () => {
 
       expect(html).not.toContain("style=");
     }
+  });
+});
+
+describe("renderCornCrop", () => {
+  it("renders all corn state layers inside one stable art anchor", () => {
+    const html = renderCornCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--corn crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="corn-layer corn-layer--seed"');
+    expect(html).toContain('class="corn-layer corn-layer--sprout"');
+    expect(html).toContain('class="corn-layer corn-layer--mature"');
+    expect(html).toContain('class="corn-layer corn-layer--ready"');
+    expect(html).toContain('class="corn-layer corn-layer--dead"');
+    expect(html).not.toContain("style=");
+  });
+});
+
+describe("renderPotatoCrop", () => {
+  it("renders all potato state layers inside one stable art anchor", () => {
+    const html = renderPotatoCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--potato crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="potato-layer potato-layer--seed"');
+    expect(html).toContain('class="potato-layer potato-layer--sprout"');
+    expect(html).toContain('class="potato-layer potato-layer--mature"');
+    expect(html).toContain('class="potato-layer potato-layer--ready"');
+    expect(html).toContain('class="potato-layer potato-layer--dead"');
+    expect(html).not.toContain("style=");
+  });
+});
+
+describe("renderPumpkinCrop", () => {
+  it("renders all pumpkin state layers inside one stable art anchor", () => {
+    const html = renderPumpkinCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--pumpkin crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="pumpkin-layer pumpkin-layer--seed"');
+    expect(html).toContain('class="pumpkin-layer pumpkin-layer--sprout"');
+    expect(html).toContain('class="pumpkin-layer pumpkin-layer--mature"');
+    expect(html).toContain('class="pumpkin-layer pumpkin-layer--ready"');
+    expect(html).toContain('class="pumpkin-layer pumpkin-layer--dead"');
+    expect(html).not.toContain("style=");
+  });
+});
+
+describe("renderStrawberryCrop", () => {
+  it("renders all strawberry state layers inside one stable art anchor", () => {
+    const html = renderStrawberryCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--strawberry crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="strawberry-layer strawberry-layer--seed"');
+    expect(html).toContain('class="strawberry-layer strawberry-layer--sprout"');
+    expect(html).toContain('class="strawberry-layer strawberry-layer--mature"');
+    expect(html).toContain('class="strawberry-layer strawberry-layer--ready"');
+    expect(html).toContain('class="strawberry-layer strawberry-layer--dead"');
+    expect(html).not.toContain("style=");
+  });
+});
+
+describe("renderTomatoCrop", () => {
+  it("renders all tomato state layers inside one stable art anchor", () => {
+    const html = renderTomatoCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--tomato crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="tomato-layer tomato-layer--seed"');
+    expect(html).toContain('class="tomato-layer tomato-layer--sprout"');
+    expect(html).toContain('class="tomato-layer tomato-layer--mature"');
+    expect(html).toContain('class="tomato-layer tomato-layer--ready"');
+    expect(html).toContain('class="tomato-layer tomato-layer--dead"');
+    expect(html).not.toContain("style=");
+  });
+});
+
+describe("renderWheatCrop", () => {
+  it("renders all wheat state layers inside one stable art anchor", () => {
+    const html = renderWheatCrop("ready");
+
+    expect(html).toContain('class="crop-plant crop-plant--wheat crop-plant--ready"');
+    expect(html).toContain('data-crop-anchor="120 132"');
+    expect(html).toContain('class="wheat-layer wheat-layer--seed"');
+    expect(html).toContain('class="wheat-layer wheat-layer--sprout"');
+    expect(html).toContain('class="wheat-layer wheat-layer--mature"');
+    expect(html).toContain('class="wheat-layer wheat-layer--ready"');
+    expect(html).toContain('class="wheat-layer wheat-layer--dead"');
+    expect(html).not.toContain("style=");
   });
 });
 

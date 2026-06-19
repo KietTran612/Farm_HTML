@@ -1,0 +1,141 @@
+.crop-plant--wheat {
+  .wheat-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .wheat-stalk,
+  .wheat-dead-stalk,
+  .wheat-beard {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .wheat-stalk {
+    stroke: #86aa3d;
+    stroke-width: 4;
+
+    &--sprout-1,
+    &--sprout-2,
+    &--sprout-3 {
+      stroke: #7bb53c;
+      stroke-width: 5;
+    }
+
+    &--ready-1,
+    &--ready-2,
+    &--ready-3,
+    &--ready-4,
+    &--ready-5 {
+      stroke: #d4a32b;
+      stroke-width: 3.5;
+    }
+  }
+
+  .wheat-kernel {
+    fill: #a5cc5c;
+    stroke: #608c20;
+    stroke-linejoin: round;
+    stroke-width: 2.2;
+    paint-order: stroke fill;
+  }
+
+  .wheat-beard {
+    stroke: #608c20;
+    stroke-width: 1.2;
+  }
+
+  .wheat-seed {
+    fill: #826e56;
+    stroke: #544635;
+    stroke-width: 1.8;
+  }
+
+  // Ready State - Golden Yellow
+  &.crop-plant--ready {
+    .wheat-kernel {
+      fill: #ffcf40;
+      stroke: #b38012;
+      stroke-width: 2.5;
+    }
+
+    .wheat-beard {
+      stroke: #c29221;
+      stroke-width: 1.5;
+    }
+  }
+
+  // Dead State - Straw Brown
+  .wheat-dead-stalk {
+    stroke: #9d875a;
+    stroke-width: 4;
+  }
+
+  .wheat-head--dead-left,
+  .wheat-head--dead-right {
+    .wheat-kernel {
+      fill: #cca26a;
+      stroke: #7e5e3b;
+      stroke-width: 2.2;
+    }
+
+    .wheat-beard {
+      stroke: #8e6c46;
+      stroke-width: 1.2;
+    }
+  }
+}
+
+.crop-art--seed .wheat-layer--seed,
+.crop-art--sprout .wheat-layer--sprout,
+.crop-art--mature .wheat-layer--mature,
+.crop-art--ready .wheat-layer--mature,
+.crop-art--ready .wheat-layer--ready,
+.crop-art--dead .wheat-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--wheat {
+  transform: translateY(6px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--wheat {
+  transform: translateY(4px) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--wheat {
+  transform: translateY(-4px) scale(0.86);
+}
+
+.crop-art--ready .crop-plant--wheat {
+  transform: translateY(-8px) scale(0.92);
+}
+
+.crop-art--dead .crop-plant--wheat {
+  transform: translateY(4px) scale(0.82) rotate(-4deg);
+}
+
+// Wave swaying effect for ripe wheat
+.crop-art--ready .wheat-layer--ready {
+  animation: wheat-wind-sway 3.2s ease-in-out infinite;
+  transform-origin: 120px 136px;
+}
+
+@keyframes wheat-wind-sway {
+  0%,
+  100% {
+    transform: skewX(0deg) rotate(0deg);
+  }
+
+  30% {
+    transform: skewX(-3deg) rotate(-1.5deg) scaleY(0.98);
+  }
+
+  65% {
+    transform: skewX(2.5deg) rotate(1.2deg) scaleY(0.99);
+  }
+}

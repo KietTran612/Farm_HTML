@@ -26,12 +26,12 @@
 | **Task 21: Stabilize Crop Positioning Inside 2.5D Tiles** | [x] | Align crop-art and crop-plant transforms to stable 2.5D board baseline. |
 | **Task 22: Add Focused Renderer Regression Coverage** | [x] | Add no-inline-style and dry/pest class integration unit tests. |
 | **Task 23: Verify Build And Focused Browser Smoke** | [x] | Verify successful production build and manual/automated browser smoke checks. |
-| **Task 24: Implement Corn SVG Renderer And Styles** | [ ] | Register corn and add SVG renderer and sway SCSS with tests. |
-| **Task 25: Implement Potato SVG Renderer And Styles** | [ ] | Register potato and add SVG renderer and tuber SCSS with tests. |
-| **Task 26: Implement Pumpkin SVG Renderer And Styles** | [ ] | Register pumpkin and add SVG renderer and orange fruit SCSS with tests. |
-| **Task 27: Implement Strawberry SVG Renderer And Styles** | [ ] | Register strawberry and add SVG renderer and red berries SCSS with tests. |
-| **Task 28: Implement Tomato SVG Renderer And Styles** | [ ] | Register tomato and add SVG renderer and tall bush SCSS with tests. |
-| **Task 29: Implement Wheat SVG Renderer And Styles** | [ ] | Register wheat and add SVG renderer and golden ears SCSS with tests. |
-| **Task 30: Update Handoff And Commit On Approval** | [x] | Update task tracker, current handoff and git commit changes. |
+| **Task 24: Implement Corn SVG Renderer And Styles** | [x] | Register corn and add SVG renderer and sway SCSS with tests. |
+| **Task 25: Implement Potato SVG Renderer And Styles** | [x] | Register potato and add SVG renderer and tuber SCSS with tests. |
+| **Task 26: Implement Pumpkin SVG Renderer And Styles** | [x] | Register pumpkin and add SVG renderer and orange fruit SCSS with tests. |
+| **Task 27: Implement Strawberry SVG Renderer And Styles** | [x] | Register strawberry and add SVG renderer and red berries SCSS with tests. |
+| **Task 28: Implement Tomato SVG Renderer And Styles** | [x] | Register tomato and add SVG renderer and tall bush SCSS with tests. |
+| **Task 29: Implement Wheat SVG Renderer And Styles** | [x] | Register wheat and add SVG renderer and golden ears SCSS with tests. |
+| **Task 30: Update Handoff And Commit On Approval** | [x] | Update task tracker, current handoff and ready for user commit. |
 
 

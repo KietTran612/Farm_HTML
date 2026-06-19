@@ -1,5 +1,11 @@
 @use "./crop-art/base";
 @use "./crop-art/carrot";
+@use "./crop-art/corn";
+@use "./crop-art/potato";
+@use "./crop-art/pumpkin";
+@use "./crop-art/strawberry";
+@use "./crop-art/tomato";
+@use "./crop-art/wheat";
 
 :root {
   font-family:

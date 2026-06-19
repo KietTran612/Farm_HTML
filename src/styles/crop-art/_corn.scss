@@ -1,0 +1,114 @@
+.crop-plant--corn {
+  .corn-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .corn-stem,
+  .corn-dead-stem {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .corn-stem {
+    stroke: #458a2e;
+    stroke-width: 9;
+  }
+
+  .corn-leaf {
+    fill: #73b83d;
+    stroke: #255c1b;
+    stroke-linejoin: round;
+    stroke-width: 5;
+    paint-order: stroke fill;
+  }
+
+  .corn-ear-husk {
+    fill: #8fc45a;
+    stroke: #3c5c1d;
+    stroke-width: 4;
+    paint-order: stroke fill;
+  }
+
+  .corn-ear-silk {
+    fill: none;
+    stroke: #bda043;
+    stroke-linecap: round;
+    stroke-width: 3.5;
+  }
+
+  .corn-ear-kernel {
+    fill: #ffd438;
+    stroke: #c2951b;
+    stroke-width: 3;
+    paint-order: stroke fill;
+  }
+
+  .corn-seed {
+    fill: #70563b;
+    stroke: #4a3622;
+    stroke-width: 2;
+  }
+
+  .corn-dead-stem {
+    stroke: #907845;
+    stroke-width: 9;
+  }
+
+  .corn-dead-leaf {
+    fill: #cca85c;
+    stroke: #7c6436;
+    stroke-linejoin: round;
+    stroke-width: 5;
+    paint-order: stroke fill;
+  }
+}
+
+.crop-art--seed .corn-layer--seed,
+.crop-art--sprout .corn-layer--sprout,
+.crop-art--mature .corn-layer--mature,
+.crop-art--ready .corn-layer--mature,
+.crop-art--ready .corn-layer--ready,
+.crop-art--dead .corn-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--corn {
+  transform: translateY(6px) scale(0.68);
+}
+
+.crop-art--sprout .crop-plant--corn {
+  transform: translateY(2px) scale(0.74);
+}
+
+.crop-art--mature .crop-plant--corn {
+  transform: translateY(-8px) scale(0.86);
+}
+
+.crop-art--ready .crop-plant--corn {
+  transform: translateY(-12px) scale(0.92);
+}
+
+.crop-art--dead .crop-plant--corn {
+  transform: translateY(4px) scale(0.82) rotate(-5deg);
+}
+
+.crop-art--ready .corn-layer--mature,
+.crop-art--ready .corn-layer--ready {
+  animation: corn-leaf-sway 2.6s ease-in-out infinite;
+}
+
+@keyframes corn-leaf-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.2deg);
+  }
+}

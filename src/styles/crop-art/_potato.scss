@@ -1,0 +1,104 @@
+.crop-plant--potato {
+  .potato-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .potato-stem,
+  .potato-dead-stem {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .potato-stem {
+    stroke: #3c7230;
+    stroke-width: 7;
+  }
+
+  .potato-leaf {
+    fill: #5a9b3d;
+    stroke: #204c17;
+    stroke-linejoin: round;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+  }
+
+  .potato-tuber-body {
+    fill: #aa865c;
+    stroke: #664d2d;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+  }
+
+  .potato-tuber-eye {
+    fill: #4c351c;
+    opacity: 0.72;
+  }
+
+  .potato-seed {
+    fill: #927552;
+    stroke: #5d4830;
+    stroke-width: 2.2;
+  }
+
+  .potato-dead-stem {
+    stroke: #867246;
+    stroke-width: 7;
+  }
+
+  .potato-dead-leaf {
+    fill: #b49e5d;
+    stroke: #6d5e32;
+    stroke-linejoin: round;
+    stroke-width: 4.5;
+    paint-order: stroke fill;
+  }
+}
+
+.crop-art--seed .potato-layer--seed,
+.crop-art--sprout .potato-layer--sprout,
+.crop-art--mature .potato-layer--mature,
+.crop-art--ready .potato-layer--mature,
+.crop-art--ready .potato-layer--ready,
+.crop-art--dead .potato-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--potato {
+  transform: translateY(6px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--potato {
+  transform: translateY(4px) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--potato {
+  transform: translateY(-4px) scale(0.86);
+}
+
+.crop-art--ready .crop-plant--potato {
+  transform: translateY(-8px) scale(0.92);
+}
+
+.crop-art--dead .crop-plant--potato {
+  transform: translateY(4px) scale(0.82) rotate(-4deg);
+}
+
+.crop-art--ready .potato-layer--mature {
+  animation: potato-leaf-sway 2.5s ease-in-out infinite;
+}
+
+@keyframes potato-leaf-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.5deg);
+  }
+}

@@ -1,0 +1,133 @@
+.crop-plant--strawberry {
+  .strawberry-layer {
+    opacity: 0;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s ease,
+      filter 0.22s ease;
+  }
+
+  .strawberry-stem,
+  .strawberry-dead-stem {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .strawberry-stem {
+    stroke: #387b3e;
+    stroke-width: 5;
+  }
+
+  .strawberry-leaf-lobe {
+    fill: #4b9b4f;
+    stroke: #1f4f22;
+    stroke-linejoin: round;
+    stroke-width: 3.5;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-seed {
+    fill: #786551;
+    stroke: #4e3e30;
+    stroke-width: 1.8;
+  }
+
+  .strawberry-flower-petal {
+    fill: #ffffff;
+    stroke: #d0c8b0;
+    stroke-width: 2.2;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-flower-center {
+    fill: #ffd166;
+    stroke: #cda23a;
+    stroke-width: 1.8;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-calyx {
+    fill: #54aa58;
+    stroke: #1f4f22;
+    stroke-width: 2;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-fruit {
+    fill: #e63946;
+    stroke: #9b111e;
+    stroke-linejoin: round;
+    stroke-width: 4;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-seed-dot {
+    fill: #ffdf00;
+  }
+
+  .strawberry-dead-stem {
+    stroke: #877456;
+    stroke-width: 5;
+  }
+
+  .strawberry-dead-fruit {
+    fill: #9a735c;
+    stroke: #664d3e;
+    stroke-width: 3;
+    paint-order: stroke fill;
+  }
+
+  .strawberry-dead-leaf {
+    fill: #baa570;
+    stroke: #786842;
+    stroke-linejoin: round;
+    stroke-width: 3.5;
+    paint-order: stroke fill;
+  }
+}
+
+.crop-art--seed .strawberry-layer--seed,
+.crop-art--sprout .strawberry-layer--sprout,
+.crop-art--mature .strawberry-layer--mature,
+.crop-art--ready .strawberry-layer--mature,
+.crop-art--ready .strawberry-layer--ready,
+.crop-art--dead .strawberry-layer--dead {
+  opacity: 1;
+}
+
+.crop-art--seed .crop-plant--strawberry {
+  transform: translateY(6px) scale(0.72);
+}
+
+.crop-art--sprout .crop-plant--strawberry {
+  transform: translateY(4px) scale(0.78);
+}
+
+.crop-art--mature .crop-plant--strawberry {
+  transform: translateY(-2px) scale(0.88);
+}
+
+.crop-art--ready .crop-plant--strawberry {
+  transform: translateY(-4px) scale(0.94);
+}
+
+.crop-art--dead .crop-plant--strawberry {
+  transform: translateY(4px) scale(0.84) rotate(-4deg);
+}
+
+.crop-art--ready .strawberry-layer--ready {
+  animation: strawberry-sway 2.4s ease-in-out infinite;
+  transform-origin: 120px 126px;
+}
+
+@keyframes strawberry-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
