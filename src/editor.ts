@@ -47,6 +47,9 @@ let targetStages: string[] = ["stage00", "stage01", "stage02", "stage03", "dead"
 let mappedStages: Record<string, string> = {}; // stageName -> filename
 let tracedSvgs: Record<string, string> = {}; // cardId -> optimizedSvgContent
 let selectedMappings: Record<string, string> = {}; // cardId -> stageId
+let activeCandidates: string[] = [];
+let lightboxActiveCardId: string | null = null;
+let lightboxZoomScale: number = 1.0;
 
 // Debounce helper for live tracing
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
@@ -61,6 +64,22 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (..
 
 document.addEventListener("DOMContentLoaded", async () => {
   setupUIEventListeners();
+  setupLightboxEvents();
+  
+  // Delegated click handler to open lightbox when clicking preview SVGs
+  document.getElementById("candidates-grid")?.addEventListener("click", (e) => {
+    const previewEl = (e.target as HTMLElement).closest(".svg-preview");
+    if (previewEl) {
+      const cardEl = previewEl.closest(".candidate-card");
+      if (cardEl) {
+        const cardId = cardEl.getAttribute("data-cand-id");
+        if (cardId) {
+          openLightbox(cardId);
+        }
+      }
+    }
+  });
+
   await initEditor();
 });
 
@@ -179,18 +198,21 @@ async function handleCropSelection(cropName: string) {
 
     // Attempt to load current mapping meta.json if exists
     mappedStages = {};
+    const defaultStages = ["stage00", "stage01", "stage02", "stage03", "dead"];
     const metaResponse = await fetch(`/src/assets/crops/${cropName}/meta.json`);
     const contentType = metaResponse.headers.get("content-type") || "";
     if (metaResponse.ok && contentType.includes("application/json")) {
       const meta = await metaResponse.json();
       if (meta && meta.stages) {
         mappedStages = meta.stages;
-        // Parse stages from meta keys
-        targetStages = Object.keys(meta.stages);
+        // Merge defaults and keys from meta.json to ensure defaults are always present
+        const uniqueStages = new Set([...defaultStages, ...Object.keys(meta.stages)]);
+        targetStages = Array.from(uniqueStages);
+        sortStages(); // Ensure they are sorted nicely
       }
     } else {
       // Default stages
-      targetStages = ["stage00", "stage01", "stage02", "stage03", "dead"];
+      targetStages = [...defaultStages];
     }
 
     renderStagesSidebar();
@@ -296,6 +318,7 @@ function triggerTraceAll(forceCustom: boolean = false) {
   // Initialize candidates grid with loading/blank cards
   const presetKeys = Object.keys(presets);
   const cards = [...presetKeys, "custom"];
+  activeCandidates = cards;
 
   candidatesGrid.innerHTML = cards.map(cardId => {
     const isPreset = cardId !== "custom";
@@ -666,4 +689,166 @@ function showStatus(type: "loading" | "success" | "error" | "info", message: str
     <span class="status-icon ${iconClass}">${icon}</span>
     <span class="status-message" style="${messageStyle}">${message}</span>
   `;
+}
+
+// LIGHTBOX MODAL FUNCTIONALITY
+function openLightbox(cardId: string) {
+  const lightbox = document.getElementById("svg-lightbox");
+  const viewer = document.getElementById("lightbox-viewer");
+  const titleEl = document.getElementById("lightbox-title");
+  if (!lightbox || !viewer) return;
+
+  const svgContent = tracedSvgs[cardId];
+  if (!svgContent) return;
+
+  lightboxActiveCardId = cardId;
+  lightboxZoomScale = 1.0;
+
+  viewer.innerHTML = svgContent;
+
+  // Set Title
+  if (titleEl) {
+    const cardEl = document.getElementById(`card-${cardId}`);
+    titleEl.textContent = cardEl?.querySelector("h4")?.textContent || cardId;
+  }
+
+  // Sync Dropdown
+  syncLightboxStageSelect(cardId);
+
+  updateZoomDisplay();
+  lightbox.classList.add("is-active");
+}
+
+function syncLightboxStageSelect(cardId: string) {
+  const lightboxSelect = document.getElementById("lightbox-stage-select") as HTMLSelectElement | null;
+  const cardSelect = document.getElementById(`select-${cardId}`) as HTMLSelectElement | null;
+  if (!lightboxSelect || !cardSelect) return;
+
+  // Copy options
+  lightboxSelect.innerHTML = cardSelect.innerHTML;
+  // Set value
+  lightboxSelect.value = cardSelect.value;
+}
+
+function setupLightboxEvents() {
+  const lightbox = document.getElementById("svg-lightbox");
+  const closeBtn = document.getElementById("lightbox-close");
+  const prevBtn = document.getElementById("lightbox-prev");
+  const nextBtn = document.getElementById("lightbox-next");
+  const zoomInBtn = document.getElementById("zoom-in-btn");
+  const zoomOutBtn = document.getElementById("zoom-out-btn");
+  const zoomResetBtn = document.getElementById("zoom-reset-btn");
+  const lightboxSelect = document.getElementById("lightbox-stage-select") as HTMLSelectElement | null;
+
+  closeBtn?.addEventListener("click", closeLightbox);
+  prevBtn?.addEventListener("click", navigateLightboxPrev);
+  nextBtn?.addEventListener("click", navigateLightboxNext);
+  zoomInBtn?.addEventListener("click", () => zoomLightbox(0.2));
+  zoomOutBtn?.addEventListener("click", () => zoomLightbox(-0.2));
+  zoomResetBtn?.addEventListener("click", resetLightboxZoom);
+
+  // Sync back to card when changed inside Lightbox
+  lightboxSelect?.addEventListener("change", () => {
+    if (!lightboxActiveCardId) return;
+    const cardSelect = document.getElementById(`select-${lightboxActiveCardId}`) as HTMLSelectElement | null;
+    if (cardSelect) {
+      cardSelect.value = lightboxSelect.value;
+      selectedMappings[lightboxActiveCardId] = lightboxSelect.value;
+      validateStageMappings();
+    }
+  });
+
+  lightbox?.addEventListener("click", (e) => {
+    if (e.target === lightbox) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (!lightbox?.classList.contains("is-active")) return;
+
+    if (e.key === "Escape") {
+      closeLightbox();
+    } else if (e.key === "ArrowLeft") {
+      navigateLightboxPrev();
+    } else if (e.key === "ArrowRight") {
+      navigateLightboxNext();
+    } else if (e.key === "+" || e.key === "=") {
+      zoomLightbox(0.2);
+    } else if (e.key === "-") {
+      zoomLightbox(-0.2);
+    }
+  });
+}
+
+function closeLightbox() {
+  const lightbox = document.getElementById("svg-lightbox");
+  lightbox?.classList.remove("is-active");
+  lightboxActiveCardId = null;
+}
+
+function navigateLightboxNext() {
+  navigateLightbox(1);
+}
+
+function navigateLightboxPrev() {
+  navigateLightbox(-1);
+}
+
+function navigateLightbox(direction: number) {
+  if (!lightboxActiveCardId || activeCandidates.length === 0) return;
+
+  let index = activeCandidates.indexOf(lightboxActiveCardId);
+  if (index === -1) return;
+
+  let attempts = 0;
+  while (attempts < activeCandidates.length) {
+    index = (index + direction + activeCandidates.length) % activeCandidates.length;
+    const nextCardId = activeCandidates[index];
+    if (tracedSvgs[nextCardId]) {
+      lightboxActiveCardId = nextCardId;
+      lightboxZoomScale = 1.0;
+      
+      const viewer = document.getElementById("lightbox-viewer");
+      if (viewer) {
+        viewer.innerHTML = tracedSvgs[nextCardId];
+      }
+
+      // Update Title
+      const titleEl = document.getElementById("lightbox-title");
+      if (titleEl) {
+        const cardEl = document.getElementById(`card-${nextCardId}`);
+        titleEl.textContent = cardEl?.querySelector("h4")?.textContent || nextCardId;
+      }
+
+      // Sync Dropdown
+      syncLightboxStageSelect(nextCardId);
+
+      updateZoomDisplay();
+      return;
+    }
+    attempts++;
+  }
+}
+
+function zoomLightbox(delta: number) {
+  lightboxZoomScale = Math.min(4.0, Math.max(0.5, lightboxZoomScale + delta));
+  updateZoomDisplay();
+}
+
+function resetLightboxZoom() {
+  lightboxZoomScale = 1.0;
+  updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+  const display = document.getElementById("zoom-level-display");
+  const svg = document.querySelector("#lightbox-viewer svg") as HTMLElement | null;
+
+  if (display) {
+    display.textContent = `${Math.round(lightboxZoomScale * 100)}%`;
+  }
+  if (svg) {
+    svg.style.transform = `scale(${lightboxZoomScale})`;
+  }
 }

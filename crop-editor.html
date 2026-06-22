@@ -163,6 +163,31 @@
       </footer>
     </div>
 
+    <!-- Lightbox Modal for Zoom & Navigation -->
+    <div id="svg-lightbox" class="svg-lightbox">
+      <button class="lightbox-close" id="lightbox-close" title="Đóng (Esc)">&times;</button>
+      <button class="lightbox-btn lightbox-prev" id="lightbox-prev" title="Ảnh trước (⬅)">&lt;</button>
+      <button class="lightbox-btn lightbox-next" id="lightbox-next" title="Ảnh sau (➡)">&gt;</button>
+      
+      <h3 id="lightbox-title" class="lightbox-title"></h3>
+      
+      <div class="lightbox-content">
+        <div class="lightbox-viewer" id="lightbox-viewer"></div>
+      </div>
+      
+      <div class="lightbox-controls">
+        <div class="lightbox-stage-mapping">
+          <label for="lightbox-stage-select">Gán Stage:</label>
+          <select id="lightbox-stage-select" class="form-control stage-select"></select>
+        </div>
+        <div class="lightbox-divider" style="width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
+        <button id="zoom-out-btn" class="btn btn-secondary btn-zoom" title="Thu nhỏ (-)">➖</button>
+        <span id="zoom-level-display" class="zoom-display">100%</span>
+        <button id="zoom-in-btn" class="btn btn-secondary btn-zoom" title="Phóng to (+)">➕</button>
+        <button id="zoom-reset-btn" class="btn btn-secondary btn-zoom" style="margin-left: 10px;">Reset</button>
+      </div>
+    </div>
+
     <!-- Script Entry -->
     <script type="module" src="/src/editor.ts"></script>
   </body>
