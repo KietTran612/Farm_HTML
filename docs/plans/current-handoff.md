@@ -2,6 +2,11 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 52 (Crop Animation Editor Navigation And Shell):** Added a single `Animation Editor` button to `crop-editor.html`, wired crop-level navigation in `src/editor.ts`, styled the button, and created `crop-animation-editor.html`.
+- **Implemented Task 53 (SVG Group Classify And Edit Tools):** Added crop stage asset middleware endpoints, grouped SVG save/metadata merge flow, SVG sanitization, path classifier, group editing operations, animation presets, animation editor controller, and SCSS for overlay/solo/preview states.
+- **Implemented Task 54 (Verify Crop Animation Editor Flow):** Verified focused middleware and animation editor unit tests, production build, and browser smoke for navigation, classify, preview, and save.
+- **Implemented Task 56 (Pivot Review And Editing):** Added semantic pivot defaults, pivot preset and percent controls, preview marker, per-group transform-origin preview, and saved pivot metadata in `animations.json`.
+- Fixed animation editor preview sizing so the review SVG stays inside the visible preview frame instead of overflowing below the viewport.
 - Reviewed the current crop editor workflow at `http://localhost:4000/crop-editor.html` after the user completed Tasks 46-49.
 - Agreed on a separate crop-level animation editor instead of embedding animation tools inside `crop-editor.html`.
 - Chose a single `Animation Editor` button from `crop-editor.html` that opens `crop-animation-editor.html?crop=<crop>`.
@@ -67,6 +72,18 @@
 
 ## Verification
 
+- Red tests first: new middleware tests failed for missing `handleCropStageAssetsRequest` and `handleSaveStageAnimationRequest`; new animation editor tests failed for missing classifier/editor/preset modules.
+- Run focused middleware tests: `npm test -- scripts/vite-plugins/editorMiddleware.test.ts` (Passed 7/7 tests; Node emitted existing DEP0190 warning from shell spawn usage).
+- Run classifier tests: `npm test -- src/animation-editor/groupClassifier.test.ts` (Passed 2/2 tests).
+- Run group editor tests: `npm test -- src/animation-editor/groupEditor.test.ts` (Passed 4/4 tests).
+- Run animation preset tests: `npm test -- src/animation-editor/animationPresets.test.ts` (Passed 2/2 tests).
+- Run production build: `npm run build` (Passed).
+- Browser smoke: opened `http://localhost:4000/crop-animation-editor.html?crop=corn`, confirmed stages load, SVG renders, Auto Classify created 20 groups, overlay mode enabled, preset `soft-sway` applied, preview animation toggled, and Save wrote `dead.grouped.svg` with Grouped badge.
+- Browser smoke: opened `http://localhost:4000/crop-editor.html`, confirmed `Animation Editor` button is disabled before crop selection, enabled after selecting `corn`, and navigates to `crop-animation-editor.html?crop=corn`.
+- Run pivot preset test: `npm test -- src/animation-editor/animationPresets.test.ts` (Passed 3/3 tests after adding pivot defaults).
+- Run production build after pivot changes: `npm run build` (Passed).
+- Browser pivot smoke: opened `http://localhost:4000/crop-animation-editor.html?crop=corn`, ran Auto Classify, selected `left-base` pivot, confirmed pivot inputs `85/90`, pivot marker visible, selected animated group uses `transform-origin: 85% 90%`, and Save wrote pivot metadata to `src/assets/crops/corn/animations.json`.
+- Preview fit smoke: opened `http://localhost:4000/crop-animation-editor.html?crop=carrot`, confirmed `scrollHeight` equals `clientHeight` at 720px viewport, preview bottom is within viewport, and SVG bounds fit inside the visible frame.
 - Docs-only crop animation editor plan update: app validation not run - not relevant to this change.
 - Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 4/4 tests including cleanup test).
 - Run cleanup CLI command: `npm run crop:vtracer:clear -- --crop Corn` (Passed; successfully deleted `docs/Crops/Corn/SVG/Generated`).
@@ -90,7 +107,7 @@
 
 ## Known Warnings Or Blockers
 
-- Last commit: `2984354 fix: move farm controls into popups`.
+- Last commit: `0ed3e3b chore: add auto traced crop assets`.
 - Codex in-app browser plugin failed to initialize in this environment due `EPERM` while accessing `C:\Users\Hoang.H\AppData`; Chrome headless/CDP was used instead for browser smoke testing.
 - Crop art is visually cleaner for review, but the crop shapes are still procedural prototype art and will need a dedicated art pass to match the provided high-detail mockups.
 - Corn VTracer raw SVG sizes are large: Stage00 ~79KB, Stage01 ~113KB, Stage02 ~202KB, Stage03 ~539KB, Dead ~206KB.
@@ -98,18 +115,12 @@
 
 ## Current Uncommitted Scope
 
-- Crop animation editor planning docs: `docs/plans/2026-06-22-crop-animation-editor.md`, `docs/plans/task.md`, `docs/plans/current-handoff.md`, and `docs/plans/index.md`.
-- Vite Middleware API, Cleanup & Auto-Trace Scripts: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `scripts/vtracer/cleanup.mjs`, `scripts/vtracer/auto-trace-crops.mjs`, `clear_drafts.bat`, `auto_trace.bat`.
-- Generated game SVGs & metadata: `src/assets/crops/**/stage*.svg`, `src/assets/crops/**/dead.svg`, `src/assets/crops/**/meta.json`.
-- HTML Crop Editor UI Layout & Logic: `crop-editor.html`, `src/styles/editor.scss`, `src/editor.ts`.
-- Plan files: `docs/plans/2026-06-22-integrate-vite-middleware-api.md`, `docs/plans/2026-06-22-html-crop-editor-layout.md`, `docs/plans/2026-06-22-html-crop-editor-logic-verification.md`.
-- Review polish files: `review.html`, `src/review.ts`, `src/review.test.ts`, and `src/node-test-shims.d.ts`.
-- Crop art polish files: `src/ui/crop-art/cropArt.ts`, `src/ui/crop-art/soilPatch.ts`, `src/ui/crop-art/cropArt.test.ts`, `src/styles/crop-art/_base.scss`, and `src/styles/crop-art/_carrot.scss`.
-- Generated review screenshots under `demo-review/`.
-- Standalone VTracer demo: `corn-vtracer-demo.html`.
-- VTracer CLI setup plan: `docs/plans/2026-06-19-vtracer-cli-crop-pipeline.md`.
-- Existing untracked `.superpowers/` and `docs/Crops/` remain untouched.
+- Crop animation editor implementation: `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/groupClassifier.ts`, `src/animation-editor/groupEditor.ts`, `src/animation-editor/animationPresets.ts`, and their focused tests.
+- Crop editor navigation: `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`.
+- Middleware animation endpoints: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`.
+- Generated smoke output: `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/animations.json`, and updated `src/assets/crops/corn/meta.json`.
+- Updated planning tracker docs: `docs/plans/2026-06-22-crop-animation-editor.md`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 
 ## Recommended Next Task
 
-- Execute `docs/plans/2026-06-22-crop-animation-editor.md`, starting with Task 1 and Task 2: add the single crop-level animation editor button and create the new `crop-animation-editor.html` shell.
+- Review `crop-animation-editor.html?crop=corn` visually and tune real crop pivots/group labels; next likely improvement is path-level correction or rectangle select for groups that auto-classify poorly.

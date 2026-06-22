@@ -1,0 +1,483 @@
+$bg-primary: #fbfaf5;
+$card-bg: #ffffff;
+$text: #253b2a;
+$muted: #667c69;
+$forest-dark: #1a3d21;
+$forest-medium: #2b5f35;
+$forest-light: #428b4d;
+$forest-pastel: #e9f5eb;
+$border: #e1dbcb;
+$border-light: rgba(184, 169, 120, 0.28);
+$error: #c43f35;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: $bg-primary;
+  color: $text;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2 {
+  margin: 0;
+  color: $forest-dark;
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+.animation-app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.animation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 24px;
+  background: $card-bg;
+  border-bottom: 1px solid $border;
+
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: $muted;
+    font-size: 13px;
+  }
+}
+
+.animation-header__back {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: $forest-medium;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.animation-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.animation-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px minmax(360px, 1fr) 360px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.animation-panel {
+  padding: 20px;
+  background: $card-bg;
+  border-color: $border;
+  overflow-y: auto;
+
+  h2 {
+    margin-bottom: 14px;
+    font-size: 18px;
+  }
+}
+
+.stage-panel {
+  border-right: 1px solid $border;
+}
+
+.group-panel {
+  border-left: 1px solid $border;
+}
+
+.animation-workspace {
+  min-width: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.animation-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.segmented-control {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $card-bg;
+}
+
+.mode-btn {
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 12px;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  font-weight: 700;
+
+  &.is-active {
+    background: $forest-pastel;
+    color: $forest-dark;
+  }
+}
+
+.animation-status {
+  color: $muted;
+  font-size: 13px;
+  font-weight: 600;
+
+  &.is-error {
+    color: $error;
+  }
+}
+
+.crop-animation-preview {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 50% 76%, rgba(121, 83, 42, 0.12) 0%, rgba(121, 83, 42, 0.04) 34%, transparent 62%),
+    linear-gradient(180deg, #fffcf6 0%, #f6f1e2 100%);
+
+  svg {
+    width: auto;
+    height: auto;
+    max-width: min(72%, 560px);
+    max-height: min(72%, 520px);
+    overflow: visible;
+  }
+
+  &.mode-overlay .crop-part {
+    opacity: 0.62;
+    outline: 2px solid rgba(45, 117, 57, 0.42);
+    outline-offset: 4px;
+  }
+
+  &.mode-solo .is-dimmed-group {
+    opacity: 0.12;
+  }
+
+  .is-selected-group {
+    filter: drop-shadow(0 0 8px rgba(66, 139, 77, 0.75));
+  }
+
+  .is-hidden-group {
+    display: none;
+  }
+
+  .pivot-marker {
+    pointer-events: none;
+
+    circle {
+      fill: #fff7d6;
+      stroke: #156f3a;
+      stroke-width: 3;
+    }
+
+    path {
+      stroke: #156f3a;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+  }
+}
+
+.animation-stage-list,
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stage-card {
+  position: relative;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  background: $bg-primary;
+  color: $text;
+  text-align: left;
+  cursor: pointer;
+
+  &.is-active {
+    border-color: $forest-light;
+    background: $forest-pastel;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.stage-card__name {
+  font-weight: 800;
+}
+
+.stage-card__file,
+.group-row__meta {
+  color: $muted;
+  font-size: 12px;
+}
+
+.stage-card__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: $forest-light;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.panel-section + .panel-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid $border-light;
+}
+
+.group-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.group-row {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  background: $bg-primary;
+
+  &.is-active {
+    border-color: $forest-light;
+    background: $forest-pastel;
+  }
+}
+
+.group-row__main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.group-row__select {
+  display: grid;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.group-row__label {
+  font-weight: 800;
+}
+
+.group-row__controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: $muted;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pivot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.form-control {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: #fffefb;
+  color: $text;
+  font-weight: 700;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &.btn-primary {
+    background: $forest-light;
+    color: #fff;
+  }
+
+  &.btn-secondary {
+    background: $card-bg;
+    border-color: $border;
+    color: $text;
+  }
+
+  &.btn-success {
+    background: #3b793f;
+    color: #fff;
+  }
+}
+
+.animation-empty {
+  margin: 0;
+  color: $muted;
+  text-align: center;
+}
+
+.animation-missing {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.crop-part {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.is-previewing-animation {
+  .anim-soft-sway {
+    animation: crop-soft-sway 2.8s ease-in-out infinite;
+  }
+
+  .anim-sway-left {
+    transform-origin: 80% 90%;
+    animation: crop-sway-left 2.4s ease-in-out infinite;
+  }
+
+  .anim-sway-right {
+    transform-origin: 20% 90%;
+    animation: crop-sway-right 2.4s ease-in-out infinite;
+  }
+
+  .anim-leaf-breathe {
+    transform-origin: 50% 100%;
+    animation: crop-leaf-breathe 2.6s ease-in-out infinite;
+  }
+
+  .anim-bob {
+    animation: crop-bob 2.2s ease-in-out infinite;
+  }
+}
+
+@keyframes crop-soft-sway {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1.2deg); }
+}
+
+@keyframes crop-sway-left {
+  0%, 100% { transform: rotate(1deg) translateY(0); }
+  50% { transform: rotate(-4deg) translateY(-2px); }
+}
+
+@keyframes crop-sway-right {
+  0%, 100% { transform: rotate(-1deg) translateY(0); }
+  50% { transform: rotate(4deg) translateY(-2px); }
+}
+
+@keyframes crop-leaf-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+}
+
+@keyframes crop-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@media (max-width: 1100px) {
+  .animation-layout {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .group-panel {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid $border;
+  }
+}
+
+@media (max-width: 760px) {
+  .animation-header,
+  .animation-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .animation-header__actions {
+    justify-content: stretch;
+
+    .btn {
+      flex: 1;
+    }
+  }
+
+  .animation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-panel,
+  .group-panel {
+    border: 0;
+    border-bottom: 1px solid $border;
+  }
+}

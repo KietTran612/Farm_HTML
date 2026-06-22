@@ -112,12 +112,17 @@ function setupUIEventListeners() {
   const saveConfigBtn = document.getElementById("save-config-btn") as HTMLButtonElement | null;
   const addStageBtn = document.getElementById("add-stage-btn") as HTMLButtonElement | null;
   const removeStageBtn = document.getElementById("remove-stage-btn") as HTMLButtonElement | null;
+  const animationEditorBtn = document.getElementById("open-animation-editor-btn") as HTMLButtonElement | null;
 
   cropSelect?.addEventListener("change", () => handleCropSelection(cropSelect.value));
   pngSelect?.addEventListener("change", () => handlePngSelection());
   runTraceBtn?.addEventListener("change", () => triggerTraceAll(true));
   runTraceBtn?.addEventListener("click", () => triggerTraceAll(true));
   saveConfigBtn?.addEventListener("click", () => handleSaveConfig());
+  animationEditorBtn?.addEventListener("click", () => {
+    if (!activeCrop) return;
+    window.location.href = `/crop-animation-editor.html?crop=${encodeURIComponent(activeCrop)}`;
+  });
 
   addStageBtn?.addEventListener("click", () => handleAddStage());
   removeStageBtn?.addEventListener("click", () => handleRemoveStage());
@@ -161,6 +166,7 @@ function populateCropDropdown() {
 
 async function handleCropSelection(cropName: string) {
   activeCrop = cropName;
+  syncAnimationEditorButton();
   const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
   const pngPreviewContainer = document.getElementById("png-preview-container");
   const candidatesGrid = document.getElementById("candidates-grid");
@@ -220,6 +226,13 @@ async function handleCropSelection(cropName: string) {
   } catch (error: any) {
     showStatus("error", `Lỗi tải cấu hình cây trồng: ${error.message}`);
   }
+}
+
+function syncAnimationEditorButton() {
+  const animationEditorBtn = document.getElementById("open-animation-editor-btn") as HTMLButtonElement | null;
+  if (!animationEditorBtn) return;
+
+  animationEditorBtn.disabled = !activeCrop;
 }
 
 function renderStagesSidebar() {

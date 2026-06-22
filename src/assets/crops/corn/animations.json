@@ -1,0 +1,39 @@
+{
+  "crop": "Corn",
+  "stages": {
+    "dead": {
+      "sourceFile": "dead.svg",
+      "groupedFile": "dead.grouped.svg",
+      "parts": {
+        "ears": {
+          "animation": "soft-sway",
+          "pivot": {
+            "x": 85,
+            "y": 90
+          }
+        },
+        "other": {
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "tassels": {
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 95
+          }
+        },
+        "base": {
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        }
+      }
+    }
+  }
+}

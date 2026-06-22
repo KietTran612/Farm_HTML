@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crop Animation Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="animation-app">
+      <header class="animation-header">
+        <div class="animation-header__copy">
+          <a class="animation-header__back" href="/crop-editor.html">Back to Crop Editor</a>
+          <h1 id="animation-title">Crop Animation Editor</h1>
+          <p id="animation-subtitle">Select a saved stage, classify SVG groups, and preview part animations.</p>
+        </div>
+        <div class="animation-header__actions">
+          <button id="auto-classify-btn" class="btn btn-primary" disabled>Auto Classify</button>
+          <button id="preview-animation-btn" class="btn btn-secondary" disabled>Preview Animation</button>
+          <button id="save-animation-btn" class="btn btn-success" disabled>Save Grouped SVG</button>
+        </div>
+      </header>
+
+      <main class="animation-layout">
+        <aside class="animation-panel stage-panel">
+          <h2>Stages</h2>
+          <div id="animation-stage-list" class="animation-stage-list">
+            <p class="animation-empty">Loading stages...</p>
+          </div>
+        </aside>
+
+        <section class="animation-workspace">
+          <div class="animation-toolbar">
+            <div class="segmented-control" role="group" aria-label="Preview mode">
+              <button class="mode-btn is-active" type="button" data-mode="normal">Normal</button>
+              <button class="mode-btn" type="button" data-mode="overlay">Overlay</button>
+              <button class="mode-btn" type="button" data-mode="solo">Solo</button>
+            </div>
+            <span id="animation-status" class="animation-status">Choose a stage to begin.</span>
+          </div>
+
+          <div id="svg-preview" class="crop-animation-preview mode-normal">
+            <p class="animation-empty">No stage selected.</p>
+          </div>
+        </section>
+
+        <aside class="animation-panel group-panel">
+          <div class="panel-section">
+            <h2>Groups</h2>
+            <div class="group-actions">
+              <button id="merge-groups-btn" class="btn btn-secondary" disabled>Merge Selected</button>
+              <button id="split-left-right-btn" class="btn btn-secondary" disabled>Split L/R</button>
+              <button id="split-top-bottom-btn" class="btn btn-secondary" disabled>Split T/B</button>
+              <button id="split-color-btn" class="btn btn-secondary" disabled>Split Color</button>
+            </div>
+            <div id="group-list" class="group-list">
+              <p class="animation-empty">Run Auto Classify to inspect groups.</p>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2>Animation</h2>
+            <label class="field-label" for="animation-preset-select">Selected group preset</label>
+            <select id="animation-preset-select" class="form-control" disabled></select>
+          </div>
+
+          <div class="panel-section">
+            <h2>Pivot</h2>
+            <label class="field-label" for="pivot-preset-select">Pivot preset</label>
+            <select id="pivot-preset-select" class="form-control" disabled></select>
+            <div class="pivot-grid">
+              <label class="field-label" for="pivot-x-input">Pivot X %</label>
+              <label class="field-label" for="pivot-y-input">Pivot Y %</label>
+              <input id="pivot-x-input" class="form-control" type="number" min="0" max="100" step="1" value="50" disabled />
+              <input id="pivot-y-input" class="form-control" type="number" min="0" max="100" step="1" value="100" disabled />
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="/src/animation-editor.ts"></script>
+  </body>
+</html>

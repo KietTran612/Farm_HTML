@@ -415,8 +415,6 @@ Use semantic classes, not inline styles:
 }
 ```
 
-- [ ] **Step 3: Verify preview**
-
 - [ ] **Step 3: Test preset IDs**
 
 Run:
@@ -510,9 +508,73 @@ Record focused verification results and any known limitations. Do not run the fu
 
 ---
 
+### Task 10: Add Pivot Review And Editing
+
+**Files:**
+- Modify: `src/animation-editor.ts`
+- Modify: `src/styles/animation-editor.scss`
+- Modify: `src/animation-editor/animationPresets.ts`
+- Modify: `src/animation-editor/animationPresets.test.ts`
+
+- [ ] **Step 1: Define pivot defaults**
+
+Add semantic-part pivot defaults:
+
+```ts
+{
+  base: { x: 50, y: 100 },
+  stem: { x: 50, y: 100 },
+  "leaves-left": { x: 85, y: 90 },
+  "leaves-right": { x: 15, y: 90 },
+  fruit: { x: 50, y: 65 },
+  ears: { x: 50, y: 65 },
+  tassels: { x: 50, y: 95 },
+  other: { x: 50, y: 100 }
+}
+```
+
+- [ ] **Step 2: Add pivot controls**
+
+For the selected group, render:
+
+- pivot preset dropdown: `center`, `bottom-center`, `top-center`, `left-base`, `right-base`, `custom`
+- numeric `pivotX` and `pivotY` inputs as percentages from `0` to `100`
+
+- [ ] **Step 3: Show pivot marker**
+
+In `Pivot Review` display, show a crosshair marker for the selected group using its pivot percentage and group bounding box.
+
+- [ ] **Step 4: Apply pivot in preview**
+
+Use the selected pivot as `transform-origin` for animation preview. This is editor-only preview styling; saved runtime data must live in `animations.json`.
+
+- [ ] **Step 5: Save pivot metadata**
+
+When saving a grouped stage, include:
+
+```json
+{
+  "animation": "sway-left",
+  "pivot": { "x": 85, "y": 90 }
+}
+```
+
+- [ ] **Step 6: Run focused checks**
+
+Run:
+
+```powershell
+npm test -- src/animation-editor/animationPresets.test.ts
+npm run build
+```
+
+Expected: pivot defaults test and production build pass.
+
+---
+
 ## Self-Review
 
-- Spec coverage: This plan covers the separate crop-level animation editor, one navigation button from crop editor, stage selection inside the animation editor, auto classify, group review/editing, animation preview, grouped SVG output, `animations.json`, `meta.json` updates, and runtime lookup preference.
+- Spec coverage: This plan covers the separate crop-level animation editor, one navigation button from crop editor, stage selection inside the animation editor, auto classify, group review/editing, pivot review/editing, animation preview, grouped SVG output, `animations.json`, `meta.json` updates, and runtime lookup preference.
 - Placeholder scan: No implementation step depends on undefined placeholders; detailed UI refinement is intentionally deferred to later improvement after practical review.
 - Type consistency: `groupedStages`, `animations`, `stageId`, `sourceFile`, `groupedFile`, `groupedSvg`, and `animationConfig` are named consistently across data contracts and tasks.
 - Scope check: Runtime game renderer integration is explicitly separated unless requested, keeping the first implementation focused on asset authoring.

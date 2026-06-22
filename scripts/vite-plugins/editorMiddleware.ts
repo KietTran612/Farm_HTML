@@ -3,6 +3,7 @@ import { existsSync, readdirSync, writeFileSync, mkdirSync, readFileSync, rmSync
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { optimize } from "svgo";
+import { sanitizeSvgText } from "../../src/animation-editor/groupEditor";
 // @ts-ignore
 import { collectSvgMetricsFromText } from "../vtracer/svg-metrics.mjs";
 
@@ -18,6 +19,38 @@ export interface SavePayload {
 
 export interface CleanupPayload {
   cropName?: string;
+}
+
+export interface CropStageAssetsPayload {
+  cropName: string;
+}
+
+export interface CropStageAssetsResponse {
+  cropName: string;
+  meta: {
+    cropName: string;
+    stages: Record<string, string>;
+    groupedStages?: Record<string, string>;
+    animations?: string;
+  };
+  stages: Array<{
+    stageId: string;
+    sourceFile?: string;
+    groupedFile?: string;
+    sourceSvg?: string;
+    groupedSvg?: string;
+    activeSvg: string;
+    activeFile: string;
+    hasGroupedSvg: boolean;
+  }>;
+  animations: any;
+}
+
+export interface SaveStageAnimationPayload {
+  cropName: string;
+  stageId: string;
+  groupedSvg: string;
+  animationConfig: Record<string, any>;
 }
 
 
@@ -124,6 +157,115 @@ export function handleCleanupRequest(payload: CleanupPayload): { success: boolea
       }
     }
   }
+
+  return { success: true };
+}
+
+export function handleCropStageAssetsRequest(payload: CropStageAssetsPayload): CropStageAssetsResponse {
+  const cropName = normalizeCropName(payload.cropName);
+  const cropDir = resolve("src/assets/crops", cropName);
+  if (!existsSync(cropDir)) {
+    throw new Error(`Crop assets not found: ${cropName}`);
+  }
+
+  const metaPath = join(cropDir, "meta.json");
+  if (!existsSync(metaPath)) {
+    throw new Error(`Crop meta not found: ${cropName}`);
+  }
+
+  const meta = JSON.parse(readFileSync(metaPath, "utf8"));
+  const stages = Object.entries(meta.stages || {}).map(([stageId, sourceFileValue]) => {
+    const sourceFile = String(sourceFileValue);
+    const groupedFile = meta.groupedStages?.[stageId] ? String(meta.groupedStages[stageId]) : undefined;
+    const sourceSvg = readCropAssetFile(cropDir, sourceFile);
+    const groupedSvg = groupedFile ? readCropAssetFile(cropDir, groupedFile) : undefined;
+    const activeFile = groupedFile && groupedSvg ? groupedFile : sourceFile;
+    const activeSvg = groupedSvg || sourceSvg;
+
+    return {
+      stageId,
+      sourceFile,
+      groupedFile,
+      sourceSvg,
+      groupedSvg,
+      activeSvg,
+      activeFile,
+      hasGroupedSvg: Boolean(groupedSvg)
+    };
+  });
+
+  const animations = meta.animations
+    ? JSON.parse(readCropAssetFile(cropDir, String(meta.animations)))
+    : { crop: meta.cropName || cropName, stages: {} };
+
+  return {
+    cropName,
+    meta,
+    stages,
+    animations
+  };
+}
+
+export function handleSaveStageAnimationRequest(payload: SaveStageAnimationPayload): { success: boolean } {
+  const cropName = normalizeCropName(payload.cropName);
+  const { stageId } = payload;
+  if (!/^[a-zA-Z0-9_-]+$/.test(stageId)) {
+    throw new Error("Invalid stage id.");
+  }
+
+  const cropDir = resolve("src/assets/crops", cropName);
+  if (!existsSync(cropDir)) {
+    throw new Error(`Crop assets not found: ${cropName}`);
+  }
+
+  const metaPath = join(cropDir, "meta.json");
+  if (!existsSync(metaPath)) {
+    throw new Error(`Crop meta not found: ${cropName}`);
+  }
+
+  const meta = JSON.parse(readFileSync(metaPath, "utf8"));
+  if (!meta.stages?.[stageId]) {
+    throw new Error(`Stage not found: ${stageId}`);
+  }
+
+  const sanitizedSvg = sanitizeSvgText(payload.groupedSvg);
+  if (!/<svg\b[^>]*>/i.test(sanitizedSvg)) {
+    throw new Error("Grouped SVG must include a root <svg> element.");
+  }
+
+  const groupedFile = `${stageId}.grouped.svg`;
+  writeFileSync(join(cropDir, groupedFile), sanitizedSvg, "utf8");
+
+  const animationsFile = "animations.json";
+  const animationsPath = join(cropDir, animationsFile);
+  const existingAnimations = existsSync(animationsPath)
+    ? JSON.parse(readFileSync(animationsPath, "utf8"))
+    : { crop: meta.cropName || cropName, stages: {} };
+
+  const nextAnimations = {
+    ...existingAnimations,
+    crop: existingAnimations.crop || meta.cropName || cropName,
+    stages: {
+      ...(existingAnimations.stages || {}),
+      [stageId]: {
+        sourceFile: meta.stages[stageId],
+        groupedFile,
+        ...payload.animationConfig
+      }
+    }
+  };
+
+  writeFileSync(animationsPath, JSON.stringify(nextAnimations, null, 2), "utf8");
+
+  const nextMeta = {
+    ...meta,
+    groupedStages: {
+      ...(meta.groupedStages || {}),
+      [stageId]: groupedFile
+    },
+    animations: animationsFile
+  };
+  writeFileSync(metaPath, JSON.stringify(nextMeta, null, 2), "utf8");
 
   return { success: true };
 }
@@ -286,6 +428,25 @@ function readRequestBody(req: any): Promise<string> {
   });
 }
 
+function normalizeCropName(cropName: string): string {
+  if (!cropName || !/^[a-zA-Z0-9_-]+$/.test(cropName)) {
+    throw new Error("Invalid crop name.");
+  }
+  return cropName.toLowerCase();
+}
+
+function readCropAssetFile(cropDir: string, fileName: string): string {
+  if (!/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
+    throw new Error("Invalid crop asset file name.");
+  }
+
+  const fullPath = join(cropDir, fileName);
+  if (!existsSync(fullPath)) {
+    throw new Error(`Crop asset file not found: ${fileName}`);
+  }
+  return readFileSync(fullPath, "utf8");
+}
+
 export function cropEditorPlugin(): Plugin {
   return {
     name: "crop-editor-middleware",
@@ -334,6 +495,23 @@ export function cropEditorPlugin(): Plugin {
             const bodyText = await readRequestBody(req);
             const payload = JSON.parse(bodyText) as CleanupPayload;
             const result = handleCleanupRequest(payload);
+            res.statusCode = 200;
+            res.end(JSON.stringify(result));
+            return;
+          }
+
+          if (pathname === "/api/editor/crop-stage-assets" && req.method === "GET") {
+            const cropName = url.searchParams.get("crop") || "";
+            const result = handleCropStageAssetsRequest({ cropName });
+            res.statusCode = 200;
+            res.end(JSON.stringify(result));
+            return;
+          }
+
+          if (pathname === "/api/editor/save-stage-animation" && req.method === "POST") {
+            const bodyText = await readRequestBody(req);
+            const payload = JSON.parse(bodyText) as SaveStageAnimationPayload;
+            const result = handleSaveStageAnimationRequest(payload);
             res.statusCode = 200;
             res.end(JSON.stringify(result));
             return;
