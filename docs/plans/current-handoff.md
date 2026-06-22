@@ -2,6 +2,10 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 70 (Edit Saved Layered Stages):** Added saved layered SVG parsing and wired Crop Editor stage sidebar clicks to reopen mapped stage SVGs. Loaded layers can be renamed, reordered, deleted, extended with newly traced PNG layers, previewed, and saved back to the same stage without needing original lasso metadata. Review fixes preserve root `<defs>` used by loaded layer paths and prevent repeated saves from double-prefixing internal SVG IDs.
+
+- **Implemented Task 69 (Remove Legacy Auto Trace Workflow):** Removed `auto_trace.bat`, deleted `scripts/vtracer/auto-trace-crops.mjs`, and removed the `crop:vtracer:auto` npm script because the full-PNG auto trace path is superseded by the lasso masked layer trace workflow.
+
 - **Implemented Task 68 (Fix Layer Composite Preview Scaling):** Fixed SVG scaling in the composite preview container by adding `width: 100%; height: 100%; object-fit: contain;` to `.layer-composite-preview svg` in `editor.scss`. Symmetrical grid template columns (`minmax(360px, 1fr) 260px minmax(360px, 1fr)`) were applied to `.layer-trace-layout` so that both the drawing canvas container and the composite SVG preview container have identical dimensions, ensuring their visual scale matches 1-to-1 perfectly.
 - **Implemented Task 67 (Implement Layer Rename Functionality):** Added inline rename input triggers (double-click and edit icon `✎`) for layer names. An input field temporarily replaces the label (disabling drag events to allow text selection) and updates the data array and preview on Enter or blur, and restores the original value on Escape.
 - **Implemented Task 66 (Add VTracer Preset Selector):** Added a preset select box directly in the VTracer parameters section header. This allows users to quickly select one of the four standard project presets (`gameClean`, `gameDetailed`, `animationCandidate`, `tinyRuntime`) even when the parameters panel is collapsed. Selecting a preset updates the sliders and values immediately, and adjusting any slider manually shifts the selector to `Custom` mode.
@@ -28,6 +32,18 @@
 
 ## Verification
 
+- **For Task 70 (Edit Saved Layered Stages):**
+  - Wrote parser tests first and verified the initial missing-module failure.
+  - Added review regression tests for preserving root `<defs>` and avoiding double-prefix IDs on loaded layer re-save; both failed before the fixes.
+  - `npx vitest run src/layer-trace/layerParser.test.ts src/layer-trace/layerComposer.test.ts` passed with 5 tests.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot, clicked Stage 03, confirmed one loaded layer, SVG preview present, and Save enabled without writing files.
+
+- **For Task 69 (Remove Legacy Auto Trace Workflow):**
+  - `package.json` parsed successfully after removing the npm script.
+  - Reference scan confirmed no remaining `auto_trace`, `auto-trace-crops`, or `crop:vtracer:auto` references outside planning history.
+  - App validation not run - obsolete workflow removal only.
+
 - **For Task 68 (Preview Scaling):**
   - Production build successfully completed.
   - Project unit tests successfully completed (`npm run test`).
@@ -53,15 +69,17 @@
 
 - Codex in-app browser plugin failed to initialize in this environment due to `EPERM` while accessing `C:\Users\Hoang.H\AppData`. Chrome headless/CDP was used instead for browser smoke testing.
 - Corn VTracer raw SVG sizes are large (Stage03 ~539KB). Presets like `tinyRuntime` have been tuned to reduce path count for production runtime.
-- VTracer CLI is fully set up, presets are verified, and auto-tracing script is ready.
+- VTracer CLI is fully set up and presets are verified. The old full-PNG auto-tracing script was removed because lasso masked layer tracing is now the active workflow.
 
 ## Current Uncommitted Scope
 
 - **Crop Editor Updates:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/` (contains layer composer and math helpers).
+- **Saved Stage Reopen:** `src/layer-trace/layerParser.ts`, `src/layer-trace/layerParser.test.ts`, `src/editor.ts`, and `docs/plans/2026-06-22-edit-saved-layered-stages.md`.
 - **Crop Animation Editor Updates:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/` (group classifier, group editor, types), `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage03.grouped.svg`.
 - **Middleware API:** `scripts/vite-plugins/editorMiddleware.ts` and `scripts/vite-plugins/editorMiddleware.test.ts`.
+- **Removed Legacy Auto Trace:** `auto_trace.bat`, `scripts/vtracer/auto-trace-crops.mjs`, and the `crop:vtracer:auto` npm script.
 - **Cleanup and Planning Docs:** `docs/plans/2026-06-22-clean-obsolete-plans-and-tasks.md`, `docs/plans/2026-06-22-crop-animation-editor-visual-grouping.md`, `docs/plans/archive/` (moved files), `docs/plans/index.md`, `docs/plans/task.md`, `docs/plans/current-handoff.md`.
 
 ## Recommended Next Task
 
-- **Manual Verification of Editor Improvements:** Open `http://localhost:4000/crop-editor.html` in the browser, verify that changing the Preset dropdown immediately sets the sliders to the correct values, trace a few layers using different presets, rearrange them using drag-and-drop or arrows, double-click a layer name (or click `✎`) to edit and rename it, and save the layered SVG.
+- **Manual Save Verification:** Open `http://localhost:4000/crop-editor.html`, load a saved stage from the sidebar, delete one old layer, trace a replacement layer from the PNG source, and save the stage after visually confirming the composite.

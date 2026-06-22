@@ -5,6 +5,7 @@
 - `2026-06-22-crop-animation-editor.md` - Plan for a separate crop-level SVG group and animation editor.
 - `2026-06-22-crop-animation-editor-visual-grouping.md` - Plan for adding interactive visual selection and grouping to the Crop Animation Editor.
 - `2026-06-22-clean-obsolete-plans-and-tasks.md` - Plan for cleaning obsolete task and plan entries.
+- `2026-06-22-edit-saved-layered-stages.md` - Plan for reopening saved layered SVG stages in Crop Editor.
 
 ## Archived / Historical Plans
 
@@ -25,5 +26,4 @@
 
 ## Planned Next
 
-- Review the lasso masked layer trace UX in `crop-editor.html` (Task 64) to decide whether to add layer reorder/rename controls before runtime integration.
-
+- Manually verify save flow by loading a saved stage, deleting one old layer, tracing a replacement from PNG, and saving after visual confirmation.

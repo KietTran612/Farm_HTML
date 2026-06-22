@@ -51,7 +51,7 @@ function prefixInternalIds(svgText: string, prefix: string): string {
   const ids = Array.from(svgText.matchAll(/\bid=["']([^"']+)["']/gi)).map((match) => match[1]);
 
   for (const id of ids) {
-    const nextId = `${prefix}-${id}`;
+    const nextId = id.startsWith(`${prefix}-`) ? id : `${prefix}-${id}`;
     result = result
       .replace(new RegExp(`\\bid=(["'])${escapeRegExp(id)}\\1`, "g"), `id="${nextId}"`)
       .replace(new RegExp(`url\\(#${escapeRegExp(id)}\\)`, "g"), `url(#${nextId})`)

@@ -31,4 +31,24 @@ describe("composeLayeredSvg", () => {
     expect(result).toContain('fill="url(#group-ears-paint0)"');
     expect(result.match(/<svg\b/g)).toHaveLength(1);
   });
+
+  it("does not prefix internal ids again when re-saving a loaded layer", () => {
+    const result = composeLayeredSvg({
+      width: 64,
+      height: 64,
+      cropId: "carrot",
+      stageId: "stage03",
+      layers: [
+        {
+          groupId: "leaves-123",
+          label: "leaves",
+          svgText: `<svg viewBox="0 0 64 64"><defs><linearGradient id="leaves-123-grad"><stop stop-color="#4c6522"/></linearGradient></defs><path fill="url(#leaves-123-grad)" d="M0 0H10V10Z"/></svg>`
+        }
+      ]
+    });
+
+    expect(result).toContain('id="leaves-123-grad"');
+    expect(result).toContain('fill="url(#leaves-123-grad)"');
+    expect(result).not.toContain("leaves-123-leaves-123-grad");
+  });
 });

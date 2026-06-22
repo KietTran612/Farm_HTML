@@ -15,8 +15,7 @@
     "crop:vtracer:batch": "node scripts/vtracer/convert-crop-batch.mjs",
     "crop:vtracer:review": "node scripts/vtracer/review-crop-candidates.mjs",
     "crop:vtracer:inline": "node scripts/vtracer/prepare-inline-svg.mjs",
-    "crop:vtracer:clear": "node scripts/vtracer/cleanup.mjs",
-    "crop:vtracer:auto": "node scripts/vtracer/auto-trace-crops.mjs"
+    "crop:vtracer:clear": "node scripts/vtracer/cleanup.mjs"
   },
   "devDependencies": {
     "@vitest/ui": "^3.2.4",

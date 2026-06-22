@@ -1,5 +1,6 @@
 import "./styles/editor.scss";
 import { composeLayeredSvg, type SvgLayerInput } from "./layer-trace/layerComposer";
+import { parseLayeredSvg } from "./layer-trace/layerParser";
 
 interface Crop {
   name: string;
@@ -70,6 +71,7 @@ let cropsList: Crop[] = [];
 let targetStages = [...defaultStages];
 let mappedStages: Record<string, string> = {};
 let layerTraceImage: HTMLImageElement | null = null;
+let layerTraceSize: { width: number; height: number } | null = null;
 let layerLassoPoints: Array<{ x: number; y: number }> = [];
 let isDrawingLayerMask = false;
 let layerTraceLayers: SvgLayerInput[] = [];
@@ -289,6 +291,10 @@ async function loadLayerTraceImage(pngPath: string) {
 
   canvas.width = layerTraceImage.naturalWidth;
   canvas.height = layerTraceImage.naturalHeight;
+  layerTraceSize = {
+    width: layerTraceImage.naturalWidth,
+    height: layerTraceImage.naturalHeight
+  };
   canvas.parentElement?.classList.add("has-image");
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
@@ -440,7 +446,7 @@ function createMaskedLayerDataUrl(): string | null {
 }
 
 async function handleSaveLayerComposite() {
-  if (!activeCrop || !layerTraceImage || layerTraceLayers.length === 0) return;
+  if (!activeCrop || !layerTraceSize || layerTraceLayers.length === 0) return;
   const stageSelect = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
   const stageId = stageSelect?.value || targetStages[0] || "stage00";
   const compositeSvg = composeCurrentLayerSvg(stageId);
@@ -473,13 +479,13 @@ async function handleSaveLayerComposite() {
 }
 
 function composeCurrentLayerSvg(stageId: string): string {
-  if (!layerTraceImage) {
-    throw new Error("No PNG selected.");
+  if (!layerTraceSize) {
+    throw new Error("No layer source loaded.");
   }
 
   return composeLayeredSvg({
-    width: layerTraceImage.naturalWidth,
-    height: layerTraceImage.naturalHeight,
+    width: layerTraceSize.width,
+    height: layerTraceSize.height,
     cropId: activeCrop,
     stageId,
     layers: layerTraceLayers
@@ -676,7 +682,7 @@ function renderLayerCompositePreview() {
   const preview = document.getElementById("layer-composite-preview");
   if (!preview) return;
 
-  if (!layerTraceImage || layerTraceLayers.length === 0) {
+  if (!layerTraceSize || layerTraceLayers.length === 0) {
     preview.innerHTML = `<p class="placeholder-text">Composite SVG preview se hien thi o day.</p>`;
     return;
   }
@@ -692,12 +698,13 @@ function updateLayerTraceButtons() {
     traceBtn.disabled = !layerTraceImage || layerLassoPoints.length < 3;
   }
   if (saveBtn) {
-    saveBtn.disabled = !layerTraceImage || layerTraceLayers.length === 0;
+    saveBtn.disabled = !layerTraceSize || layerTraceLayers.length === 0;
   }
 }
 
 function resetLayerWorkflow() {
   layerTraceImage = null;
+  layerTraceSize = null;
   layerLassoPoints = [];
   layerTraceLayers = [];
   isDrawingLayerMask = false;
@@ -740,6 +747,57 @@ function renderStagesSidebar() {
       </li>
     `;
   }).join("");
+
+  stagesList.querySelectorAll<HTMLElement>("[data-stage-id]").forEach((stageItem) => {
+    stageItem.addEventListener("click", () => {
+      const stageId = stageItem.getAttribute("data-stage-id") || "";
+      void handleSavedStageSelection(stageId);
+    });
+  });
+}
+
+async function handleSavedStageSelection(stageId: string) {
+  if (!activeCrop || !stageId) return;
+
+  const stageSelect = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
+  if (stageSelect) {
+    stageSelect.value = stageId;
+  }
+
+  const mappedFile = mappedStages[stageId];
+  if (!mappedFile) {
+    layerTraceLayers = [];
+    layerTraceSize = layerTraceImage
+      ? { width: layerTraceImage.naturalWidth, height: layerTraceImage.naturalHeight }
+      : null;
+    clearLayerMask();
+    renderLayerTraceState();
+    showStatus("info", `${formatStageName(stageId)} chua co SVG da luu. Trace layer moi roi save vao stage nay.`);
+    return;
+  }
+
+  showStatus("loading", `Dang tai ${formatStageName(stageId)} da luu...`);
+
+  try {
+    const response = await fetch(`/src/assets/crops/${encodeURIComponent(activeCrop)}/${encodeURIComponent(mappedFile)}`);
+    if (!response.ok) {
+      throw new Error("Khong the tai SVG stage da luu.");
+    }
+
+    const parsed = parseLayeredSvg(await response.text());
+    layerTraceLayers = parsed.layers;
+    layerTraceSize = {
+      width: parsed.width,
+      height: parsed.height
+    };
+    layerLassoPoints = [];
+    isDrawingLayerMask = false;
+    drawLayerMaskCanvas();
+    renderLayerTraceState();
+    showStatus("info", `Da mo ${formatStageName(stageId)}. Layer cu co the rename, reorder, delete; lasso goc khong duoc luu.`);
+  } catch (error: any) {
+    showStatus("error", `Khong the mo stage da luu: ${error.message}`);
+  }
 }
 
 function handleAddStage() {

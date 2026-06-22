@@ -71,3 +71,5 @@
 | **Task 66: Add VTracer Preset Selector to Crop Editor** | [x] | Added preset selector select box to VTracer parameter header, loaded presets, and synchronized with sliders and live trace. |
 | **Task 67: Implement Layer Rename Functionality** | [x] | Added inline rename input triggers (double-click and edit icon) for layer names, updating data array, and re-rendering list and preview. |
 | **Task 68: Fix Layer Composite Preview Scaling** | [x] | Fixed SVG scaling in composite preview container by adding object-fit contain, width/height 100% styles, and making grid layout columns symmetrical to match canvas constraints. |
+| **Task 69: Remove Legacy Auto Trace Workflow** | [x] | Removed the full-PNG auto trace batch file, Node script, and npm script now superseded by lasso layer tracing. |
+| **Task 70: Edit Saved Layered Stages** | [x] | Added saved-stage SVG parsing and sidebar loading so old layers can be renamed, reordered, deleted, extended, and saved again. |
