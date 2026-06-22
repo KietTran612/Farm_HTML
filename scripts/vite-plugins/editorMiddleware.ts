@@ -16,6 +16,11 @@ export interface SavePayload {
   stages: Record<string, string>; // stageName -> svgContent
 }
 
+export interface CleanupPayload {
+  cropName?: string;
+}
+
+
 export interface TraceParams {
   colormode?: string;
   mode?: string;
@@ -91,6 +96,38 @@ export function handleSaveRequest(payload: SavePayload): { success: boolean } {
 
   return { success: true };
 }
+
+export function handleCleanupRequest(payload: CleanupPayload): { success: boolean } {
+  const { cropName } = payload;
+  const cropsDir = resolve("docs/Crops");
+  if (!existsSync(cropsDir)) {
+    return { success: true };
+  }
+
+  const entries = readdirSync(cropsDir, { withFileTypes: true });
+
+  if (cropName) {
+    const match = entries.find(e => e.isDirectory() && e.name.toLowerCase() === cropName.toLowerCase());
+    if (match) {
+      const targetGeneratedDir = join(cropsDir, match.name, "SVG", "Generated");
+      if (existsSync(targetGeneratedDir)) {
+        rmSync(targetGeneratedDir, { recursive: true, force: true });
+      }
+    }
+  } else {
+    for (const entry of entries) {
+      if (entry.isDirectory() && entry.name !== "SVG" && entry.name !== "Generated") {
+        const targetGeneratedDir = join(cropsDir, entry.name, "SVG", "Generated");
+        if (existsSync(targetGeneratedDir)) {
+          rmSync(targetGeneratedDir, { recursive: true, force: true });
+        }
+      }
+    }
+  }
+
+  return { success: true };
+}
+
 
 export function detectVTracer(): string | null {
   const possiblePaths = [
@@ -292,6 +329,16 @@ export function cropEditorPlugin(): Plugin {
             res.end(JSON.stringify(result));
             return;
           }
+
+          if (pathname === "/api/editor/cleanup" && req.method === "POST") {
+            const bodyText = await readRequestBody(req);
+            const payload = JSON.parse(bodyText) as CleanupPayload;
+            const result = handleCleanupRequest(payload);
+            res.statusCode = 200;
+            res.end(JSON.stringify(result));
+            return;
+          }
+
 
           res.statusCode = 404;
           res.end(JSON.stringify({ error: "Endpoint not found" }));

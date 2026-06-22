@@ -52,4 +52,5 @@
 | **Task 47: Create HTML Crop Editor UI Layout** | [x] | Implement crop-editor.html and editor.scss with responsive layout, stages panel, and sliders. |
 | **Task 48: Implement Client-side Logic and Validation** | [x] | Write src/editor.ts to handle tracing requests, validation checking, warning display, and save mapping. |
 | **Task 49: Verify HTML Crop Editor E2E** | [x] | Test the entire flow from PNG selection, custom parameter tuning, duplicate validation, to saving crop files. |
+| **Task 50: Implement Crop Editor Cleanup Drafts Script** | [x] | Created scripts/vtracer/cleanup.mjs and clear_drafts.bat to clear crop generated directories. |
 

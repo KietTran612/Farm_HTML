@@ -56,12 +56,12 @@
 - **Implemented Task 47 (Create HTML Crop Editor UI Layout):** Created `crop-editor.html` (comprehensive UI with sidebar, parameters sliders, and candidates grid), `src/styles/editor.scss` (premium Farm-Green style, custom slider styling, toggle switches, and duplicate validation visual cards), and `src/editor.ts` (client scaffolding with mock data and validation displays).
 - **Implemented Task 48 (Implement Client-side Logic and Validation):** Implemented actual tracing requests, dynamic preset loading, debounced sliders for custom trace, duplication highlight visually with classes and alerts, and footer validation logic in `src/editor.ts`.
 - **Implemented Task 49 (Verify HTML Crop Editor E2E):** Ran complete browser automation smoke check verifying PNG selection, tracing, duplicate error alerts, and successfully saving SVG mappings and `meta.json` on disk.
-
-
+- **Implemented Task 50 (Implement Crop Editor Cleanup Drafts Script):** Created `scripts/vtracer/cleanup.mjs` and `clear_drafts.bat` supporting recursive deletion of VTracer SVG/Generated workspace folders either for all crops or a targeted crop (`--crop <name>`), registered as `npm run crop:vtracer:clear`.
 
 ## Verification
 
-- Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 3/3 tests).
+- Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 4/4 tests including cleanup test).
+- Run cleanup CLI command: `npm run crop:vtracer:clear -- --crop Corn` (Passed; successfully deleted `docs/Crops/Corn/SVG/Generated`).
 - Run client production build: `npm run build` (Passed, 0 errors).
 - Verified E2E Crop Editor flow: navigated to `http://localhost:4000/crop-editor.html`, selected crop, PNG, triggered trace, simulated duplication error (`crop_editor_duplicate_error_stage02_1782096550421.png`), resolved it, clicked save successfully (`crop_editor_save_success_1782096573293.png`), and recorded full video (`crop_editor_e2e_test_fixed_1782096082468.webp`).
 - Verified in-browser quality: navigated to `http://localhost:4000/crop-editor.html`, verified premium design, slider interactivity, and duplication alerts, capturing screenshots.
@@ -90,7 +90,7 @@
 
 ## Current Uncommitted Scope
 
-- Vite Middleware API: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`.
+- Vite Middleware API & Cleanup Script: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `scripts/vtracer/cleanup.mjs`, `clear_drafts.bat`.
 - HTML Crop Editor UI Layout & Logic: `crop-editor.html`, `src/styles/editor.scss`, `src/editor.ts`.
 - Plan files: `docs/plans/2026-06-22-integrate-vite-middleware-api.md`, `docs/plans/2026-06-22-html-crop-editor-layout.md`, `docs/plans/2026-06-22-html-crop-editor-logic-verification.md`.
 - Review polish files: `review.html`, `src/review.ts`, `src/review.test.ts`, and `src/node-test-shims.d.ts`.

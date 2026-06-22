@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
-import { handleCropsRequest, handleSaveRequest, handleTraceRequest } from "./editorMiddleware";
+import { handleCropsRequest, handleSaveRequest, handleTraceRequest, handleCleanupRequest } from "./editorMiddleware";
 
 describe("Editor Middleware API", () => {
   const testAssetsDir = resolve("src/assets/crops/test-crop");
@@ -76,5 +76,27 @@ describe("Editor Middleware API", () => {
     expect(result.metrics).toBeDefined();
     expect(result.metrics.raw.pathCount).toBeGreaterThan(0);
     expect(result.metrics.optimized.pathCount).toBeGreaterThan(0);
+  });
+
+  it("cleans up generated directory for a specific crop", () => {
+    const testCropDir = resolve("docs/Crops/test-cleanup-crop");
+    const generatedDir = join(testCropDir, "SVG", "Generated");
+    
+    if (!existsSync(generatedDir)) {
+      mkdirSync(generatedDir, { recursive: true });
+    }
+    const dummyFile = join(generatedDir, "dummy.svg");
+    writeFileSync(dummyFile, "<svg></svg>", "utf8");
+
+    expect(existsSync(dummyFile)).toBe(true);
+
+    const cleanupResult = handleCleanupRequest({ cropName: "test-cleanup-crop" });
+    expect(cleanupResult.success).toBe(true);
+    expect(existsSync(generatedDir)).toBe(false);
+
+    // Cleanup the parent test directory too
+    if (existsSync(testCropDir)) {
+      rmSync(testCropDir, { recursive: true, force: true });
+    }
   });
 });
