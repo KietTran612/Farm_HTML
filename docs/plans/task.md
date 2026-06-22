@@ -59,3 +59,4 @@
 | **Task 54: Verify Crop Animation Editor Flow** | [x] | Ran focused unit tests, production build, and browser smoke for classify, preview, navigation, and save. |
 | **Task 55: Implement Auto Trace Crops Script** | [x] | Created scripts/vtracer/auto-trace-crops.mjs and auto_trace.bat to trace all crops automatically. |
 | **Task 56: Add Pivot Review And Editing** | [x] | Added selected-group pivot presets, percent controls, preview marker, transform-origin preview, and saved pivot metadata. |
+| **Task 57: Add Crop Switcher To Animation Editor** | [x] | Added a crop dropdown to crop-animation-editor so users can switch crops without returning to crop-editor. |

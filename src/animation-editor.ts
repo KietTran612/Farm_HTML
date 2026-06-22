@@ -14,6 +14,10 @@ interface StageAsset {
   hasGroupedSvg: boolean;
 }
 
+interface CropListEntry {
+  name: string;
+}
+
 interface CropStageAssetsResponse {
   cropName: string;
   stages: StageAsset[];
@@ -40,6 +44,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function setupEvents() {
+  const cropSelect = document.getElementById("animation-crop-select") as HTMLSelectElement | null;
+  cropSelect?.addEventListener("change", () => {
+    const nextCrop = cropSelect.value;
+    if (!nextCrop || nextCrop === cropName) return;
+    window.location.href = `/crop-animation-editor.html?crop=${encodeURIComponent(nextCrop)}`;
+  });
+
   document.getElementById("auto-classify-btn")?.addEventListener("click", handleAutoClassify);
   document.getElementById("preview-animation-btn")?.addEventListener("click", handlePreviewAnimation);
   document.getElementById("save-animation-btn")?.addEventListener("click", () => void handleSave());
@@ -109,6 +120,7 @@ async function initAnimationEditor() {
 
   setText("animation-title", `${cropName} Animation Editor`);
   setText("animation-subtitle", "Choose a saved stage, classify paths, edit groups, and preview per-part animation.");
+  void populateCropSwitcher(cropName);
   setStatus("Loading stage assets...");
 
   try {
@@ -129,6 +141,27 @@ async function initAnimationEditor() {
     }
   } catch (error: any) {
     setStatus(`Error: ${error.message}`, true);
+  }
+}
+
+async function populateCropSwitcher(selectedCrop: string) {
+  const select = document.getElementById("animation-crop-select") as HTMLSelectElement | null;
+  if (!select) return;
+
+  try {
+    const response = await fetch("/api/editor/crops");
+    if (!response.ok) throw new Error("Could not load crop list.");
+
+    const crops = await response.json() as CropListEntry[];
+    const selectedValue = selectedCrop.toLowerCase();
+    select.innerHTML = crops.map((crop) => {
+      const value = crop.name.toLowerCase();
+      return `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${crop.name}</option>`;
+    }).join("");
+    select.disabled = crops.length === 0;
+  } catch {
+    select.innerHTML = `<option value="${selectedCrop}">${selectedCrop}</option>`;
+    select.disabled = true;
   }
 }
 

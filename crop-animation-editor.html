@@ -17,6 +17,12 @@
           <p id="animation-subtitle">Select a saved stage, classify SVG groups, and preview part animations.</p>
         </div>
         <div class="animation-header__actions">
+          <div class="animation-crop-switcher">
+            <label class="field-label" for="animation-crop-select">Crop</label>
+            <select id="animation-crop-select" class="form-control" disabled>
+              <option value="">Loading crops...</option>
+            </select>
+          </div>
           <button id="auto-classify-btn" class="btn btn-primary" disabled>Auto Classify</button>
           <button id="preview-animation-btn" class="btn btn-secondary" disabled>Preview Animation</button>
           <button id="save-animation-btn" class="btn btn-success" disabled>Save Grouped SVG</button>

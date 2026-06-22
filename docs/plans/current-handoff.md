@@ -6,6 +6,7 @@
 - **Implemented Task 53 (SVG Group Classify And Edit Tools):** Added crop stage asset middleware endpoints, grouped SVG save/metadata merge flow, SVG sanitization, path classifier, group editing operations, animation presets, animation editor controller, and SCSS for overlay/solo/preview states.
 - **Implemented Task 54 (Verify Crop Animation Editor Flow):** Verified focused middleware and animation editor unit tests, production build, and browser smoke for navigation, classify, preview, and save.
 - **Implemented Task 56 (Pivot Review And Editing):** Added semantic pivot defaults, pivot preset and percent controls, preview marker, per-group transform-origin preview, and saved pivot metadata in `animations.json`.
+- **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly from `crop-animation-editor.html`.
 - Fixed animation editor preview sizing so the review SVG stays inside the visible preview frame instead of overflowing below the viewport.
 - Reviewed the current crop editor workflow at `http://localhost:4000/crop-editor.html` after the user completed Tasks 46-49.
 - Agreed on a separate crop-level animation editor instead of embedding animation tools inside `crop-editor.html`.
@@ -84,6 +85,8 @@
 - Run production build after pivot changes: `npm run build` (Passed).
 - Browser pivot smoke: opened `http://localhost:4000/crop-animation-editor.html?crop=corn`, ran Auto Classify, selected `left-base` pivot, confirmed pivot inputs `85/90`, pivot marker visible, selected animated group uses `transform-origin: 85% 90%`, and Save wrote pivot metadata to `src/assets/crops/corn/animations.json`.
 - Preview fit smoke: opened `http://localhost:4000/crop-animation-editor.html?crop=carrot`, confirmed `scrollHeight` equals `clientHeight` at 720px viewport, preview bottom is within viewport, and SVG bounds fit inside the visible frame.
+- Run production build after crop switcher update: `npm run build` (Passed).
+- Browser smoke for crop switcher: not run - local port 4000 was not responding before the user requested commit.
 - Docs-only crop animation editor plan update: app validation not run - not relevant to this change.
 - Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 4/4 tests including cleanup test).
 - Run cleanup CLI command: `npm run crop:vtracer:clear -- --crop Corn` (Passed; successfully deleted `docs/Crops/Corn/SVG/Generated`).
@@ -115,11 +118,8 @@
 
 ## Current Uncommitted Scope
 
-- Crop animation editor implementation: `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/groupClassifier.ts`, `src/animation-editor/groupEditor.ts`, `src/animation-editor/animationPresets.ts`, and their focused tests.
-- Crop editor navigation: `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`.
-- Middleware animation endpoints: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`.
-- Generated smoke output: `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/animations.json`, and updated `src/assets/crops/corn/meta.json`.
-- Updated planning tracker docs: `docs/plans/2026-06-22-crop-animation-editor.md`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- Crop animation editor crop switcher: `crop-animation-editor.html`, `src/animation-editor.ts`, and `src/styles/animation-editor.scss`.
+- Updated planning tracker docs: `docs/plans/task.md` and `docs/plans/current-handoff.md`.
 
 ## Recommended Next Task
 

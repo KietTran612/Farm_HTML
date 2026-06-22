@@ -71,8 +71,17 @@ h2 {
 .animation-header__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.animation-crop-switcher {
+  min-width: 180px;
+
+  .field-label {
+    margin-bottom: 4px;
+  }
 }
 
 .animation-layout {
@@ -465,6 +474,10 @@ h2 {
 
   .animation-header__actions {
     justify-content: stretch;
+
+    .animation-crop-switcher {
+      flex: 1 1 100%;
+    }
 
     .btn {
       flex: 1;
