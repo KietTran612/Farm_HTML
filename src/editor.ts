@@ -93,7 +93,7 @@ async function initEditor() {
     populateCropDropdown();
     renderStagesSidebar();
     renderLayerTraceState();
-    applyPreset("gameClean");
+    applyPreset("animationCandidate");
     showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
   } catch (error: any) {
     showStatus("error", `Loi khoi tao editor: ${error.message}`);
@@ -562,7 +562,7 @@ function renderLayerList() {
   list.querySelectorAll<HTMLElement>("[data-layer-label-index], [data-layer-rename-trigger]").forEach((el) => {
     const isTrigger = el.hasAttribute("data-layer-rename-trigger");
     const index = Number(isTrigger ? el.getAttribute("data-layer-rename-trigger") : el.getAttribute("data-layer-label-index"));
-    
+
     const eventType = isTrigger ? "click" : "dblclick";
     el.addEventListener(eventType, () => {
       startInlineRename(index);

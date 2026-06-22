@@ -2,6 +2,8 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 68 (Fix Layer Composite Preview Scaling):** Fixed SVG scaling in the composite preview container by adding `width: 100%; height: 100%; object-fit: contain;` to `.layer-composite-preview svg` in `editor.scss`. Symmetrical grid template columns (`minmax(360px, 1fr) 260px minmax(360px, 1fr)`) were applied to `.layer-trace-layout` so that both the drawing canvas container and the composite SVG preview container have identical dimensions, ensuring their visual scale matches 1-to-1 perfectly.
+- **Implemented Task 67 (Implement Layer Rename Functionality):** Added inline rename input triggers (double-click and edit icon `✎`) for layer names. An input field temporarily replaces the label (disabling drag events to allow text selection) and updates the data array and preview on Enter or blur, and restores the original value on Escape.
 - **Implemented Task 66 (Add VTracer Preset Selector):** Added a preset select box directly in the VTracer parameters section header. This allows users to quickly select one of the four standard project presets (`gameClean`, `gameDetailed`, `animationCandidate`, `tinyRuntime`) even when the parameters panel is collapsed. Selecting a preset updates the sliders and values immediately, and adjusting any slider manually shifts the selector to `Custom` mode.
 - **Implemented Task 65 (Implement Layer Reordering):** Implemented HTML5 drag-and-drop support (with visual dragging and hover feedback classes) and manual Up/Down arrow sort buttons next to each layer. Reordering layers swaps them in the data array and immediately updates the composite SVG preview to reflect new z-ordering.
 - **Implemented Task 64 (Review Layer Trace UX In Browser):** Reviewed Lasso Layer Trace UX, identified the critical z-ordering layout issue, and designed the drag-and-drop + buttons solution.
@@ -11,7 +13,7 @@
   - `docs/plans/archive/2026-06-22-html-crop-editor-layout.md`
   - `docs/plans/archive/2026-06-22-html-crop-editor-logic-verification.md`
 - **Updated Plan Index:** Adjusted `docs/plans/index.md` to list only active plans and move completed/obsolete plans to the Archived/Historical section under their updated paths.
-- **Updated Task Tracker:** Adjusted `docs/plans/task.md` to mark obsolete/incomplete tasks (40-42, 46-49) as completed `[x]` with a `[Superseded]` note. Added Task 64, Task 65, and Task 66.
+- **Updated Task Tracker:** Adjusted `docs/plans/task.md` to mark obsolete/incomplete tasks (40-42, 46-49) as completed `[x]` with a `[Superseded]` note. Added Task 64, Task 65, Task 66, and Task 67.
 
 ---
 
@@ -26,9 +28,15 @@
 
 ## Verification
 
-- **For Task 66 (Preset Selector):**
+- **For Task 68 (Preview Scaling):**
+  - Production build successfully completed.
+  - Project unit tests successfully completed (`npm run test`).
+- **For Task 67 (Layer Rename):**
   - Production build successfully completed.
   - Project unit tests successfully completed (`npx vitest run scripts/vite-plugins/editorMiddleware.test.ts src/layer-trace/layerComposer.test.ts`).
+- **For Task 66 (Preset Selector):**
+  - Production build successfully completed.
+  - Project unit tests successfully completed.
 - **For Task 65 (Layer Reordering):**
   - Production build successfully completed.
   - Project unit tests successfully completed.
@@ -56,5 +64,4 @@
 
 ## Recommended Next Task
 
-- **Manual Verification of Editor Improvements:** Open `http://localhost:4000/crop-editor.html` in the browser, verify that changing the Preset dropdown immediately sets the sliders to the correct values, trace a few layers using different presets, rearrange them using drag-and-drop or arrows, and save the layered SVG.
-
+- **Manual Verification of Editor Improvements:** Open `http://localhost:4000/crop-editor.html` in the browser, verify that changing the Preset dropdown immediately sets the sliders to the correct values, trace a few layers using different presets, rearrange them using drag-and-drop or arrows, double-click a layer name (or click `✎`) to edit and rename it, and save the layered SVG.
