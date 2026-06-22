@@ -1,0 +1,305 @@
+import type { Plugin } from "vite";
+import { existsSync, readdirSync, writeFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { resolve, join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { optimize } from "svgo";
+// @ts-ignore
+import { collectSvgMetricsFromText } from "../vtracer/svg-metrics.mjs";
+
+export interface CropData {
+  name: string;
+  pngs: string[];
+}
+
+export interface SavePayload {
+  cropName: string;
+  stages: Record<string, string>; // stageName -> svgContent
+}
+
+export interface TraceParams {
+  colormode?: string;
+  mode?: string;
+  hierarchical?: string;
+  color_precision?: number;
+  filter_speckle?: number;
+  gradient_step?: number;
+  corner_threshold?: number;
+  segment_length?: number;
+  splice_threshold?: number;
+  path_precision?: number;
+}
+
+export interface TracePayload {
+  inputPath: string;
+  params: TraceParams;
+}
+
+export function handleCropsRequest(): CropData[] {
+  const cropsDir = resolve("docs/Crops");
+  if (!existsSync(cropsDir)) {
+    return [];
+  }
+
+  const entries = readdirSync(cropsDir, { withFileTypes: true });
+  const crops: CropData[] = [];
+
+  for (const entry of entries) {
+    if (entry.isDirectory() && entry.name !== "SVG" && entry.name !== "Generated") {
+      const cropName = entry.name;
+      const cropPath = join(cropsDir, cropName);
+      const files = readdirSync(cropPath);
+      const pngs = files
+        .filter(f => f.toLowerCase().endsWith(".png"))
+        .map(f => `docs/Crops/${cropName}/${f}`);
+
+      crops.push({
+        name: cropName,
+        pngs
+      });
+    }
+  }
+
+  return crops;
+}
+
+export function handleSaveRequest(payload: SavePayload): { success: boolean } {
+  const { cropName, stages } = payload;
+  if (!cropName || !stages) {
+    throw new Error("Invalid payload: cropName and stages are required.");
+  }
+
+  const targetDir = resolve("src/assets/crops", cropName.toLowerCase());
+  if (!existsSync(targetDir)) {
+    mkdirSync(targetDir, { recursive: true });
+  }
+
+  const metaStages: Record<string, string> = {};
+
+  for (const [stageName, svgContent] of Object.entries(stages)) {
+    const fileName = `${stageName}.svg`;
+    const filePath = join(targetDir, fileName);
+    writeFileSync(filePath, svgContent, "utf8");
+    metaStages[stageName] = fileName;
+  }
+
+  const metaPath = join(targetDir, "meta.json");
+  const metaContent = {
+    cropName,
+    stages: metaStages
+  };
+  writeFileSync(metaPath, JSON.stringify(metaContent, null, 2), "utf8");
+
+  return { success: true };
+}
+
+export function detectVTracer(): string | null {
+  const possiblePaths = [
+    process.env.VTRACER_BIN,
+    "vtracer",
+    resolve("scripts/vtracer/bin/vtracer.exe"),
+    resolve("scripts/vtracer/bin/vtracer"),
+    "D:/bin/vtracer.exe",
+    "d:/bin/vtracer.exe",
+    "D:/bin/vtracer",
+    "d:/bin/vtracer"
+  ].filter((p): p is string => typeof p === "string" && p !== "");
+
+  for (const p of possiblePaths) {
+    if (p !== "vtracer" && !existsSync(p)) {
+      continue;
+    }
+    try {
+      const result = spawnSync(p, ["--help"], {
+        encoding: "utf8",
+        shell: process.platform === "win32"
+      });
+      if (result.status === 0) {
+        const output = `${result.stdout}\n${result.stderr}`.trim();
+        if (output.includes("--input") && output.includes("--output")) {
+          return p;
+        }
+      }
+    } catch {
+      // Ignore spawn errors
+    }
+  }
+  return null;
+}
+
+export function handleTraceRequest(payload: TracePayload): any {
+  const { inputPath, params } = payload;
+  const fullInputPath = resolve(inputPath);
+  if (!existsSync(fullInputPath)) {
+    throw new Error(`Input file does not exist: ${inputPath}`);
+  }
+
+  const binary = detectVTracer();
+  if (!binary) {
+    throw new Error("VTracer CLI binary not found.");
+  }
+
+  const tmpDir = resolve("docs/Crops/Generated/tmp");
+  if (!existsSync(tmpDir)) {
+    mkdirSync(tmpDir, { recursive: true });
+  }
+  const randomName = `trace_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const tmpRawSvg = join(tmpDir, `${randomName}.raw.svg`);
+
+  const colormode = params.colormode || "color";
+  const mode = params.mode || "spline";
+  const hierarchical = params.hierarchical || "stacked";
+  const color_precision = params.color_precision ?? 7;
+  const filter_speckle = params.filter_speckle ?? 5;
+  const gradient_step = params.gradient_step ?? 14;
+  const corner_threshold = params.corner_threshold ?? 60;
+  const segment_length = params.segment_length ?? 4.0;
+  const splice_threshold = params.splice_threshold ?? 45;
+  const path_precision = params.path_precision ?? 2;
+
+  const cliArgs = [
+    "--input", fullInputPath,
+    "--output", tmpRawSvg,
+    "--colormode", colormode,
+    "--mode", mode,
+    "--hierarchical", hierarchical,
+    "--color_precision", String(color_precision),
+    "--filter_speckle", String(filter_speckle),
+    "--gradient_step", String(gradient_step),
+    "--corner_threshold", String(corner_threshold),
+    "--segment_length", String(segment_length),
+    "--splice_threshold", String(splice_threshold),
+    "--path_precision", String(path_precision)
+  ];
+
+  const traceResult = spawnSync(binary, cliArgs, {
+    encoding: "utf8",
+    shell: process.platform === "win32"
+  });
+
+  if (traceResult.error || traceResult.status !== 0) {
+    if (existsSync(tmpRawSvg)) {
+      rmSync(tmpRawSvg, { force: true });
+    }
+    throw new Error(traceResult.error?.message || traceResult.stderr || "Tracing failed.");
+  }
+
+  const rawText = readFileSync(tmpRawSvg, "utf8");
+
+  const optimized = optimize(rawText, {
+    multipass: true,
+    plugins: [
+      {
+        name: "preset-default",
+        params: {
+          overrides: {
+            convertColors: {
+              names2hex: true,
+              rgb2hex: true,
+              shorthex: false,
+              shortname: false
+            }
+          }
+        }
+      },
+      "removeDimensions",
+      {
+        name: "removeAttrs",
+        params: {
+          attrs: ["svg:style", "svg:id"]
+        }
+      }
+    ]
+  });
+
+  let optimizedText = "";
+  if ("data" in optimized) {
+    optimizedText = optimized.data;
+  } else {
+    rmSync(tmpRawSvg, { force: true });
+    throw new Error("SVGO optimization failed.");
+  }
+
+  rmSync(tmpRawSvg, { force: true });
+
+  const rawMetrics = collectSvgMetricsFromText(rawText);
+  const optimizedMetrics = collectSvgMetricsFromText(optimizedText);
+
+  return {
+    rawSvg: rawText,
+    optimizedSvg: optimizedText,
+    metrics: {
+      raw: rawMetrics,
+      optimized: optimizedMetrics
+    }
+  };
+}
+
+function readRequestBody(req: any): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk: any) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      resolve(body);
+    });
+    req.on("error", (err: any) => {
+      reject(err);
+    });
+  });
+}
+
+export function cropEditorPlugin(): Plugin {
+  return {
+    name: "crop-editor-middleware",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url) {
+          return next();
+        }
+
+        const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+        const pathname = url.pathname;
+
+        if (!pathname.startsWith("/api/editor/")) {
+          return next();
+        }
+
+        res.setHeader("Content-Type", "application/json");
+
+        try {
+          if (pathname === "/api/editor/crops" && req.method === "GET") {
+            const crops = handleCropsRequest();
+            res.statusCode = 200;
+            res.end(JSON.stringify(crops));
+            return;
+          }
+
+          if (pathname === "/api/editor/trace" && req.method === "POST") {
+            const bodyText = await readRequestBody(req);
+            const payload = JSON.parse(bodyText) as TracePayload;
+            const result = handleTraceRequest(payload);
+            res.statusCode = 200;
+            res.end(JSON.stringify(result));
+            return;
+          }
+
+          if (pathname === "/api/editor/save" && req.method === "POST") {
+            const bodyText = await readRequestBody(req);
+            const payload = JSON.parse(bodyText) as SavePayload;
+            const result = handleSaveRequest(payload);
+            res.statusCode = 200;
+            res.end(JSON.stringify(result));
+            return;
+          }
+
+          res.statusCode = 404;
+          res.end(JSON.stringify({ error: "Endpoint not found" }));
+        } catch (error: any) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: error.message || "Internal Server Error" }));
+        }
+      });
+    }
+  };
+}

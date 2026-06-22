@@ -13,6 +13,9 @@
 - `2026-06-19-vtracer-cli-crop-pipeline.md` - Plan for setting up a repeatable local VTracer CLI crop PNG-to-SVG pipeline with metrics, optimization, and per-part animation preparation.
 - `2026-06-19-vtracer-preset-tuning.md` - Plan for tuning VTracer presets to output higher quality and detail SVGs.
 - `2026-06-19-html-crop-editor-implementation.md` - Plan for building an in-browser HTML Crop Art Editor with dynamic stage mapping and live tracing API.
+- `2026-06-22-integrate-vite-middleware-api.md` - Plan for integrating Vite Middleware API endpoints.
+- `2026-06-22-html-crop-editor-layout.md` - Plan for HTML Crop Editor UI layout.
+- `2026-06-22-html-crop-editor-logic-verification.md` - Plan for HTML Crop Editor logic and E2E verification.
 
 ## Planned Next
 

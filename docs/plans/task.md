@@ -48,8 +48,8 @@
 | **Task 43: Tune VTracer Presets For Higher Quality** | [x] | Updated vtracer-presets.json with higher color precision, lower speckle filtering, and smoother gradients. |
 | **Task 44: Re-run Batch Conversion For Corn** | [x] | Executed batch conversion using all updated presets (gameClean, gameDetailed, animationCandidate, tinyRuntime). |
 | **Task 45: Update Review Page And Verify Visual Details** | [x] | Regenerated review.html and confirmed Stage03 has options ranging from tinyRuntime (215KB, 511 paths) up to gameDetailed (962KB, 5482 paths). |
-| **Task 46: Integrate Vite Middleware API** | [ ] | Add api endpoints for listing crops, running VTracer CLI live, and saving selected SVGs. |
-| **Task 47: Create HTML Crop Editor UI Layout** | [ ] | Implement crop-editor.html and editor.scss with responsive layout, stages panel, and sliders. |
-| **Task 48: Implement Client-side Logic and Validation** | [ ] | Write src/editor.ts to handle tracing requests, validation checking, warning display, and save mapping. |
-| **Task 49: Verify HTML Crop Editor E2E** | [ ] | Test the entire flow from PNG selection, custom parameter tuning, duplicate validation, to saving crop files. |
+| **Task 46: Integrate Vite Middleware API** | [x] | Add api endpoints for listing crops, running VTracer CLI live, and saving selected SVGs. |
+| **Task 47: Create HTML Crop Editor UI Layout** | [x] | Implement crop-editor.html and editor.scss with responsive layout, stages panel, and sliders. |
+| **Task 48: Implement Client-side Logic and Validation** | [x] | Write src/editor.ts to handle tracing requests, validation checking, warning display, and save mapping. |
+| **Task 49: Verify HTML Crop Editor E2E** | [x] | Test the entire flow from PNG selection, custom parameter tuning, duplicate validation, to saving crop files. |
 

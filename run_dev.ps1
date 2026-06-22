@@ -14,7 +14,7 @@ $nodeModulesVite = Join-Path $projectRoot "node_modules\vite\bin\vite.js"
 $packageJson = Join-Path $projectRoot "package.json"
 $nodeCommand = "node"
 $hostName = "127.0.0.1"
-$port = "3000"
+$port = "4000"
 
 if (-not (Test-Path -LiteralPath $packageJson)) {
   throw "package.json not found. Run this script from the Farm_HTML project."

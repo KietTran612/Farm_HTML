@@ -52,9 +52,19 @@
 - **Implemented Task 43 (Tune VTracer Presets For Higher Quality):** Updated `vtracer-presets.json` configurations to use higher color precision (up to 8 bit), lower speckle filtering (minimum 3 px), and smoother gradients (gradient step down to 6).
 - **Implemented Task 44 (Re-run Batch Conversion For Corn):** Executed batch conversion on the Corn crop PNG directory using the new `gameClean`, `gameDetailed`, `animationCandidate`, and `tinyRuntime` presets.
 - **Implemented Task 45 (Update Review Page And Verify Visual Details):** Regenerated `review.html` showing the updated candidate paths and sizes, and verified visual improvements using a browser subagent (confirmed Stage03 now scales from 215KB/511 paths up to 962KB/5482 paths).
+- **Implemented Task 46 (Integrate Vite Middleware API):** Integrated server-side API middleware in Vite dev server (via `scripts/vite-plugins/editorMiddleware.ts` and `vite.config.ts`) supporting GET `/api/editor/crops` (listing crops & PNG stages), POST `/api/editor/trace` (live VTracer CLI tracing + SVGO optimization + SVG metrics collection), and POST `/api/editor/save` (saving selected SVG files and creating/updating `meta.json`).
+- **Implemented Task 47 (Create HTML Crop Editor UI Layout):** Created `crop-editor.html` (comprehensive UI with sidebar, parameters sliders, and candidates grid), `src/styles/editor.scss` (premium Farm-Green style, custom slider styling, toggle switches, and duplicate validation visual cards), and `src/editor.ts` (client scaffolding with mock data and validation displays).
+- **Implemented Task 48 (Implement Client-side Logic and Validation):** Implemented actual tracing requests, dynamic preset loading, debounced sliders for custom trace, duplication highlight visually with classes and alerts, and footer validation logic in `src/editor.ts`.
+- **Implemented Task 49 (Verify HTML Crop Editor E2E):** Ran complete browser automation smoke check verifying PNG selection, tracing, duplicate error alerts, and successfully saving SVG mappings and `meta.json` on disk.
+
+
 
 ## Verification
 
+- Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 3/3 tests).
+- Run client production build: `npm run build` (Passed, 0 errors).
+- Verified E2E Crop Editor flow: navigated to `http://localhost:4000/crop-editor.html`, selected crop, PNG, triggered trace, simulated duplication error (`crop_editor_duplicate_error_stage02_1782096550421.png`), resolved it, clicked save successfully (`crop_editor_save_success_1782096573293.png`), and recorded full video (`crop_editor_e2e_test_fixed_1782096082468.webp`).
+- Verified in-browser quality: navigated to `http://localhost:4000/crop-editor.html`, verified premium design, slider interactivity, and duplication alerts, capturing screenshots.
 - Run batch conversion commands for presets successfully.
 - Run review page regeneration successfully: `npm run crop:vtracer:review`.
 - Verified in-browser quality: navigated to `http://localhost:3000/docs/Crops/Corn/SVG/Generated/review.html`, confirmed candidates are fully rendered with clear details, and captured a screenshot at `C:\Users\Hoang.H\.gemini\antigravity-ide\brain\1cc611ad-5a3b-4b10-84d1-ce4eb343128c\stage03_candidates_1781868211041.png`.
@@ -80,6 +90,9 @@
 
 ## Current Uncommitted Scope
 
+- Vite Middleware API: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`.
+- HTML Crop Editor UI Layout & Logic: `crop-editor.html`, `src/styles/editor.scss`, `src/editor.ts`.
+- Plan files: `docs/plans/2026-06-22-integrate-vite-middleware-api.md`, `docs/plans/2026-06-22-html-crop-editor-layout.md`, `docs/plans/2026-06-22-html-crop-editor-logic-verification.md`.
 - Review polish files: `review.html`, `src/review.ts`, `src/review.test.ts`, and `src/node-test-shims.d.ts`.
 - Crop art polish files: `src/ui/crop-art/cropArt.ts`, `src/ui/crop-art/soilPatch.ts`, `src/ui/crop-art/cropArt.test.ts`, `src/styles/crop-art/_base.scss`, and `src/styles/crop-art/_carrot.scss`.
 - Generated review screenshots under `demo-review/`.
@@ -89,5 +102,4 @@
 
 ## Recommended Next Task
 
-- The user should open `review.html` and visually inspect the newly generated high-detail Corn SVG files across different presets (especially comparing gameDetailed, gameClean, and animationCandidate), then select the final preset for each growth stage.
-- Once chosen, proceed with Task 40 to prepare the inline SVG for Corn Stage03 and manual part classification.
+- Proceed with Task 40 to prepare one inline SVG candidate for per-part animation and manual part classification (currently marked as in-progress `[/]`).

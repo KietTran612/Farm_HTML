@@ -1,0 +1,7 @@
+{
+  "cropName": "corn",
+  "stages": {
+    "stage02": "stage02.svg",
+    "stage01": "stage01.svg"
+  }
+}

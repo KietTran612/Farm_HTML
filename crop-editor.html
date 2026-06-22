@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTML Crop Art Editor</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="editor-app">
+      <!-- HEADER -->
+      <header class="editor-header">
+        <div class="header-left">
+          <h1 class="editor-title">Farm Crop Art Editor</h1>
+          <p class="editor-subtitle">Công cụ tự động hóa chuyển đổi PNG sang SVG bằng VTracer CLI live</p>
+        </div>
+        <div class="header-right">
+          <div class="form-group">
+            <label for="crop-select">Chọn loại cây trồng:</label>
+            <select id="crop-select" class="form-control">
+              <option value="">Đang tải...</option>
+            </select>
+          </div>
+          <div class="stats-badge" id="stats-badge">
+            <span class="label">Tổng số stage:</span>
+            <span class="value" id="total-stages-badge">0</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT AREA -->
+      <main class="editor-main">
+        <!-- LEFT SIDEBAR: TARGET STAGES PANEL -->
+        <aside class="stages-sidebar">
+          <div class="sidebar-header">
+            <h2>Giai đoạn cây trồng</h2>
+            <div class="sidebar-actions">
+              <button id="add-stage-btn" class="btn btn-icon btn-primary" title="Thêm Stage mới">+</button>
+              <button id="remove-stage-btn" class="btn btn-icon btn-secondary" title="Xóa Stage cuối">-</button>
+            </div>
+          </div>
+          <div class="stages-list-container">
+            <ul id="stages-list" class="stages-list">
+              <!-- Render động danh sách Stage -->
+            </ul>
+          </div>
+          <div class="sidebar-info">
+            <p>Nhấp vào nút <strong>+</strong> hoặc <strong>-</strong> để cấu hình số lượng stage tăng trưởng mong muốn cho cây.</p>
+          </div>
+        </aside>
+
+        <!-- RIGHT WORKSPACE: TRACE, SLIDERS & PREVIEWS -->
+        <section class="editor-workspace">
+          <!-- TOP STEP PANEL: PNG SELECT & TRACING PARAMETERS -->
+          <div class="workspace-card config-panel">
+            <div class="config-section png-selection">
+              <h3>1. Chọn ảnh PNG nguồn</h3>
+              <div class="png-selector-wrapper">
+                <select id="png-select" class="form-control">
+                  <option value="">-- Chọn ảnh PNG --</option>
+                </select>
+              </div>
+              <div class="png-preview-container" id="png-preview-container">
+                <p class="placeholder-text">Chưa chọn ảnh PNG nguồn</p>
+              </div>
+            </div>
+
+            <div class="config-section trace-parameters">
+              <div class="trace-section-header">
+                <h3>2. Tham số VTracer</h3>
+                <div class="live-toggle-wrapper">
+                  <label class="switch">
+                    <input type="checkbox" id="live-trace-check" checked />
+                    <span class="slider round"></span>
+                  </label>
+                  <span class="live-label">Live Trace</span>
+                </div>
+              </div>
+
+              <div class="sliders-grid">
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-color-precision">Color Precision (Độ chính xác màu):</label>
+                    <span class="value-val" id="val-color-precision">7</span>
+                  </div>
+                  <input type="range" id="param-color-precision" min="1" max="8" step="1" value="7" />
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-filter-speckle">Filter Speckle (Lọc hạt nhỏ - px):</label>
+                    <span class="value-val" id="val-filter-speckle">5</span>
+                  </div>
+                  <input type="range" id="param-filter-speckle" min="1" max="15" step="1" value="5" />
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-gradient-step">Gradient Step (Độ chuyển sắc):</label>
+                    <span class="value-val" id="val-gradient-step">14</span>
+                  </div>
+                  <input type="range" id="param-gradient-step" min="2" max="40" step="1" value="14" />
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-corner-threshold">Corner Threshold (Ngưỡng góc - độ):</label>
+                    <span class="value-val" id="val-corner-threshold">60</span>
+                  </div>
+                  <input type="range" id="param-corner-threshold" min="10" max="180" step="5" value="60" />
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-segment-length">Segment Length (Chiều dài đoạn - px):</label>
+                    <span class="value-val" id="val-segment-length">4.0</span>
+                  </div>
+                  <input type="range" id="param-segment-length" min="1.0" max="10.0" step="0.5" value="4.0" />
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-info">
+                    <label for="param-splice-threshold">Splice Threshold (Ngưỡng ghép nối):</label>
+                    <span class="value-val" id="val-splice-threshold">45</span>
+                  </div>
+                  <input type="range" id="param-splice-threshold" min="10" max="180" step="5" value="45" />
+                </div>
+              </div>
+
+              <div class="trace-actions">
+                <button id="run-trace-btn" class="btn btn-secondary">Trace Thủ Công</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTTOM STEP PANEL: CANDIDATES GRID -->
+          <div class="workspace-card candidates-panel">
+            <div class="panel-header">
+              <h3>3. Kết quả Vector SVG các ứng cử viên</h3>
+              <div class="panel-subtitle">So sánh kết quả dựa trên các Presets tiêu chuẩn và bộ Custom phía trên.</div>
+            </div>
+
+            <div class="candidates-grid" id="candidates-grid">
+              <!-- Render động các Preset Cards -->
+              <p class="placeholder-text">Vui lòng chọn ảnh PNG để bắt đầu sinh các mẫu vector ứng viên.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- FOOTER ACTION BAR -->
+      <footer class="editor-footer">
+        <div class="footer-status" id="footer-status">
+          <span class="status-icon info">ℹ</span>
+          <span class="status-message">Vui lòng hoàn tất thiết lập mapping stage cho tất cả các giai đoạn cây trồng trước khi lưu.</span>
+        </div>
+        <div class="footer-actions">
+          <button id="save-config-btn" class="btn btn-lg btn-success" disabled>Lưu Cấu Hình (Save & Apply)</button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Script Entry -->
+    <script type="module" src="/src/editor.ts"></script>
+  </body>
+</html>
