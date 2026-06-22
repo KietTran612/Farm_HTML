@@ -7,7 +7,7 @@ import {
   handleCropsRequest,
   handleSaveRequest,
   handleSaveStageAnimationRequest,
-  handleTraceRequest
+  handleTraceLayerRequest
 } from "./editorMiddleware";
 
 describe("Editor Middleware API", () => {
@@ -67,21 +67,56 @@ describe("Editor Middleware API", () => {
     expect(meta.stages.dead).toBe("dead.svg");
   });
 
-  it("runs VTracer CLI and returns raw/optimized SVGs and metrics", () => {
-    const result = handleTraceRequest({
-      inputPath: "docs/Crops/Corn/World_Crop_Corn_Body_Stage00.png",
-      params: {
-        color_precision: 6,
-        filter_speckle: 8,
-        gradient_step: 20
+  it("merges new stage mappings with existing meta instead of removing old stages", () => {
+    mkdirSync(testAssetsDir, { recursive: true });
+    writeFileSync(join(testAssetsDir, "stage00.svg"), "<svg>old stage 0</svg>", "utf8");
+    writeFileSync(join(testAssetsDir, "stage01.svg"), "<svg>old stage 1</svg>", "utf8");
+    writeFileSync(join(testAssetsDir, "dead.svg"), "<svg>dead</svg>", "utf8");
+    writeFileSync(join(testAssetsDir, "meta.json"), JSON.stringify({
+      cropName: "test-crop",
+      stages: {
+        stage00: "stage00.svg",
+        stage01: "stage01.svg",
+        dead: "dead.svg"
+      },
+      groupedStages: {
+        stage01: "stage01.grouped.svg"
+      },
+      animations: "animations.json"
+    }), "utf8");
+
+    handleSaveRequest({
+      cropName: "test-crop",
+      stages: {
+        stage02: "<svg>new stage 2</svg>"
       }
     });
 
-    expect(result).toBeDefined();
-    expect(result.rawSvg).toContain("<svg");
+    const meta = JSON.parse(readFileSync(join(testAssetsDir, "meta.json"), "utf8"));
+    expect(meta.stages).toEqual({
+      stage00: "stage00.svg",
+      stage01: "stage01.svg",
+      dead: "dead.svg",
+      stage02: "stage02.svg"
+    });
+    expect(meta.groupedStages.stage01).toBe("stage01.grouped.svg");
+    expect(meta.animations).toBe("animations.json");
+    expect(readFileSync(join(testAssetsDir, "stage02.svg"), "utf8")).toBe("<svg>new stage 2</svg>");
+  });
+
+  it("runs VTracer CLI for a masked PNG data URL layer", () => {
+    const pngBase64 = readFileSync(resolve("docs/Crops/Corn/World_Crop_Corn_Body_Stage00.png")).toString("base64");
+
+    const result = handleTraceLayerRequest({
+      imageDataUrl: `data:image/png;base64,${pngBase64}`,
+      params: {
+        color_precision: 5,
+        filter_speckle: 12,
+        gradient_step: 24
+      }
+    });
+
     expect(result.optimizedSvg).toContain("<svg");
-    expect(result.metrics).toBeDefined();
-    expect(result.metrics.raw.pathCount).toBeGreaterThan(0);
     expect(result.metrics.optimized.pathCount).toBeGreaterThan(0);
   });
 

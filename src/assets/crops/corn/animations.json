@@ -34,6 +34,28 @@
           }
         }
       }
+    },
+    "stage03": {
+      "sourceFile": "stage03.svg",
+      "groupedFile": "stage03.grouped.svg",
+      "parts": {
+        "group-unassigned": {
+          "label": "other",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "group-leaves-1782115734145": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        }
+      }
     }
   }
 }

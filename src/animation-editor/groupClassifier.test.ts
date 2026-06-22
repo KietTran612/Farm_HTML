@@ -12,13 +12,13 @@ describe("classifySvgPaths", () => {
     const result = classifySvgPaths(svg, "corn");
 
     expect(result.groups.map((group) => group.id)).toEqual([
-      "cluster-green-right-middle",
-      "cluster-yellow-center-top",
-      "cluster-brown-center-bottom"
+      "candidate-group-1",
+      "candidate-group-2",
+      "candidate-group-3"
     ]);
-    expect(result.groups[0].suggestedPart).toBe("leaves-right");
-    expect(result.groups[1].suggestedPart).toBe("tassels");
-    expect(result.groups[2].suggestedPart).toBe("base");
+    expect(result.groups[0].suggestedPart).toBe("leaf-candidate-1");
+    expect(result.groups[1].suggestedPart).toBe("tassel-candidate-2");
+    expect(result.groups[2].suggestedPart).toBe("base-candidate-3");
     expect(result.groups[0].paths[0].center.x).toBeGreaterThan(60);
   });
 
@@ -30,6 +30,6 @@ describe("classifySvgPaths", () => {
     const result = classifySvgPaths(svg, "pumpkin");
 
     expect(result.groups[0].colorFamily).toBe("orange");
-    expect(result.groups[0].suggestedPart).toBe("fruit");
+    expect(result.groups[0].suggestedPart).toBe("fruit-candidate-1");
   });
 });

@@ -23,7 +23,7 @@
               <option value="">Loading crops...</option>
             </select>
           </div>
-          <button id="auto-classify-btn" class="btn btn-primary" disabled>Auto Classify</button>
+          <button id="auto-classify-btn" class="btn btn-primary" disabled>Suggest Candidates</button>
           <button id="preview-animation-btn" class="btn btn-secondary" disabled>Preview Animation</button>
           <button id="save-animation-btn" class="btn btn-success" disabled>Save Grouped SVG</button>
         </div>
@@ -53,6 +53,39 @@
         </section>
 
         <aside class="animation-panel group-panel">
+          <div class="panel-section selection-controls-section">
+            <h2>Selection</h2>
+            <div class="selection-tool-selector" style="margin: 10px 0;">
+              <label class="field-label">Công cụ chọn</label>
+              <div class="segmented-control" style="display: flex; width: 100%;">
+                <button class="mode-btn is-active" type="button" data-tool="rect" id="tool-rect-btn" style="flex: 1; text-align: center;">Hộp</button>
+                <button class="mode-btn" type="button" data-tool="brush" id="tool-brush-btn" style="flex: 1; text-align: center;">Tô</button>
+                <button class="mode-btn" type="button" data-tool="lasso" id="tool-lasso-btn" style="flex: 1; text-align: center;">Lasso</button>
+              </div>
+            </div>
+            <div class="selection-status" id="selection-status">Selected: 0 paths</div>
+            <div class="selection-label-selector" style="margin: 8px 0;">
+              <label class="field-label" for="selection-label-select">Target Label</label>
+              <select id="selection-label-select" class="form-control">
+                <option value="base">base</option>
+                <option value="stem">stem</option>
+                <option value="leaves">leaves</option>
+                <option value="leaves-left">leaves-left</option>
+                <option value="leaves-right">leaves-right</option>
+                <option value="fruit">fruit</option>
+                <option value="ears">ears</option>
+                <option value="tassels">tassels</option>
+                <option value="flower">flower</option>
+                <option value="dead-leaf">dead-leaf</option>
+                <option value="other">other</option>
+              </select>
+            </div>
+            <div class="group-actions selection-actions" style="margin-top: 8px; display: flex; gap: 8px;">
+              <button id="create-group-btn" class="btn btn-primary" style="flex: 1;" disabled>Create Group</button>
+              <button id="remove-from-group-btn" class="btn btn-danger" style="flex: 1;" disabled>Remove Selection</button>
+            </div>
+          </div>
+
           <div class="panel-section">
             <h2>Groups</h2>
             <div class="group-actions">
@@ -62,9 +95,10 @@
               <button id="split-color-btn" class="btn btn-secondary" disabled>Split Color</button>
             </div>
             <div id="group-list" class="group-list">
-              <p class="animation-empty">Run Auto Classify to inspect groups.</p>
+              <p class="animation-empty">Run Suggest Candidates to inspect groups.</p>
             </div>
           </div>
+
 
           <div class="panel-section">
             <h2>Animation</h2>

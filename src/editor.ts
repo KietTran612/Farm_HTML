@@ -1,11 +1,12 @@
 import "./styles/editor.scss";
+import { composeLayeredSvg, type SvgLayerInput } from "./layer-trace/layerComposer";
 
 interface Crop {
   name: string;
   pngs: string[];
 }
 
-interface VTracerPreset {
+interface TraceParams {
   colormode: string;
   mode: string;
   hierarchical: string;
@@ -19,140 +20,143 @@ interface VTracerPreset {
 }
 
 interface TraceResult {
-  rawSvg: string;
   optimizedSvg: string;
   metrics: {
-    raw: {
-      bytes: number;
-      pathCount: number;
-      groupCount: number;
-      uniqueFillCount: number;
-      viewBox: string | null;
-    };
     optimized: {
-      bytes: number;
       pathCount: number;
-      groupCount: number;
-      uniqueFillCount: number;
-      viewBox: string | null;
     };
   };
 }
 
-// Global Application State
-let activeCrop: string = "";
+const vtracerPresets: Record<string, Record<string, number>> = {
+  gameClean: {
+    color_precision: 7,
+    filter_speckle: 5,
+    gradient_step: 14,
+    corner_threshold: 60,
+    segment_length: 4.0,
+    splice_threshold: 45
+  },
+  gameDetailed: {
+    color_precision: 8,
+    filter_speckle: 3,
+    gradient_step: 6,
+    corner_threshold: 60,
+    segment_length: 3.5,
+    splice_threshold: 45
+  },
+  animationCandidate: {
+    color_precision: 7,
+    filter_speckle: 6,
+    gradient_step: 14,
+    corner_threshold: 60,
+    segment_length: 4.0,
+    splice_threshold: 45
+  },
+  tinyRuntime: {
+    color_precision: 6,
+    filter_speckle: 8,
+    gradient_step: 20,
+    corner_threshold: 70,
+    segment_length: 4.5,
+    splice_threshold: 50
+  }
+};
+
+const defaultStages = ["stage00", "stage01", "stage02", "stage03", "dead"];
+
+let activeCrop = "";
 let cropsList: Crop[] = [];
-let presets: Record<string, VTracerPreset> = {};
-let targetStages: string[] = ["stage00", "stage01", "stage02", "stage03", "dead"];
-let mappedStages: Record<string, string> = {}; // stageName -> filename
-let tracedSvgs: Record<string, string> = {}; // cardId -> optimizedSvgContent
-let selectedMappings: Record<string, string> = {}; // cardId -> stageId
-let activeCandidates: string[] = [];
-let lightboxActiveCardId: string | null = null;
-let lightboxZoomScale: number = 1.0;
+let targetStages = [...defaultStages];
+let mappedStages: Record<string, string> = {};
+let layerTraceImage: HTMLImageElement | null = null;
+let layerLassoPoints: Array<{ x: number; y: number }> = [];
+let isDrawingLayerMask = false;
+let layerTraceLayers: SvgLayerInput[] = [];
+let draggedIndex: number | null = null;
 
-// Debounce helper for live tracing
-function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => fn(...args), delay);
-  };
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   setupUIEventListeners();
-  setupLightboxEvents();
-  
-  // Delegated click handler to open lightbox when clicking preview SVGs
-  document.getElementById("candidates-grid")?.addEventListener("click", (e) => {
-    const previewEl = (e.target as HTMLElement).closest(".svg-preview");
-    if (previewEl) {
-      const cardEl = previewEl.closest(".candidate-card");
-      if (cardEl) {
-        const cardId = cardEl.getAttribute("data-cand-id");
-        if (cardId) {
-          openLightbox(cardId);
-        }
-      }
-    }
-  });
-
-  await initEditor();
+  void initEditor();
 });
 
 async function initEditor() {
-  showStatus("loading", "Đang tải cấu hình dự án...");
+  showStatus("loading", "Dang tai danh sach crop...");
+
   try {
-    // 1. Fetch crops list
     const cropsResponse = await fetch("/api/editor/crops");
-    if (!cropsResponse.ok) throw new Error("Không thể tải danh sách cây trồng.");
+    if (!cropsResponse.ok) {
+      throw new Error("Khong the tai danh sach crop.");
+    }
+
     cropsList = await cropsResponse.json() as Crop[];
-
-    // 2. Fetch presets config
-    const presetsResponse = await fetch("/docs/Crops/vtracer-presets.json");
-    if (!presetsResponse.ok) throw new Error("Không thể tải cấu hình presets VTracer.");
-    presets = await presetsResponse.json() as Record<string, VTracerPreset>;
-
-    // 3. Populate crop selector dropdown
     populateCropDropdown();
-
-    showStatus("info", "Vui lòng chọn một loại cây trồng để bắt đầu.");
+    renderStagesSidebar();
+    renderLayerTraceState();
+    applyPreset("gameClean");
+    showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
   } catch (error: any) {
-    showStatus("error", `Lỗi khởi tạo: ${error.message}`);
+    showStatus("error", `Loi khoi tao editor: ${error.message}`);
   }
 }
 
 function setupUIEventListeners() {
   const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
   const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
-  const runTraceBtn = document.getElementById("run-trace-btn") as HTMLButtonElement | null;
-  const saveConfigBtn = document.getElementById("save-config-btn") as HTMLButtonElement | null;
   const addStageBtn = document.getElementById("add-stage-btn") as HTMLButtonElement | null;
   const removeStageBtn = document.getElementById("remove-stage-btn") as HTMLButtonElement | null;
   const animationEditorBtn = document.getElementById("open-animation-editor-btn") as HTMLButtonElement | null;
+  const layerCanvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
+  const clearLayerMaskBtn = document.getElementById("clear-layer-mask-btn") as HTMLButtonElement | null;
+  const traceLayerBtn = document.getElementById("trace-layer-btn") as HTMLButtonElement | null;
+  const saveLayerCompositeBtn = document.getElementById("save-layer-composite-btn") as HTMLButtonElement | null;
+  const layerStageSelect = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
+  const toggleTraceParamsBtn = document.getElementById("toggle-trace-params-btn") as HTMLButtonElement | null;
 
-  cropSelect?.addEventListener("change", () => handleCropSelection(cropSelect.value));
-  pngSelect?.addEventListener("change", () => handlePngSelection());
-  runTraceBtn?.addEventListener("change", () => triggerTraceAll(true));
-  runTraceBtn?.addEventListener("click", () => triggerTraceAll(true));
-  saveConfigBtn?.addEventListener("click", () => handleSaveConfig());
+  cropSelect?.addEventListener("change", () => void handleCropSelection(cropSelect.value));
+  pngSelect?.addEventListener("change", () => void handlePngSelection());
+  addStageBtn?.addEventListener("click", handleAddStage);
+  removeStageBtn?.addEventListener("click", handleRemoveStage);
   animationEditorBtn?.addEventListener("click", () => {
-    if (!activeCrop) return;
-    window.location.href = `/crop-animation-editor.html?crop=${encodeURIComponent(activeCrop)}`;
+    if (activeCrop) {
+      window.location.href = `/crop-animation-editor.html?crop=${encodeURIComponent(activeCrop)}`;
+    }
+  });
+  layerCanvas?.addEventListener("pointerdown", handleLayerPointerDown);
+  layerCanvas?.addEventListener("pointermove", handleLayerPointerMove);
+  layerCanvas?.addEventListener("pointerup", handleLayerPointerUp);
+  layerCanvas?.addEventListener("pointerleave", handleLayerPointerUp);
+  clearLayerMaskBtn?.addEventListener("click", clearLayerMask);
+  traceLayerBtn?.addEventListener("click", () => void handleTraceLayer());
+  saveLayerCompositeBtn?.addEventListener("click", () => void handleSaveLayerComposite());
+  layerStageSelect?.addEventListener("change", renderLayerCompositePreview);
+  toggleTraceParamsBtn?.addEventListener("click", toggleTraceParameters);
+
+  const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
+  presetSelect?.addEventListener("change", () => {
+    if (presetSelect.value !== "custom") {
+      applyPreset(presetSelect.value);
+    }
   });
 
-  addStageBtn?.addEventListener("click", () => handleAddStage());
-  removeStageBtn?.addEventListener("click", () => handleRemoveStage());
-
-  // Set up listeners on all range sliders
-  const sliderIds = [
+  [
     "color-precision",
     "filter-speckle",
     "gradient-step",
     "corner-threshold",
     "segment-length",
     "splice-threshold"
-  ];
-
-  const debouncedCustomTrace = debounce(() => {
-    const liveTraceCheck = document.getElementById("live-trace-check") as HTMLInputElement | null;
-    if (liveTraceCheck?.checked) {
-      triggerSingleTrace("custom");
-    }
-  }, 350);
-
-  sliderIds.forEach(paramId => {
+  ].forEach((paramId) => {
     const slider = document.getElementById(`param-${paramId}`) as HTMLInputElement | null;
     const valueDisplay = document.getElementById(`val-${paramId}`);
-    if (slider && valueDisplay) {
-      slider.addEventListener("input", () => {
+    slider?.addEventListener("input", () => {
+      if (valueDisplay) {
         valueDisplay.textContent = slider.value;
-        debouncedCustomTrace();
-      });
-    }
+      }
+      if (presetSelect) {
+        presetSelect.value = "custom";
+      }
+    });
   });
 }
 
@@ -160,79 +164,552 @@ function populateCropDropdown() {
   const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
   if (!cropSelect) return;
 
-  cropSelect.innerHTML = `<option value="">-- Chọn Cây Trồng --</option>` +
-    cropsList.map(c => `<option value="${c.name.toLowerCase()}">${c.name}</option>`).join("");
+  cropSelect.innerHTML = `<option value="">-- Chon crop --</option>${cropsList
+    .map((crop) => `<option value="${crop.name.toLowerCase()}">${crop.name}</option>`)
+    .join("")}`;
 }
 
 async function handleCropSelection(cropName: string) {
   activeCrop = cropName;
+  mappedStages = {};
+  targetStages = [...defaultStages];
+  resetPngSelection();
+  resetLayerWorkflow();
   syncAnimationEditorButton();
-  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
-  const pngPreviewContainer = document.getElementById("png-preview-container");
-  const candidatesGrid = document.getElementById("candidates-grid");
 
-  if (!pngSelect) return;
-
-  // Clear selections
-  pngSelect.innerHTML = `<option value="">-- Chọn ảnh PNG --</option>`;
-  if (pngPreviewContainer) {
-    pngPreviewContainer.innerHTML = `<p class="placeholder-text">Chưa chọn ảnh PNG nguồn</p>`;
-  }
-  if (candidatesGrid) {
-    candidatesGrid.innerHTML = `<p class="placeholder-text">Vui lòng chọn ảnh PNG để bắt đầu sinh các mẫu vector ứng viên.</p>`;
-  }
-  tracedSvgs = {};
-  selectedMappings = {};
-
-  if (!cropName) {
+  if (!activeCrop) {
     renderStagesSidebar();
-    showStatus("info", "Vui lòng chọn một loại cây trồng để bắt đầu.");
+    showStatus("info", "Chon crop de bat dau.");
     return;
   }
 
-  showStatus("loading", `Đang tải thông tin cây trồng ${cropName}...`);
+  showStatus("loading", `Dang tai cau hinh ${activeCrop}...`);
 
   try {
-    const crop = cropsList.find(c => c.name.toLowerCase() === cropName);
-    if (crop) {
-      pngSelect.innerHTML = `<option value="">-- Chọn ảnh PNG --</option>` +
-        crop.pngs.map(p => {
-          const filename = p.split("/").pop() || p;
-          return `<option value="${p}">${filename}</option>`;
-        }).join("");
-    }
-
-    // Attempt to load current mapping meta.json if exists
-    mappedStages = {};
-    const defaultStages = ["stage00", "stage01", "stage02", "stage03", "dead"];
-    const metaResponse = await fetch(`/src/assets/crops/${cropName}/meta.json`);
-    const contentType = metaResponse.headers.get("content-type") || "";
-    if (metaResponse.ok && contentType.includes("application/json")) {
-      const meta = await metaResponse.json();
-      if (meta && meta.stages) {
-        mappedStages = meta.stages;
-        // Merge defaults and keys from meta.json to ensure defaults are always present
-        const uniqueStages = new Set([...defaultStages, ...Object.keys(meta.stages)]);
-        targetStages = Array.from(uniqueStages);
-        sortStages(); // Ensure they are sorted nicely
-      }
-    } else {
-      // Default stages
-      targetStages = [...defaultStages];
-    }
-
+    const crop = cropsList.find((item) => item.name.toLowerCase() === activeCrop);
+    renderPngOptions(crop?.pngs || []);
+    await loadExistingMeta(activeCrop);
     renderStagesSidebar();
-    showStatus("info", `Đã chọn ${cropName}. Vui lòng chọn ảnh PNG nguồn để trace.`);
+    showStatus("info", "Chon PNG, ve lasso quanh mot phan anh, roi trace thanh layer.");
   } catch (error: any) {
-    showStatus("error", `Lỗi tải cấu hình cây trồng: ${error.message}`);
+    showStatus("error", `Khong the tai crop: ${error.message}`);
   }
 }
 
-function syncAnimationEditorButton() {
-  const animationEditorBtn = document.getElementById("open-animation-editor-btn") as HTMLButtonElement | null;
-  if (!animationEditorBtn) return;
+function resetPngSelection() {
+  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
+  if (pngSelect) {
+    pngSelect.innerHTML = `<option value="">-- Chon PNG --</option>`;
+  }
+}
 
-  animationEditorBtn.disabled = !activeCrop;
+function renderPngOptions(pngs: string[]) {
+  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
+  if (!pngSelect) return;
+
+  pngSelect.innerHTML = `<option value="">-- Chon PNG --</option>${pngs
+    .map((pngPath) => {
+      const filename = pngPath.split("/").pop() || pngPath;
+      return `<option value="${pngPath}">${filename}</option>`;
+    })
+    .join("")}`;
+}
+
+async function loadExistingMeta(cropName: string) {
+  const metaResponse = await fetch(`/src/assets/crops/${cropName}/meta.json`);
+  const contentType = metaResponse.headers.get("content-type") || "";
+  if (!metaResponse.ok || !contentType.includes("application/json")) {
+    return;
+  }
+
+  const meta = await metaResponse.json();
+  if (!meta?.stages) {
+    return;
+  }
+
+  mappedStages = meta.stages;
+  targetStages = Array.from(new Set([...defaultStages, ...Object.keys(meta.stages)]));
+  sortStages();
+}
+
+async function handlePngSelection() {
+  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
+  const pngPath = pngSelect?.value || "";
+
+  resetLayerWorkflow();
+
+  if (!pngPath) {
+    showStatus("info", "Chon PNG de ve lasso layer.");
+    return;
+  }
+
+  try {
+    await loadLayerTraceImage(pngPath);
+    showStatus("info", "Ve lasso quanh mot phan anh, dat label, roi bam Trace Layer.");
+  } catch (error: any) {
+    showStatus("error", `Khong the tai PNG: ${error.message}`);
+  }
+}
+
+function toggleTraceParameters() {
+  const traceParameters = document.querySelector(".trace-parameters");
+  const toggleButton = document.getElementById("toggle-trace-params-btn") as HTMLButtonElement | null;
+  if (!traceParameters || !toggleButton) return;
+
+  const isCollapsed = traceParameters.classList.toggle("is-collapsed");
+  toggleButton.setAttribute("aria-expanded", String(!isCollapsed));
+  toggleButton.textContent = isCollapsed ? "Mo tham so" : "Thu gon";
+}
+
+function getSliderParams(): TraceParams {
+  return {
+    colormode: "color",
+    mode: "spline",
+    hierarchical: "cutout",
+    color_precision: readNumberInput("param-color-precision", 5),
+    filter_speckle: readNumberInput("param-filter-speckle", 12),
+    gradient_step: readNumberInput("param-gradient-step", 24),
+    corner_threshold: readNumberInput("param-corner-threshold", 60),
+    segment_length: readNumberInput("param-segment-length", 6),
+    splice_threshold: readNumberInput("param-splice-threshold", 45),
+    path_precision: 3
+  };
+}
+
+function readNumberInput(id: string, fallback: number): number {
+  const input = document.getElementById(id) as HTMLInputElement | null;
+  return input ? Number(input.value) : fallback;
+}
+
+async function loadLayerTraceImage(pngPath: string) {
+  layerTraceImage = await loadImage(`/${pngPath}`);
+  layerLassoPoints = [];
+  const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
+  if (!canvas || !layerTraceImage) return;
+
+  canvas.width = layerTraceImage.naturalWidth;
+  canvas.height = layerTraceImage.naturalHeight;
+  canvas.parentElement?.classList.add("has-image");
+  drawLayerMaskCanvas();
+  updateLayerTraceButtons();
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Could not load image: ${src}`));
+    image.src = src;
+  });
+}
+
+function handleLayerPointerDown(event: PointerEvent) {
+  if (!layerTraceImage) return;
+  const canvas = event.currentTarget as HTMLCanvasElement;
+  canvas.setPointerCapture(event.pointerId);
+  layerLassoPoints = [readCanvasPoint(canvas, event)];
+  isDrawingLayerMask = true;
+  drawLayerMaskCanvas();
+  updateLayerTraceButtons();
+}
+
+function handleLayerPointerMove(event: PointerEvent) {
+  if (!isDrawingLayerMask || !layerTraceImage) return;
+  const canvas = event.currentTarget as HTMLCanvasElement;
+  const nextPoint = readCanvasPoint(canvas, event);
+  const previousPoint = layerLassoPoints[layerLassoPoints.length - 1];
+  if (!previousPoint || Math.hypot(nextPoint.x - previousPoint.x, nextPoint.y - previousPoint.y) >= 3) {
+    layerLassoPoints.push(nextPoint);
+    drawLayerMaskCanvas();
+  }
+}
+
+function handleLayerPointerUp(event: PointerEvent) {
+  if (!isDrawingLayerMask) return;
+  const canvas = event.currentTarget as HTMLCanvasElement;
+  if (canvas.hasPointerCapture(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId);
+  }
+  isDrawingLayerMask = false;
+  drawLayerMaskCanvas();
+  updateLayerTraceButtons();
+}
+
+function readCanvasPoint(canvas: HTMLCanvasElement, event: PointerEvent): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+    y: ((event.clientY - rect.top) / rect.height) * canvas.height
+  };
+}
+
+function drawLayerMaskCanvas() {
+  const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
+  if (!canvas || !layerTraceImage) return;
+  const context = canvas.getContext("2d");
+  if (!context) return;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
+
+  if (layerLassoPoints.length === 0) return;
+
+  context.save();
+  context.beginPath();
+  context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
+  for (const point of layerLassoPoints.slice(1)) {
+    context.lineTo(point.x, point.y);
+  }
+  if (!isDrawingLayerMask && layerLassoPoints.length >= 3) {
+    context.closePath();
+    context.fillStyle = "rgba(66, 139, 77, 0.22)";
+    context.fill();
+  }
+  context.strokeStyle = "#ffb238";
+  context.lineWidth = 4;
+  context.setLineDash([12, 8]);
+  context.stroke();
+  context.restore();
+}
+
+function clearLayerMask() {
+  layerLassoPoints = [];
+  isDrawingLayerMask = false;
+  drawLayerMaskCanvas();
+  updateLayerTraceButtons();
+}
+
+async function handleTraceLayer() {
+  if (!layerTraceImage || layerLassoPoints.length < 3) return;
+  const imageDataUrl = createMaskedLayerDataUrl();
+  if (!imageDataUrl) return;
+
+  const labelInput = document.getElementById("layer-label-input") as HTMLInputElement | null;
+  const label = sanitizeLayerLabel(labelInput?.value || "layer");
+  showStatus("loading", `Dang trace layer ${label}...`);
+
+  try {
+    const response = await fetch("/api/editor/trace-layer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageDataUrl,
+        params: getSliderParams()
+      })
+    });
+
+    if (!response.ok) {
+      const errorJson = await response.json();
+      throw new Error(errorJson.error || "Trace layer failed.");
+    }
+
+    const result = await response.json() as TraceResult;
+    layerTraceLayers.push({
+      groupId: `${label}-${Date.now()}`,
+      label,
+      svgText: result.optimizedSvg
+    });
+    clearLayerMask();
+    renderLayerTraceState();
+    showStatus("success", `Da trace layer ${label} (${result.metrics.optimized.pathCount} paths).`);
+  } catch (error: any) {
+    showStatus("error", `Trace layer that bai: ${error.message}`);
+  }
+}
+
+function createMaskedLayerDataUrl(): string | null {
+  if (!layerTraceImage || layerLassoPoints.length < 3) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = layerTraceImage.naturalWidth;
+  canvas.height = layerTraceImage.naturalHeight;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  context.save();
+  context.beginPath();
+  context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
+  for (const point of layerLassoPoints.slice(1)) {
+    context.lineTo(point.x, point.y);
+  }
+  context.closePath();
+  context.clip();
+  context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
+  context.restore();
+
+  return canvas.toDataURL("image/png");
+}
+
+async function handleSaveLayerComposite() {
+  if (!activeCrop || !layerTraceImage || layerTraceLayers.length === 0) return;
+  const stageSelect = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
+  const stageId = stageSelect?.value || targetStages[0] || "stage00";
+  const compositeSvg = composeCurrentLayerSvg(stageId);
+
+  showStatus("loading", `Dang luu layered SVG cho ${formatStageName(stageId)}...`);
+
+  try {
+    const response = await fetch("/api/editor/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cropName: activeCrop,
+        stages: {
+          [stageId]: compositeSvg
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorJson = await response.json();
+      throw new Error(errorJson.error || "Save failed.");
+    }
+
+    mappedStages[stageId] = `${stageId}.svg`;
+    renderStagesSidebar();
+    showStatus("success", `Da luu layered SVG cho ${formatStageName(stageId)}.`);
+  } catch (error: any) {
+    showStatus("error", `Luu layered SVG that bai: ${error.message}`);
+  }
+}
+
+function composeCurrentLayerSvg(stageId: string): string {
+  if (!layerTraceImage) {
+    throw new Error("No PNG selected.");
+  }
+
+  return composeLayeredSvg({
+    width: layerTraceImage.naturalWidth,
+    height: layerTraceImage.naturalHeight,
+    cropId: activeCrop,
+    stageId,
+    layers: layerTraceLayers
+  });
+}
+
+function renderLayerTraceState() {
+  renderLayerStageOptions();
+  renderLayerList();
+  renderLayerCompositePreview();
+  updateLayerTraceButtons();
+}
+
+function renderLayerStageOptions() {
+  const select = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
+  if (!select) return;
+  const fallbackStage = targetStages.find((stage) => stage === "stage03") || targetStages[0] || "stage00";
+  const currentValue = targetStages.includes(select.value) ? select.value : fallbackStage;
+
+  select.innerHTML = targetStages
+    .map((stageId) => `<option value="${stageId}" ${stageId === currentValue ? "selected" : ""}>${formatStageName(stageId)}</option>`)
+    .join("");
+}
+
+function renderLayerList() {
+  const list = document.getElementById("layer-list");
+  if (!list) return;
+
+  if (layerTraceLayers.length === 0) {
+    list.innerHTML = `<p class="placeholder-text">Chua co layer nao.</p>`;
+    return;
+  }
+
+  list.innerHTML = layerTraceLayers.map((layer, index) => `
+    <div class="layer-row" draggable="true" data-layer-index="${index}">
+      <div class="layer-row-left">
+        <span class="drag-handle" title="Keo de sap xep">⋮⋮</span>
+        <span class="layer-label-text" data-layer-label-index="${index}" title="Double click de doi ten">${index + 1}. ${escapeHtml(layer.label)}</span>
+        <span class="rename-icon" data-layer-rename-trigger="${index}" title="Doi ten">✎</span>
+      </div>
+      <div class="layer-row-right">
+        <button class="btn btn-secondary btn-icon sort-btn sort-up" type="button" data-layer-up="${index}" title="Di chuyen len" ${index === 0 ? "disabled" : ""}>↑</button>
+        <button class="btn btn-secondary btn-icon sort-btn sort-down" type="button" data-layer-down="${index}" title="Di chuyen xuong" ${index === layerTraceLayers.length - 1 ? "disabled" : ""}>↓</button>
+        <button class="btn btn-secondary btn-icon delete-btn" type="button" data-layer-delete="${index}" title="Xoa layer">x</button>
+      </div>
+    </div>
+  `).join("");
+
+  list.querySelectorAll<HTMLButtonElement>("[data-layer-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      layerTraceLayers.splice(Number(button.dataset.layerDelete), 1);
+      renderLayerTraceState();
+    });
+  });
+
+  list.querySelectorAll<HTMLButtonElement>("[data-layer-up]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.layerUp);
+      if (index > 0) {
+        const temp = layerTraceLayers[index];
+        layerTraceLayers[index] = layerTraceLayers[index - 1];
+        layerTraceLayers[index - 1] = temp;
+        renderLayerTraceState();
+      }
+    });
+  });
+
+  list.querySelectorAll<HTMLButtonElement>("[data-layer-down]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.layerDown);
+      if (index < layerTraceLayers.length - 1) {
+        const temp = layerTraceLayers[index];
+        layerTraceLayers[index] = layerTraceLayers[index + 1];
+        layerTraceLayers[index + 1] = temp;
+        renderLayerTraceState();
+      }
+    });
+  });
+
+  list.querySelectorAll<HTMLElement>("[data-layer-label-index], [data-layer-rename-trigger]").forEach((el) => {
+    const isTrigger = el.hasAttribute("data-layer-rename-trigger");
+    const index = Number(isTrigger ? el.getAttribute("data-layer-rename-trigger") : el.getAttribute("data-layer-label-index"));
+    
+    const eventType = isTrigger ? "click" : "dblclick";
+    el.addEventListener(eventType, () => {
+      startInlineRename(index);
+    });
+  });
+
+  const rows = list.querySelectorAll<HTMLDivElement>(".layer-row");
+  rows.forEach((row) => {
+    const index = Number(row.dataset.layerIndex);
+
+    row.addEventListener("dragstart", (e) => {
+      draggedIndex = index;
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = "move";
+      }
+      row.classList.add("is-dragging");
+    });
+
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (draggedIndex !== null && draggedIndex !== index) {
+        row.classList.add("is-drag-over");
+      }
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("is-drag-over");
+    });
+
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      row.classList.remove("is-drag-over");
+      if (draggedIndex !== null && draggedIndex !== index) {
+        const draggedItem = layerTraceLayers[draggedIndex];
+        layerTraceLayers.splice(draggedIndex, 1);
+        layerTraceLayers.splice(index, 0, draggedItem);
+        draggedIndex = null;
+        renderLayerTraceState();
+      }
+    });
+
+    row.addEventListener("dragend", () => {
+      rows.forEach((r) => {
+        r.classList.remove("is-dragging");
+        r.classList.remove("is-drag-over");
+      });
+      draggedIndex = null;
+    });
+  });
+}
+
+function startInlineRename(index: number) {
+  const list = document.getElementById("layer-list");
+  if (!list) return;
+
+  const row = list.querySelector(`.layer-row[data-layer-index="${index}"]`) as HTMLDivElement | null;
+  if (!row) return;
+
+  row.setAttribute("draggable", "false");
+  row.classList.add("is-editing");
+
+  const rowLeft = row.querySelector(".layer-row-left");
+  if (!rowLeft) return;
+
+  const originalLabel = layerTraceLayers[index].label;
+
+  rowLeft.innerHTML = `
+    <span class="drag-handle" style="visibility: hidden">⋮⋮</span>
+    <span class="layer-index-indicator">${index + 1}. </span>
+    <input type="text" class="form-control layer-rename-input" value="${escapeHtml(originalLabel)}" />
+  `;
+
+  const input = rowLeft.querySelector(".layer-rename-input") as HTMLInputElement | null;
+  if (input) {
+    input.focus();
+    input.select();
+
+    let finished = false;
+
+    const saveRename = () => {
+      if (finished) return;
+      finished = true;
+      const newVal = sanitizeLayerLabel(input.value);
+      layerTraceLayers[index].label = newVal;
+      renderLayerTraceState();
+    };
+
+    const cancelRename = () => {
+      if (finished) return;
+      finished = true;
+      renderLayerTraceState();
+    };
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveRename();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancelRename();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      saveRename();
+    });
+  }
+}
+
+function renderLayerCompositePreview() {
+  const preview = document.getElementById("layer-composite-preview");
+  if (!preview) return;
+
+  if (!layerTraceImage || layerTraceLayers.length === 0) {
+    preview.innerHTML = `<p class="placeholder-text">Composite SVG preview se hien thi o day.</p>`;
+    return;
+  }
+
+  const stageId = (document.getElementById("layer-stage-select") as HTMLSelectElement | null)?.value || targetStages[0] || "stage00";
+  preview.innerHTML = composeCurrentLayerSvg(stageId);
+}
+
+function updateLayerTraceButtons() {
+  const traceBtn = document.getElementById("trace-layer-btn") as HTMLButtonElement | null;
+  const saveBtn = document.getElementById("save-layer-composite-btn") as HTMLButtonElement | null;
+  if (traceBtn) {
+    traceBtn.disabled = !layerTraceImage || layerLassoPoints.length < 3;
+  }
+  if (saveBtn) {
+    saveBtn.disabled = !layerTraceImage || layerTraceLayers.length === 0;
+  }
+}
+
+function resetLayerWorkflow() {
+  layerTraceImage = null;
+  layerLassoPoints = [];
+  layerTraceLayers = [];
+  isDrawingLayerMask = false;
+  const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
+  if (canvas) {
+    const context = canvas.getContext("2d");
+    context?.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = 0;
+    canvas.height = 0;
+    canvas.parentElement?.classList.remove("has-image");
+  }
+  renderLayerTraceState();
 }
 
 function renderStagesSidebar() {
@@ -242,626 +719,123 @@ function renderStagesSidebar() {
   if (totalStagesBadge) {
     totalStagesBadge.textContent = activeCrop ? String(targetStages.length) : "0";
   }
+  renderLayerStageOptions();
 
   if (!stagesList) return;
-
   if (!activeCrop) {
-    stagesList.innerHTML = `<li class="placeholder-text" style="padding: 20px 0;">Chưa chọn cây trồng</li>`;
+    stagesList.innerHTML = `<li class="placeholder-text stage-placeholder">Chua chon crop</li>`;
     return;
   }
 
-  stagesList.innerHTML = targetStages.map(stageId => {
-    const isMapped = !!mappedStages[stageId];
-    const filename = mappedStages[stageId] || "Chưa gán";
-    
-    // Label normalization for nice UI display (e.g. stage00 -> Stage 00, dead -> Dead)
-    let displayLabel = stageId.charAt(0).toUpperCase() + stageId.slice(1);
-    if (stageId.startsWith("stage")) {
-      const num = stageId.replace("stage", "");
-      displayLabel = `Stage ${num}`;
-    }
-
+  stagesList.innerHTML = targetStages.map((stageId) => {
+    const isMapped = Boolean(mappedStages[stageId]);
+    const filename = mappedStages[stageId] || "Chua gan";
     return `
-      <li class="stage-item ${isMapped ? 'is-mapped' : ''}" data-stage-id="${stageId}">
+      <li class="stage-item ${isMapped ? "is-mapped" : ""}" data-stage-id="${stageId}">
         <span class="stage-name">
-          <span class="stage-dot" style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${isMapped ? '#428b4d' : '#e1dbcb'}"></span>
-          ${displayLabel}
+          <span class="stage-dot ${isMapped ? "is-mapped" : ""}"></span>
+          ${formatStageName(stageId)}
         </span>
-        <span class="stage-badge">${filename}</span>
+        <span class="stage-badge">${escapeHtml(filename)}</span>
       </li>
     `;
   }).join("");
 }
 
-function handlePngSelection() {
-  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
-  const pngPreviewContainer = document.getElementById("png-preview-container");
-
-  if (!pngSelect || !pngSelect.value) {
-    if (pngPreviewContainer) {
-      pngPreviewContainer.innerHTML = `<p class="placeholder-text">Chưa chọn ảnh PNG nguồn</p>`;
-    }
-    return;
-  }
-
-  const pngPath = pngSelect.value;
-  const filename = pngPath.split("/").pop() || pngPath;
-
-  if (pngPreviewContainer) {
-    pngPreviewContainer.innerHTML = `
-      <div style="text-align: center; color: #2c4130; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-        <img src="/${pngPath}" alt="${filename}" />
-        <p style="font-weight: 600; margin: 0; font-size: 12px; overflow-wrap: anywhere; max-width: 100%;">${filename}</p>
-      </div>
-    `;
-  }
-
-  // Auto trigger tracing for all candidate cards
-  triggerTraceAll();
-}
-
-function getSliderParams(): VTracerPreset {
-  const color_precision = Number((document.getElementById("param-color-precision") as HTMLInputElement).value);
-  const filter_speckle = Number((document.getElementById("param-filter-speckle") as HTMLInputElement).value);
-  const gradient_step = Number((document.getElementById("param-gradient-step") as HTMLInputElement).value);
-  const corner_threshold = Number((document.getElementById("param-corner-threshold") as HTMLInputElement).value);
-  const segment_length = Number((document.getElementById("param-segment-length") as HTMLInputElement).value);
-  const splice_threshold = Number((document.getElementById("param-splice-threshold") as HTMLInputElement).value);
-
-  return {
-    colormode: "color",
-    mode: "spline",
-    hierarchical: "stacked",
-    color_precision,
-    filter_speckle,
-    gradient_step,
-    corner_threshold,
-    segment_length,
-    splice_threshold,
-    path_precision: 2
-  };
-}
-
-function triggerTraceAll(forceCustom: boolean = false) {
-  const candidatesGrid = document.getElementById("candidates-grid");
-  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
-
-  if (!candidatesGrid || !pngSelect || !pngSelect.value) return;
-
-  // Initialize candidates grid with loading/blank cards
-  const presetKeys = Object.keys(presets);
-  const cards = [...presetKeys, "custom"];
-  activeCandidates = cards;
-
-  candidatesGrid.innerHTML = cards.map(cardId => {
-    const isPreset = cardId !== "custom";
-    const title = isPreset ? `Preset: ${cardId}` : "Custom (Sliders)";
-
-    return `
-      <div class="candidate-card" id="card-${cardId}" data-cand-id="${cardId}">
-        <div class="card-header">
-          <h4>${title}</h4>
-          <span class="badge ${isPreset ? 'badge-preset' : ''}">${isPreset ? 'Preset' : 'Tùy chỉnh'}</span>
-        </div>
-        
-        <div class="svg-preview" id="preview-${cardId}">
-          <div class="loading-spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #428b4d; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
-          <span style="font-size: 11px; color: #667c69; margin-top: 8px;">Tracing...</span>
-        </div>
-        
-        <div class="metrics-table" id="metrics-${cardId}">
-          <div class="metric-item">Size: <span class="val">-</span></div>
-          <div class="metric-item">Paths: <span class="val">-</span></div>
-          <div class="metric-item">Groups: <span class="val">-</span></div>
-          <div class="metric-item">Colors: <span class="val">-</span></div>
-        </div>
-        
-        <div class="mapping-control">
-          <label for="select-${cardId}">Gán cho Stage:</label>
-          <select id="select-${cardId}" class="form-control stage-select" disabled>
-            <option value="">-- Loading --</option>
-          </select>
-        </div>
-        
-        <div class="duplicate-alert" id="alert-${cardId}">
-          <span class="alert-icon">⚠️</span>
-          <span class="alert-text">Stage này bị trùng lặp ở một card khác!</span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  // Style helper for spinner animation
-  if (!document.getElementById("spinner-animation-style")) {
-    const style = document.createElement("style");
-    style.id = "spinner-animation-style";
-    style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
-    document.head.appendChild(style);
-  }
-
-  // Trigger trace on each card asynchronously
-  cards.forEach(cardId => {
-    if (cardId === "custom" && !forceCustom) {
-      const liveTraceCheck = document.getElementById("live-trace-check") as HTMLInputElement | null;
-      if (!liveTraceCheck?.checked) {
-        // Render custom card as idle/ready for manual click
-        renderCustomCardIdle();
-        return;
-      }
-    }
-    triggerSingleTrace(cardId);
-  });
-}
-
-function renderCustomCardIdle() {
-  const preview = document.getElementById("preview-custom");
-  const select = document.getElementById("select-custom") as HTMLSelectElement | null;
-
-  if (preview) {
-    preview.innerHTML = `
-      <div style="text-align: center; color: #667c69; padding: 10px;">
-        <span style="font-size: 24px; display:block; margin-bottom: 4px;">🛠️</span>
-        <span style="font-size: 11px;">Nhấn "Trace Thủ Công" để xem kết quả tùy chỉnh</span>
-      </div>
-    `;
-  }
-
-  if (select) {
-    select.innerHTML = `<option value="">-- Trống --</option>`;
-    select.disabled = true;
-  }
-}
-
-async function triggerSingleTrace(cardId: string) {
-  const pngSelect = document.getElementById("png-select") as HTMLSelectElement | null;
-  const preview = document.getElementById(`preview-${cardId}`);
-  const metricsContainer = document.getElementById(`metrics-${cardId}`);
-  const select = document.getElementById(`select-${cardId}`) as HTMLSelectElement | null;
-
-  if (!pngSelect || !pngSelect.value || !preview) return;
-
-  // Show loading
-  preview.innerHTML = `
-    <div class="loading-spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #428b4d; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;"></div>
-    <span style="font-size: 10px; color: #667c69; margin-top: 6px;">Tracing...</span>
-  `;
-
-  try {
-    const inputPath = pngSelect.value;
-    const params = cardId === "custom" ? getSliderParams() : presets[cardId];
-
-    const response = await fetch("/api/editor/trace", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputPath, params })
-    });
-
-    if (!response.ok) {
-      const errorJson = await response.json();
-      throw new Error(errorJson.error || "Trace failed.");
-    }
-
-    const result = await response.json() as TraceResult;
-
-    // Cache SVG content
-    tracedSvgs[cardId] = result.optimizedSvg;
-
-    // 1. Render SVG Preview
-    preview.innerHTML = result.optimizedSvg;
-
-    // 2. Render Metrics Table
-    if (metricsContainer) {
-      const met = result.metrics.optimized;
-      const sizeKB = (met.bytes / 1024).toFixed(1);
-      metricsContainer.innerHTML = `
-        <div class="metric-item">Size: <span class="val">${sizeKB} KB</span></div>
-        <div class="metric-item">Paths: <span class="val">${met.pathCount}</span></div>
-        <div class="metric-item">Groups: <span class="val">${met.groupCount}</span></div>
-        <div class="metric-item">Colors: <span class="val">${met.uniqueFillCount}</span></div>
-      `;
-    }
-
-    // 3. Populate Stage Selector Dropdown
-    if (select) {
-      const prevVal = selectedMappings[cardId] || "";
-      select.innerHTML = `<option value="">-- Không gán --</option>` +
-        targetStages.map(stageId => {
-          let label = stageId.charAt(0).toUpperCase() + stageId.slice(1);
-          if (stageId.startsWith("stage")) {
-            label = `Stage ${stageId.replace("stage", "")}`;
-          }
-          return `<option value="${stageId}" ${stageId === prevVal ? "selected" : ""}>${label}</option>`;
-        }).join("");
-      
-      select.disabled = false;
-
-      // Bind change event
-      select.onchange = () => {
-        selectedMappings[cardId] = select.value;
-        validateStageMappings();
-      };
-    }
-
-    validateStageMappings();
-  } catch (error: any) {
-    preview.innerHTML = `
-      <div style="text-align: center; color: #d32f2f; padding: 10px;">
-        <span style="font-size: 24px; display:block; margin-bottom: 4px;">⚠️</span>
-        <span style="font-size: 11px; overflow-wrap: anywhere; max-width: 100%; display: inline-block;">Lỗi: ${error.message}</span>
-      </div>
-    `;
-    if (select) {
-      select.innerHTML = `<option value="">-- Lỗi --</option>`;
-      select.disabled = true;
-    }
-  }
-}
-
-function validateStageMappings() {
-  const cards = Object.keys(tracedSvgs);
-  
-  // Clear all previous errors
-  cards.forEach(cardId => {
-    const cardEl = document.getElementById(`card-${cardId}`);
-    cardEl?.classList.remove("is-duplicate");
-  });
-
-  // Count stage assignments
-  const counts: Record<string, string[]> = {}; // stageId -> cardIds[]
-  
-  for (const [cardId, stageId] of Object.entries(selectedMappings)) {
-    if (!stageId) continue;
-    if (!counts[stageId]) {
-      counts[stageId] = [];
-    }
-    counts[stageId].push(cardId);
-  }
-
-  // Highlight duplicates
-  let hasDuplicates = false;
-  let duplicateStagesList: string[] = [];
-
-  for (const [stageId, cardIds] of Object.entries(counts)) {
-    if (cardIds.length > 1) {
-      hasDuplicates = true;
-      let label = stageId.charAt(0).toUpperCase() + stageId.slice(1);
-      if (stageId.startsWith("stage")) {
-        label = `Stage ${stageId.replace("stage", "")}`;
-      }
-      duplicateStagesList.push(label);
-
-      cardIds.forEach(cardId => {
-        const cardEl = document.getElementById(`card-${cardId}`);
-        cardEl?.classList.add("is-duplicate");
-
-        const alertText = cardEl?.querySelector(".duplicate-alert .alert-text");
-        if (alertText) {
-          alertText.textContent = `Stage "${label}" đang bị trùng lặp ở một card khác!`;
-        }
-      });
-    }
-  }
-
-  // Update Footer & Enable/Disable Save
-  const saveConfigBtn = document.getElementById("save-config-btn") as HTMLButtonElement | null;
-  
-  if (hasDuplicates) {
-    showStatus("error", `Không thể lưu: Giai đoạn [${duplicateStagesList.join(", ")}] đang bị trùng lặp!`);
-    if (saveConfigBtn) saveConfigBtn.disabled = true;
-  } else {
-    // Check if at least one stage is mapped
-    const totalMapped = Object.values(selectedMappings).filter(Boolean).length;
-    if (totalMapped > 0) {
-      showStatus("success", `Sẵn sàng lưu. Đã thiết lập mapping cho ${totalMapped} stages.`);
-      if (saveConfigBtn) saveConfigBtn.disabled = false;
-    } else {
-      showStatus("info", "Vui lòng gán ít nhất một giai đoạn (stage) để lưu cấu hình.");
-      if (saveConfigBtn) saveConfigBtn.disabled = true;
-    }
-  }
-}
-
-async function handleSaveConfig() {
-  const saveConfigBtn = document.getElementById("save-config-btn") as HTMLButtonElement | null;
-  if (!activeCrop || !saveConfigBtn || saveConfigBtn.disabled) return;
-
-  // Build the payload
-  const stagesPayload: Record<string, string> = {};
-
-  for (const [cardId, stageId] of Object.entries(selectedMappings)) {
-    if (!stageId) continue;
-    const svgContent = tracedSvgs[cardId];
-    if (svgContent) {
-      stagesPayload[stageId] = svgContent;
-    }
-  }
-
-  showStatus("loading", "Đang lưu cấu hình và ảnh SVG xuống máy...");
-  saveConfigBtn.disabled = true;
-
-  try {
-    const response = await fetch("/api/editor/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cropName: activeCrop,
-        stages: stagesPayload
-      })
-    });
-
-    if (!response.ok) {
-      const errorJson = await response.json();
-      throw new Error(errorJson.error || "Save failed.");
-    }
-
-    // Update mappedStages cache
-    for (const stageId of Object.keys(stagesPayload)) {
-      mappedStages[stageId] = `${stageId}.svg`;
-    }
-
-    renderStagesSidebar();
-    showStatus("success", "Đã lưu và áp dụng cấu hình SVG thành công!");
-    
-    // Auto re-enable button if still valid
-    validateStageMappings();
-  } catch (error: any) {
-    showStatus("error", `Lỗi lưu tệp: ${error.message}`);
-    saveConfigBtn.disabled = false;
-  }
-}
-
 function handleAddStage() {
   if (!activeCrop) return;
-  
-  // Find next stage number
-  let nextNum = 0;
-  targetStages.forEach(s => {
-    if (s.startsWith("stage")) {
-      const num = parseInt(s.replace("stage", ""), 10);
-      if (!isNaN(num) && num >= nextNum) {
-        nextNum = num + 1;
-      }
-    }
-  });
-
-  const nextStageId = `stage${String(nextNum).padStart(2, "0")}`;
-  targetStages.push(nextStageId);
-  
-  // Sort stages so stage00, stage01, ... and dead is at the end
+  const nextNum = targetStages.reduce((max, stageId) => {
+    const match = stageId.match(/^stage(\d+)$/);
+    return match ? Math.max(max, Number(match[1]) + 1) : max;
+  }, 0);
+  targetStages.push(`stage${String(nextNum).padStart(2, "0")}`);
   sortStages();
-  
   renderStagesSidebar();
-  triggerTraceAll(); // rebuild selectors
+  renderLayerTraceState();
 }
 
 function handleRemoveStage() {
   if (!activeCrop || targetStages.length <= 1) return;
-
-  // Remove the last stage that is NOT "dead" if possible, otherwise remove last one
-  const nonDeadStages = targetStages.filter(s => s !== "dead");
-  if (nonDeadStages.length > 0) {
-    const targetToRemove = nonDeadStages[nonDeadStages.length - 1];
-    targetStages = targetStages.filter(s => s !== targetToRemove);
-    delete mappedStages[targetToRemove];
-    
-    // Clear mappings referencing it
-    for (const [cardId, stageId] of Object.entries(selectedMappings)) {
-      if (stageId === targetToRemove) {
-        selectedMappings[cardId] = "";
-      }
-    }
-  } else {
-    const targetToRemove = targetStages[targetStages.length - 1];
-    targetStages.pop();
-    delete mappedStages[targetToRemove];
-  }
-
+  const removableStages = targetStages.filter((stageId) => stageId !== "dead");
+  const stageToRemove = removableStages[removableStages.length - 1] || targetStages[targetStages.length - 1];
+  targetStages = targetStages.filter((stageId) => stageId !== stageToRemove);
+  delete mappedStages[stageToRemove];
   renderStagesSidebar();
-  triggerTraceAll();
+  renderLayerTraceState();
 }
 
 function sortStages() {
-  const stagePattern = /^stage(\d+)$/;
-  
   targetStages.sort((a, b) => {
     if (a === "dead") return 1;
     if (b === "dead") return -1;
-
-    const matchA = a.match(stagePattern);
-    const matchB = b.match(stagePattern);
-
+    const matchA = a.match(/^stage(\d+)$/);
+    const matchB = b.match(/^stage(\d+)$/);
     if (matchA && matchB) {
-      return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
+      return Number(matchA[1]) - Number(matchB[1]);
     }
     return a.localeCompare(b);
   });
+}
+
+function syncAnimationEditorButton() {
+  const animationEditorBtn = document.getElementById("open-animation-editor-btn") as HTMLButtonElement | null;
+  if (animationEditorBtn) {
+    animationEditorBtn.disabled = !activeCrop;
+  }
+}
+
+function sanitizeLayerLabel(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "layer";
+}
+
+function formatStageName(stageId: string): string {
+  if (stageId.startsWith("stage")) return `Stage ${stageId.replace("stage", "")}`;
+  return stageId.charAt(0).toUpperCase() + stageId.slice(1);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function showStatus(type: "loading" | "success" | "error" | "info", message: string) {
   const footerStatus = document.getElementById("footer-status");
   if (!footerStatus) return;
 
-  let icon = "ℹ";
-  let iconClass = "info";
-  let messageStyle = "";
-
-  if (type === "loading") {
-    icon = `<div class="loading-spinner" style="border: 2px solid #f3f3f3; border-top: 2px solid #428b4d; border-radius: 50%; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block;"></div>`;
-    iconClass = "loading";
-  } else if (type === "success") {
-    icon = "✅";
-    iconClass = "success";
-    messageStyle = "color: #3b793f; font-weight: 700;";
-  } else if (type === "error") {
-    icon = "❌";
-    iconClass = "error";
-    messageStyle = "color: #d32f2f; font-weight: 700;";
-  }
-
   footerStatus.innerHTML = `
-    <span class="status-icon ${iconClass}">${icon}</span>
-    <span class="status-message" style="${messageStyle}">${message}</span>
+    <span class="status-icon ${type}">${type === "loading" ? "..." : type === "success" ? "OK" : type === "error" ? "ERR" : "i"}</span>
+    <span class="status-message">${message}</span>
   `;
 }
 
-// LIGHTBOX MODAL FUNCTIONALITY
-function openLightbox(cardId: string) {
-  const lightbox = document.getElementById("svg-lightbox");
-  const viewer = document.getElementById("lightbox-viewer");
-  const titleEl = document.getElementById("lightbox-title");
-  if (!lightbox || !viewer) return;
-
-  const svgContent = tracedSvgs[cardId];
-  if (!svgContent) return;
-
-  lightboxActiveCardId = cardId;
-  lightboxZoomScale = 1.0;
-
-  viewer.innerHTML = svgContent;
-
-  // Set Title
-  if (titleEl) {
-    const cardEl = document.getElementById(`card-${cardId}`);
-    titleEl.textContent = cardEl?.querySelector("h4")?.textContent || cardId;
+function applyPreset(presetName: string) {
+  const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
+  if (presetSelect) {
+    presetSelect.value = presetName;
   }
 
-  // Sync Dropdown
-  syncLightboxStageSelect(cardId);
+  const params = vtracerPresets[presetName];
+  if (!params) return;
 
-  updateZoomDisplay();
-  lightbox.classList.add("is-active");
+  setInputValueAndLabel("color-precision", params.color_precision);
+  setInputValueAndLabel("filter-speckle", params.filter_speckle);
+  setInputValueAndLabel("gradient-step", params.gradient_step);
+  setInputValueAndLabel("corner-threshold", params.corner_threshold);
+  setInputValueAndLabel("segment-length", params.segment_length);
+  setInputValueAndLabel("splice-threshold", params.splice_threshold);
 }
 
-function syncLightboxStageSelect(cardId: string) {
-  const lightboxSelect = document.getElementById("lightbox-stage-select") as HTMLSelectElement | null;
-  const cardSelect = document.getElementById(`select-${cardId}`) as HTMLSelectElement | null;
-  if (!lightboxSelect || !cardSelect) return;
-
-  // Copy options
-  lightboxSelect.innerHTML = cardSelect.innerHTML;
-  // Set value
-  lightboxSelect.value = cardSelect.value;
-}
-
-function setupLightboxEvents() {
-  const lightbox = document.getElementById("svg-lightbox");
-  const closeBtn = document.getElementById("lightbox-close");
-  const prevBtn = document.getElementById("lightbox-prev");
-  const nextBtn = document.getElementById("lightbox-next");
-  const zoomInBtn = document.getElementById("zoom-in-btn");
-  const zoomOutBtn = document.getElementById("zoom-out-btn");
-  const zoomResetBtn = document.getElementById("zoom-reset-btn");
-  const lightboxSelect = document.getElementById("lightbox-stage-select") as HTMLSelectElement | null;
-
-  closeBtn?.addEventListener("click", closeLightbox);
-  prevBtn?.addEventListener("click", navigateLightboxPrev);
-  nextBtn?.addEventListener("click", navigateLightboxNext);
-  zoomInBtn?.addEventListener("click", () => zoomLightbox(0.2));
-  zoomOutBtn?.addEventListener("click", () => zoomLightbox(-0.2));
-  zoomResetBtn?.addEventListener("click", resetLightboxZoom);
-
-  // Sync back to card when changed inside Lightbox
-  lightboxSelect?.addEventListener("change", () => {
-    if (!lightboxActiveCardId) return;
-    const cardSelect = document.getElementById(`select-${lightboxActiveCardId}`) as HTMLSelectElement | null;
-    if (cardSelect) {
-      cardSelect.value = lightboxSelect.value;
-      selectedMappings[lightboxActiveCardId] = lightboxSelect.value;
-      validateStageMappings();
-    }
-  });
-
-  lightbox?.addEventListener("click", (e) => {
-    if (e.target === lightbox) {
-      closeLightbox();
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (!lightbox?.classList.contains("is-active")) return;
-
-    if (e.key === "Escape") {
-      closeLightbox();
-    } else if (e.key === "ArrowLeft") {
-      navigateLightboxPrev();
-    } else if (e.key === "ArrowRight") {
-      navigateLightboxNext();
-    } else if (e.key === "+" || e.key === "=") {
-      zoomLightbox(0.2);
-    } else if (e.key === "-") {
-      zoomLightbox(-0.2);
-    }
-  });
-}
-
-function closeLightbox() {
-  const lightbox = document.getElementById("svg-lightbox");
-  lightbox?.classList.remove("is-active");
-  lightboxActiveCardId = null;
-}
-
-function navigateLightboxNext() {
-  navigateLightbox(1);
-}
-
-function navigateLightboxPrev() {
-  navigateLightbox(-1);
-}
-
-function navigateLightbox(direction: number) {
-  if (!lightboxActiveCardId || activeCandidates.length === 0) return;
-
-  let index = activeCandidates.indexOf(lightboxActiveCardId);
-  if (index === -1) return;
-
-  let attempts = 0;
-  while (attempts < activeCandidates.length) {
-    index = (index + direction + activeCandidates.length) % activeCandidates.length;
-    const nextCardId = activeCandidates[index];
-    if (tracedSvgs[nextCardId]) {
-      lightboxActiveCardId = nextCardId;
-      lightboxZoomScale = 1.0;
-      
-      const viewer = document.getElementById("lightbox-viewer");
-      if (viewer) {
-        viewer.innerHTML = tracedSvgs[nextCardId];
-      }
-
-      // Update Title
-      const titleEl = document.getElementById("lightbox-title");
-      if (titleEl) {
-        const cardEl = document.getElementById(`card-${nextCardId}`);
-        titleEl.textContent = cardEl?.querySelector("h4")?.textContent || nextCardId;
-      }
-
-      // Sync Dropdown
-      syncLightboxStageSelect(nextCardId);
-
-      updateZoomDisplay();
-      return;
-    }
-    attempts++;
+function setInputValueAndLabel(idSuffix: string, value: any) {
+  if (value === undefined) return;
+  const slider = document.getElementById(`param-${idSuffix}`) as HTMLInputElement | null;
+  const display = document.getElementById(`val-${idSuffix}`);
+  if (slider) {
+    slider.value = String(value);
   }
-}
-
-function zoomLightbox(delta: number) {
-  lightboxZoomScale = Math.min(4.0, Math.max(0.5, lightboxZoomScale + delta));
-  updateZoomDisplay();
-}
-
-function resetLightboxZoom() {
-  lightboxZoomScale = 1.0;
-  updateZoomDisplay();
-}
-
-function updateZoomDisplay() {
-  const display = document.getElementById("zoom-level-display");
-  const svg = document.querySelector("#lightbox-viewer svg") as HTMLElement | null;
-
   if (display) {
-    display.textContent = `${Math.round(lightboxZoomScale * 100)}%`;
-  }
-  if (svg) {
-    svg.style.transform = `scale(${lightboxZoomScale})`;
+    display.textContent = String(value);
   }
 }

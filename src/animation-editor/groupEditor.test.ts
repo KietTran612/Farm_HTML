@@ -87,4 +87,37 @@ describe("groupEditor operations", () => {
     expect(result).not.toContain("<script");
     expect(result).not.toContain("onclick");
   });
+
+  it("preserves unassigned paths, defs, stable data-original-index, and sorts groups by minimum pathIndex", () => {
+    const originalSvg = `<svg viewBox="0 0 100 100">
+      <defs>
+        <linearGradient id="g1" />
+      </defs>
+      <path d="M0 0" />
+      <path d="M1 1" />
+      <path d="M2 2" />
+    </svg>`;
+
+    const groups = [
+      makeGroup("group1", [1], "leaves"),
+      makeGroup("group2", [0], "stem")
+    ];
+
+    const result = serializeGroupedSvg(originalSvg, groups, "corn", "stage01");
+
+    expect(result).toContain("<defs>");
+    expect(result).toContain('id="g1"');
+
+    expect(result).toContain('class="crop-part crop-part--other"');
+    expect(result).toContain('data-original-index="2"');
+    expect(result).toContain('data-original-index="1"');
+    expect(result).toContain('data-original-index="0"');
+
+    const stemPos = result.indexOf('class="crop-part crop-part--stem"');
+    const leavesPos = result.indexOf('class="crop-part crop-part--leaves"');
+    const otherPos = result.indexOf('class="crop-part crop-part--other"');
+
+    expect(stemPos).toBeLessThan(leavesPos);
+    expect(leavesPos).toBeLessThan(otherPos);
+  });
 });

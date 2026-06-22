@@ -1,14 +1,10 @@
 {
-  "cropName": "Corn",
+  "cropName": "corn",
   "stages": {
     "dead": "dead.svg",
     "stage00": "stage00.svg",
     "stage01": "stage01.svg",
     "stage02": "stage02.svg",
     "stage03": "stage03.svg"
-  },
-  "groupedStages": {
-    "dead": "dead.grouped.svg"
-  },
-  "animations": "animations.json"
+  }
 }

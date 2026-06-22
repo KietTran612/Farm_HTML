@@ -37,12 +37,139 @@ export interface ClassificationResult {
   groups: CropGroup[];
 }
 
+export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): PathBounds {
+  const commandRegex = /([astvzqhlmc])([^astvzqhlmc]*)/gi;
+  let cx = 0;
+  let cy = 0;
+  let startX = 0;
+  let startY = 0;
+  const xs: number[] = [];
+  const ys: number[] = [];
+
+  const addPoint = (x: number, y: number) => {
+    xs.push(x + transformX);
+    ys.push(y + transformY);
+  };
+
+  let match;
+  commandRegex.lastIndex = 0;
+  while ((match = commandRegex.exec(d)) !== null) {
+    const cmd = match[1];
+    const argsStr = match[2].trim();
+    const args = Array.from(argsStr.matchAll(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi)).map(m => Number(m[0]));
+
+    const isRelative = cmd === cmd.toLowerCase();
+    const upperCmd = cmd.toUpperCase();
+    let argIdx = 0;
+
+    switch (upperCmd) {
+      case "M":
+        while (argIdx < args.length) {
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          cx = x;
+          cy = y;
+          startX = x;
+          startY = y;
+          addPoint(cx, cy);
+        }
+        break;
+      case "L":
+        while (argIdx < args.length) {
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          cx = x;
+          cy = y;
+          addPoint(cx, cy);
+        }
+        break;
+      case "H":
+        while (argIdx < args.length) {
+          cx = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          addPoint(cx, cy);
+        }
+        break;
+      case "V":
+        while (argIdx < args.length) {
+          cy = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          addPoint(cx, cy);
+        }
+        break;
+      case "C":
+        while (argIdx < args.length) {
+          const x1 = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y1 = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          const x2 = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y2 = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          addPoint(x1, y1);
+          addPoint(x2, y2);
+          addPoint(x, y);
+          cx = x;
+          cy = y;
+        }
+        break;
+      case "S":
+      case "Q":
+        while (argIdx < args.length) {
+          const x1 = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y1 = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          addPoint(x1, y1);
+          addPoint(x, y);
+          cx = x;
+          cy = y;
+        }
+        break;
+      case "T":
+        while (argIdx < args.length) {
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          addPoint(x, y);
+          cx = x;
+          cy = y;
+        }
+        break;
+      case "A":
+        while (argIdx < args.length) {
+          argIdx += 5; // Skip rx, ry, xAxisRot, largeArcFlag, sweepFlag
+          const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
+          const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
+          addPoint(x, y);
+          cx = x;
+          cy = y;
+        }
+        break;
+      case "Z":
+        cx = startX;
+        cy = startY;
+        addPoint(cx, cy);
+        break;
+    }
+  }
+
+  if (xs.length === 0 || ys.length === 0) {
+    return { minX: transformX, minY: transformY, maxX: transformX, maxY: transformY };
+  }
+
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys)
+  };
+}
+
 export function classifySvgPaths(svgText: string, cropId: string): ClassificationResult {
   const paths = Array.from(svgText.matchAll(/<path\b[^>]*>/gi)).map((match, pathIndex) => {
     const markup = match[0];
     const fill = readFill(markup);
     const colorFamily = classifyColor(fill);
-    const bounds = readBounds(markup);
+    const translate = readTranslate(markup);
+    const d = markup.match(/\bd=["']([^"']+)["']/i)?.[1] || "";
+    const bounds = parseSvgPathBounds(d, translate.x, translate.y);
 
     return {
       id: `path-${pathIndex}`,
@@ -68,8 +195,8 @@ export function classifySvgPaths(svgText: string, cropId: string): Classificatio
   for (const path of paths) {
     const regionX = classifyRegionX(path.center.x, allBounds);
     const regionY = classifyRegionY(path.center.y, allBounds);
-    const id = `cluster-${path.colorFamily}-${regionX}-${regionY}`;
-    const existing = grouped.get(id);
+    const clusterId = `cluster-${path.colorFamily}-${regionX}-${regionY}`;
+    const existing = grouped.get(clusterId);
 
     if (existing) {
       existing.paths.push(path);
@@ -77,8 +204,8 @@ export function classifySvgPaths(svgText: string, cropId: string): Classificatio
     }
 
     const suggestedPart = suggestPart(cropId, path.colorFamily, regionX, regionY);
-    grouped.set(id, {
-      id,
+    grouped.set(clusterId, {
+      id: clusterId,
       label: suggestedPart,
       suggestedPart,
       colorFamily: path.colorFamily,
@@ -89,7 +216,26 @@ export function classifySvgPaths(svgText: string, cropId: string): Classificatio
     });
   }
 
-  return { groups: Array.from(grouped.values()) };
+  let groupCounter = 1;
+  const groups = Array.from(grouped.values()).map((clusterGroup) => {
+    const id = `candidate-group-${groupCounter++}`;
+    let label = clusterGroup.suggestedPart;
+    if (label.startsWith("leaves")) {
+      label = `leaf-candidate-${groupCounter - 1}`;
+    } else if (label === "ears" || label === "tassels") {
+      label = `${label.slice(0, -1)}-candidate-${groupCounter - 1}`;
+    } else {
+      label = `${label}-candidate-${groupCounter - 1}`;
+    }
+    return {
+      ...clusterGroup,
+      id,
+      label,
+      suggestedPart: label
+    };
+  });
+
+  return { groups };
 }
 
 function readFill(markup: string): string {
@@ -98,32 +244,6 @@ function readFill(markup: string): string {
 
   const styleFill = markup.match(/\bstyle=["'][^"']*fill:\s*([^;"']+)/i)?.[1];
   return styleFill?.trim() || "unknown";
-}
-
-function readBounds(markup: string): PathBounds {
-  const d = markup.match(/\bd=["']([^"']+)["']/i)?.[1] || "";
-  const numbers = Array.from(d.matchAll(/-?\d+(?:\.\d+)?/g)).map((match) => Number(match[0]));
-  const translate = readTranslate(markup);
-  const xs: number[] = [];
-  const ys: number[] = [];
-
-  for (let index = 0; index < numbers.length; index += 2) {
-    xs.push(numbers[index] + translate.x);
-    if (typeof numbers[index + 1] === "number") {
-      ys.push(numbers[index + 1] + translate.y);
-    }
-  }
-
-  if (xs.length === 0 || ys.length === 0) {
-    return { minX: translate.x, minY: translate.y, maxX: translate.x, maxY: translate.y };
-  }
-
-  return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys)
-  };
 }
 
 function readTranslate(markup: string): { x: number; y: number } {

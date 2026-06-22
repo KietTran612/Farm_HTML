@@ -67,8 +67,8 @@ export interface TraceParams {
   path_precision?: number;
 }
 
-export interface TracePayload {
-  inputPath: string;
+export interface TraceLayerPayload {
+  imageDataUrl: string;
   params: TraceParams;
 }
 
@@ -111,6 +111,10 @@ export function handleSaveRequest(payload: SavePayload): { success: boolean } {
     mkdirSync(targetDir, { recursive: true });
   }
 
+  const metaPath = join(targetDir, "meta.json");
+  const existingMeta = existsSync(metaPath)
+    ? JSON.parse(readFileSync(metaPath, "utf8"))
+    : {};
   const metaStages: Record<string, string> = {};
 
   for (const [stageName, svgContent] of Object.entries(stages)) {
@@ -120,10 +124,13 @@ export function handleSaveRequest(payload: SavePayload): { success: boolean } {
     metaStages[stageName] = fileName;
   }
 
-  const metaPath = join(targetDir, "meta.json");
   const metaContent = {
+    ...existingMeta,
     cropName,
-    stages: metaStages
+    stages: {
+      ...(existingMeta.stages || {}),
+      ...metaStages
+    }
   };
   writeFileSync(metaPath, JSON.stringify(metaContent, null, 2), "utf8");
 
@@ -305,12 +312,30 @@ export function detectVTracer(): string | null {
   return null;
 }
 
-export function handleTraceRequest(payload: TracePayload): any {
-  const { inputPath, params } = payload;
-  const fullInputPath = resolve(inputPath);
-  if (!existsSync(fullInputPath)) {
-    throw new Error(`Input file does not exist: ${inputPath}`);
+export function handleTraceLayerRequest(payload: TraceLayerPayload): any {
+  const match = payload.imageDataUrl.match(/^data:image\/png;base64,([a-zA-Z0-9+/=]+)$/);
+  if (!match) {
+    throw new Error("Masked layer image must be a PNG data URL.");
   }
+
+  const tmpDir = resolve("docs/Crops/Generated/tmp");
+  if (!existsSync(tmpDir)) {
+    mkdirSync(tmpDir, { recursive: true });
+  }
+
+  const inputPath = join(tmpDir, `masked_layer_${Date.now()}_${Math.random().toString(36).slice(2)}.png`);
+  writeFileSync(inputPath, Buffer.from(match[1], "base64"));
+
+  try {
+    return runVTracerOnFile(inputPath, payload.params);
+  } finally {
+    if (existsSync(inputPath)) {
+      rmSync(inputPath, { force: true });
+    }
+  }
+}
+
+function runVTracerOnFile(fullInputPath: string, params: TraceParams): any {
 
   const binary = detectVTracer();
   if (!binary) {
@@ -473,10 +498,10 @@ export function cropEditorPlugin(): Plugin {
             return;
           }
 
-          if (pathname === "/api/editor/trace" && req.method === "POST") {
+          if (pathname === "/api/editor/trace-layer" && req.method === "POST") {
             const bodyText = await readRequestBody(req);
-            const payload = JSON.parse(bodyText) as TracePayload;
-            const result = handleTraceRequest(payload);
+            const payload = JSON.parse(bodyText) as TraceLayerPayload;
+            const result = handleTraceLayerRequest(payload);
             res.statusCode = 200;
             res.end(JSON.stringify(result));
             return;

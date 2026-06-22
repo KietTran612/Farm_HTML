@@ -1,4 +1,4 @@
-import type { ClassifiedPath, ColorFamily, CropGroup, RegionX, RegionY } from "./groupClassifier";
+import { parseSvgPathBounds, type ClassifiedPath, type ColorFamily, type CropGroup, type RegionX, type RegionY } from "./groupClassifier";
 
 export type SplitMode = "left-right" | "top-bottom" | "fill-color";
 
@@ -32,6 +32,42 @@ export function splitGroup(groups: CropGroup[], groupId: string, mode: SplitMode
   return groups.flatMap((group) => group.id === groupId ? replacementGroups : [group]);
 }
 
+export function parseAllPathsFromSvg(svgText: string): ClassifiedPath[] {
+  const pathRegex = /<path\b[^>]*>/gi;
+  const matches = Array.from(svgText.matchAll(pathRegex));
+  return matches.map((match, index) => {
+    const markup = match[0];
+    const dataIndexMatch = markup.match(/\bdata-original-index=["'](\d+)["']/i);
+    const pathIndex = dataIndexMatch ? Number(dataIndexMatch[1]) : index;
+    
+    const fillAttr = markup.match(/\bfill=["']([^"']+)["']/i)?.[1] || "unknown";
+    
+    const d = markup.match(/\bd=["']([^"']+)["']/i)?.[1] || "";
+    const translateMatch = markup.match(/\btransform=["'][^"']*translate\(\s*(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?\s*\)/i);
+    const tx = translateMatch ? Number(translateMatch[1]) : 0;
+    const ty = translateMatch && translateMatch[2] ? Number(translateMatch[2]) : 0;
+    
+    const bounds = parseSvgPathBounds(d, tx, ty);
+
+    return {
+      id: `path-${pathIndex}`,
+      markup,
+      fill: fillAttr,
+      colorFamily: "unknown" as any,
+      pathIndex,
+      bounds,
+      center: {
+        x: (bounds.minX + bounds.maxX) / 2,
+        y: (bounds.minY + bounds.maxY) / 2
+      }
+    };
+  });
+}
+
+export function isIntersecting(box: { minX: number; minY: number; maxX: number; maxY: number }, rect: { minX: number; minY: number; maxX: number; maxY: number }): boolean {
+  return !(rect.minX > box.maxX || rect.maxX < box.minX || rect.minY > box.maxY || rect.maxY < box.minY);
+}
+
 export function serializeGroupedSvg(svgText: string, groups: CropGroup[], cropId: string, stageId: string): string {
   const safeSvg = sanitizeSvgText(svgText);
   const svgOpen = safeSvg.match(/<svg\b[^>]*>/i)?.[0];
@@ -42,20 +78,77 @@ export function serializeGroupedSvg(svgText: string, groups: CropGroup[], cropId
   const viewBox = svgOpen.match(/\bviewBox=["'][^"']+["']/i)?.[0];
   const className = `imported-crop imported-crop--${sanitizeClassToken(cropId)} imported-crop--${sanitizeClassToken(stageId)}`;
   const rootAttrs = viewBox ? ` ${viewBox}` : "";
-  const body = groups
-    .filter((group) => !group.hidden)
+
+  // 1. Defs/Gradient Preservation
+  const defsMatch = safeSvg.match(/<defs\b[\s\S]*?<\/defs>/i);
+  let defsMarkup = defsMatch ? `  ${defsMatch[0].trim()}\n` : "";
+  
+  const standaloneGradients = Array.from(safeSvg.matchAll(/<(?:linearGradient|radialGradient|clipPath)\b[\s\S]*?<\/(?:linearGradient|radialGradient|clipPath)>/gi))
+    .map(m => m[0])
+    .filter(g => !defsMarkup.includes(g));
+  if (standaloneGradients.length > 0) {
+    if (!defsMarkup) {
+      defsMarkup = `  <defs>\n    ${standaloneGradients.join("\n    ")}\n  </defs>\n`;
+    } else {
+      defsMarkup = defsMarkup.replace("</defs>", `  ${standaloneGradients.join("\n    ")}\n  </defs>`);
+    }
+  }
+
+  // 2. Path Preservation
+  const allPaths = parseAllPathsFromSvg(safeSvg);
+  const assignedIndices = new Set<number>();
+  for (const group of groups) {
+    for (const path of group.paths) {
+      assignedIndices.add(path.pathIndex);
+    }
+  }
+
+  const unassignedPaths = allPaths.filter((path) => !assignedIndices.has(path.pathIndex));
+  const finalGroups = [...groups];
+
+  if (unassignedPaths.length > 0) {
+    const unassignedGroup: CropGroup = {
+      id: "group-unassigned",
+      label: "other",
+      suggestedPart: "other",
+      colorFamily: "unknown",
+      regionX: "center",
+      regionY: "middle",
+      hidden: false,
+      paths: unassignedPaths
+    };
+    finalGroups.push(unassignedGroup);
+  }
+
+  // Helper to get minimum pathIndex for sorting
+  const getMinPathIndex = (g: CropGroup) => {
+    if (g.paths.length === 0) return Infinity;
+    return Math.min(...g.paths.map((p) => p.pathIndex));
+  };
+
+  // 3. Z-Index Layer Preservation (Sort groups by minimum path index)
+  const sortedGroups = finalGroups.sort((a, b) => getMinPathIndex(a) - getMinPathIndex(b));
+
+  const body = sortedGroups
+    .filter((group) => !group.hidden && group.paths.length > 0)
     .map((group) => {
       const label = sanitizeClassToken(group.label);
       const paths = group.paths
         .sort((a, b) => a.pathIndex - b.pathIndex)
-        .map((path) => path.markup)
+        .map((path) => {
+          let markup = path.markup;
+          if (!/\bdata-original-index=/i.test(markup)) {
+            markup = markup.replace(/<path\b/i, `<path data-original-index="${path.pathIndex}"`);
+          }
+          return markup;
+        })
         .join("\n    ");
 
       return `  <g class="crop-part crop-part--${label}" data-group-id="${escapeHtml(group.id)}">\n    ${paths}\n  </g>`;
     })
     .join("\n");
 
-  return `<svg class="${className}"${rootAttrs}>\n${body}\n</svg>`;
+  return `<svg class="${className}"${rootAttrs}>\n${defsMarkup}${body}\n</svg>`;
 }
 
 export function sanitizeSvgText(svgText: string): string {
