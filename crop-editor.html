@@ -144,8 +144,18 @@
           </div>
           <div class="layer-trace-layout">
             <div class="layer-mask-editor">
-              <canvas id="layer-mask-canvas" class="layer-mask-canvas"></canvas>
-              <p id="layer-mask-placeholder" class="placeholder-text">Chon PNG de ve lasso layer.</p>
+              <div class="layer-zoom-controls" aria-label="Zoom anh goc">
+                <button id="layer-zoom-out-btn" class="btn btn-secondary btn-icon" type="button"
+                  title="Thu nho anh goc" disabled>-</button>
+                <button id="layer-zoom-reset-btn" class="btn btn-secondary layer-zoom-reset" type="button"
+                  title="Ve zoom 100%" disabled><span id="layer-zoom-value">100%</span></button>
+                <button id="layer-zoom-in-btn" class="btn btn-secondary btn-icon" type="button"
+                  title="Phong to anh goc" disabled>+</button>
+              </div>
+              <div class="layer-mask-scroll">
+                <canvas id="layer-mask-canvas" class="layer-mask-canvas"></canvas>
+                <p id="layer-mask-placeholder" class="placeholder-text">Chon PNG de ve lasso layer.</p>
+              </div>
             </div>
             <div class="layer-trace-controls">
               <label class="field-label" for="layer-label-input">Layer label</label>

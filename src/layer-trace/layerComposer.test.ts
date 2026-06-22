@@ -51,4 +51,24 @@ describe("composeLayeredSvg", () => {
     expect(result).toContain('fill="url(#leaves-123-grad)"');
     expect(result).not.toContain("leaves-123-leaves-123-grad");
   });
+
+  it("keeps hidden editor layers in saved SVG output", () => {
+    const result = composeLayeredSvg({
+      width: 64,
+      height: 64,
+      cropId: "carrot",
+      stageId: "stage03",
+      layers: [
+        {
+          groupId: "hidden-layer",
+          label: "leaves",
+          svgText: `<svg viewBox="0 0 64 64"><path fill="#4c6522" d="M0 0H10V10Z"/></svg>`,
+          hidden: true
+        }
+      ]
+    });
+
+    expect(result).toContain('data-group-id="hidden-layer"');
+    expect(result).toContain('fill="#4c6522"');
+  });
 });

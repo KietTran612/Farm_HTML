@@ -1,6 +1,7 @@
 import "./styles/editor.scss";
 import { composeLayeredSvg, type SvgLayerInput } from "./layer-trace/layerComposer";
 import { parseLayeredSvg } from "./layer-trace/layerParser";
+import { toUnscaledCanvasPoint } from "./layer-trace/layerViewport";
 
 interface Crop {
   name: string;
@@ -76,6 +77,11 @@ let layerLassoPoints: Array<{ x: number; y: number }> = [];
 let isDrawingLayerMask = false;
 let layerTraceLayers: SvgLayerInput[] = [];
 let draggedIndex: number | null = null;
+let layerTraceZoom = 1;
+
+const layerTraceZoomMin = 1;
+const layerTraceZoomMax = 4;
+const layerTraceZoomStep = 0.25;
 
 document.addEventListener("DOMContentLoaded", () => {
   setupUIEventListeners();
@@ -95,7 +101,7 @@ async function initEditor() {
     populateCropDropdown();
     renderStagesSidebar();
     renderLayerTraceState();
-    applyPreset("animationCandidate");
+    applyPreset("gameDetailed");
     showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
   } catch (error: any) {
     showStatus("error", `Loi khoi tao editor: ${error.message}`);
@@ -114,6 +120,9 @@ function setupUIEventListeners() {
   const saveLayerCompositeBtn = document.getElementById("save-layer-composite-btn") as HTMLButtonElement | null;
   const layerStageSelect = document.getElementById("layer-stage-select") as HTMLSelectElement | null;
   const toggleTraceParamsBtn = document.getElementById("toggle-trace-params-btn") as HTMLButtonElement | null;
+  const zoomOutBtn = document.getElementById("layer-zoom-out-btn") as HTMLButtonElement | null;
+  const zoomInBtn = document.getElementById("layer-zoom-in-btn") as HTMLButtonElement | null;
+  const zoomResetBtn = document.getElementById("layer-zoom-reset-btn") as HTMLButtonElement | null;
 
   cropSelect?.addEventListener("change", () => void handleCropSelection(cropSelect.value));
   pngSelect?.addEventListener("change", () => void handlePngSelection());
@@ -133,6 +142,10 @@ function setupUIEventListeners() {
   saveLayerCompositeBtn?.addEventListener("click", () => void handleSaveLayerComposite());
   layerStageSelect?.addEventListener("change", renderLayerCompositePreview);
   toggleTraceParamsBtn?.addEventListener("click", toggleTraceParameters);
+  zoomOutBtn?.addEventListener("click", () => setLayerTraceZoom(layerTraceZoom - layerTraceZoomStep));
+  zoomInBtn?.addEventListener("click", () => setLayerTraceZoom(layerTraceZoom + layerTraceZoomStep));
+  zoomResetBtn?.addEventListener("click", () => setLayerTraceZoom(1));
+  window.addEventListener("resize", applyLayerTraceZoom);
 
   const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
   presetSelect?.addEventListener("change", () => {
@@ -291,11 +304,13 @@ async function loadLayerTraceImage(pngPath: string) {
 
   canvas.width = layerTraceImage.naturalWidth;
   canvas.height = layerTraceImage.naturalHeight;
+  layerTraceZoom = 1;
   layerTraceSize = {
     width: layerTraceImage.naturalWidth,
     height: layerTraceImage.naturalHeight
   };
-  canvas.parentElement?.classList.add("has-image");
+  canvas.closest(".layer-mask-editor")?.classList.add("has-image");
+  applyLayerTraceZoom();
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
 }
@@ -343,10 +358,60 @@ function handleLayerPointerUp(event: PointerEvent) {
 
 function readCanvasPoint(canvas: HTMLCanvasElement, event: PointerEvent): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();
-  return {
-    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-    y: ((event.clientY - rect.top) / rect.height) * canvas.height
-  };
+  return toUnscaledCanvasPoint(
+    { clientX: event.clientX, clientY: event.clientY },
+    rect,
+    { width: canvas.width, height: canvas.height }
+  );
+}
+
+function setLayerTraceZoom(nextZoom: number) {
+  layerTraceZoom = Math.min(layerTraceZoomMax, Math.max(layerTraceZoomMin, nextZoom));
+  applyLayerTraceZoom();
+}
+
+function applyLayerTraceZoom() {
+  const editor = document.querySelector<HTMLElement>(".layer-mask-editor");
+  const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
+  const zoomValue = document.getElementById("layer-zoom-value");
+  const zoomOutBtn = document.getElementById("layer-zoom-out-btn") as HTMLButtonElement | null;
+  const zoomInBtn = document.getElementById("layer-zoom-in-btn") as HTMLButtonElement | null;
+  const zoomResetBtn = document.getElementById("layer-zoom-reset-btn") as HTMLButtonElement | null;
+
+  if (!editor || !canvas || !layerTraceImage || canvas.width === 0 || canvas.height === 0) {
+    if (zoomValue) {
+      zoomValue.textContent = "100%";
+    }
+    [zoomOutBtn, zoomInBtn, zoomResetBtn].forEach((button) => {
+      if (button) {
+        button.disabled = true;
+      }
+    });
+    return;
+  }
+
+  const availableWidth = Math.max(1, editor.clientWidth - 24);
+  const availableHeight = Math.max(1, editor.clientHeight - 24);
+  const fitScale = Math.min(availableWidth / canvas.width, availableHeight / canvas.height, 1);
+  const displayWidth = Math.round(canvas.width * fitScale * layerTraceZoom);
+  const displayHeight = Math.round(canvas.height * fitScale * layerTraceZoom);
+
+  editor.style.setProperty("--layer-mask-display-width", `${displayWidth}px`);
+  editor.style.setProperty("--layer-mask-display-height", `${displayHeight}px`);
+  editor.classList.toggle("is-zoomed", layerTraceZoom > 1);
+
+  if (zoomValue) {
+    zoomValue.textContent = `${Math.round(layerTraceZoom * 100)}%`;
+  }
+  if (zoomOutBtn) {
+    zoomOutBtn.disabled = layerTraceZoom <= layerTraceZoomMin;
+  }
+  if (zoomInBtn) {
+    zoomInBtn.disabled = layerTraceZoom >= layerTraceZoomMax;
+  }
+  if (zoomResetBtn) {
+    zoomResetBtn.disabled = layerTraceZoom === 1;
+  }
 }
 
 function drawLayerMaskCanvas() {
@@ -411,7 +476,7 @@ async function handleTraceLayer() {
 
     const result = await response.json() as TraceResult;
     layerTraceLayers.push({
-      groupId: `${label}-${Date.now()}`,
+      groupId: createLayerGroupId(label),
       label,
       svgText: result.optimizedSvg
     });
@@ -483,12 +548,28 @@ function composeCurrentLayerSvg(stageId: string): string {
     throw new Error("No layer source loaded.");
   }
 
+  return composeLayerSvg(stageId, layerTraceLayers);
+}
+
+function composeVisibleLayerSvg(stageId: string): string {
+  if (!layerTraceSize) {
+    throw new Error("No layer source loaded.");
+  }
+
+  return composeLayerSvg(stageId, layerTraceLayers.filter((layer) => !layer.hidden));
+}
+
+function composeLayerSvg(stageId: string, layers: SvgLayerInput[]): string {
+  if (!layerTraceSize) {
+    throw new Error("No layer source loaded.");
+  }
+
   return composeLayeredSvg({
     width: layerTraceSize.width,
     height: layerTraceSize.height,
     cropId: activeCrop,
     stageId,
-    layers: layerTraceLayers
+    layers
   });
 }
 
@@ -520,15 +601,19 @@ function renderLayerList() {
   }
 
   list.innerHTML = layerTraceLayers.map((layer, index) => `
-    <div class="layer-row" draggable="true" data-layer-index="${index}">
+    <div class="layer-row ${layer.hidden ? "is-hidden" : ""}" draggable="true" data-layer-index="${index}">
       <div class="layer-row-left">
         <span class="drag-handle" title="Keo de sap xep">⋮⋮</span>
+        <button class="layer-visibility-btn" type="button" data-layer-visibility="${index}" aria-pressed="${layer.hidden ? "true" : "false"}" title="${layer.hidden ? "Hien layer" : "An layer"}">
+          <span class="layer-visibility-icon" aria-hidden="true"></span>
+        </button>
         <span class="layer-label-text" data-layer-label-index="${index}" title="Double click de doi ten">${index + 1}. ${escapeHtml(layer.label)}</span>
         <span class="rename-icon" data-layer-rename-trigger="${index}" title="Doi ten">✎</span>
       </div>
       <div class="layer-row-right">
-        <button class="btn btn-secondary btn-icon sort-btn sort-up" type="button" data-layer-up="${index}" title="Di chuyen len" ${index === 0 ? "disabled" : ""}>↑</button>
-        <button class="btn btn-secondary btn-icon sort-btn sort-down" type="button" data-layer-down="${index}" title="Di chuyen xuong" ${index === layerTraceLayers.length - 1 ? "disabled" : ""}>↓</button>
+        <button class="btn btn-secondary btn-icon duplicate-btn" type="button" data-layer-duplicate="${index}" title="Nhan doi layer">
+          <span class="duplicate-icon" aria-hidden="true"></span>
+        </button>
         <button class="btn btn-secondary btn-icon delete-btn" type="button" data-layer-delete="${index}" title="Xoa layer">x</button>
       </div>
     </div>
@@ -541,27 +626,22 @@ function renderLayerList() {
     });
   });
 
-  list.querySelectorAll<HTMLButtonElement>("[data-layer-up]").forEach((button) => {
+  list.querySelectorAll<HTMLButtonElement>("[data-layer-visibility]").forEach((button) => {
     button.addEventListener("click", () => {
-      const index = Number(button.dataset.layerUp);
-      if (index > 0) {
-        const temp = layerTraceLayers[index];
-        layerTraceLayers[index] = layerTraceLayers[index - 1];
-        layerTraceLayers[index - 1] = temp;
-        renderLayerTraceState();
-      }
+      const index = Number(button.dataset.layerVisibility);
+      if (!Number.isFinite(index) || !layerTraceLayers[index]) return;
+      layerTraceLayers[index].hidden = !layerTraceLayers[index].hidden;
+      renderLayerTraceState();
     });
   });
 
-  list.querySelectorAll<HTMLButtonElement>("[data-layer-down]").forEach((button) => {
+  list.querySelectorAll<HTMLButtonElement>("[data-layer-duplicate]").forEach((button) => {
     button.addEventListener("click", () => {
-      const index = Number(button.dataset.layerDown);
-      if (index < layerTraceLayers.length - 1) {
-        const temp = layerTraceLayers[index];
-        layerTraceLayers[index] = layerTraceLayers[index + 1];
-        layerTraceLayers[index + 1] = temp;
-        renderLayerTraceState();
-      }
+      const index = Number(button.dataset.layerDuplicate);
+      const sourceLayer = layerTraceLayers[index];
+      if (!Number.isFinite(index) || !sourceLayer) return;
+      layerTraceLayers.splice(index + 1, 0, duplicateLayer(sourceLayer));
+      renderLayerTraceState();
     });
   });
 
@@ -637,6 +717,7 @@ function startInlineRename(index: number) {
 
   rowLeft.innerHTML = `
     <span class="drag-handle" style="visibility: hidden">⋮⋮</span>
+    <span class="layer-visibility-placeholder"></span>
     <span class="layer-index-indicator">${index + 1}. </span>
     <input type="text" class="form-control layer-rename-input" value="${escapeHtml(originalLabel)}" />
   `;
@@ -682,13 +763,14 @@ function renderLayerCompositePreview() {
   const preview = document.getElementById("layer-composite-preview");
   if (!preview) return;
 
-  if (!layerTraceSize || layerTraceLayers.length === 0) {
+  const visibleLayers = layerTraceLayers.filter((layer) => !layer.hidden);
+  if (!layerTraceSize || layerTraceLayers.length === 0 || visibleLayers.length === 0) {
     preview.innerHTML = `<p class="placeholder-text">Composite SVG preview se hien thi o day.</p>`;
     return;
   }
 
   const stageId = (document.getElementById("layer-stage-select") as HTMLSelectElement | null)?.value || targetStages[0] || "stage00";
-  preview.innerHTML = composeCurrentLayerSvg(stageId);
+  preview.innerHTML = composeVisibleLayerSvg(stageId);
 }
 
 function updateLayerTraceButtons() {
@@ -708,14 +790,20 @@ function resetLayerWorkflow() {
   layerLassoPoints = [];
   layerTraceLayers = [];
   isDrawingLayerMask = false;
+  layerTraceZoom = 1;
   const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
   if (canvas) {
     const context = canvas.getContext("2d");
     context?.clearRect(0, 0, canvas.width, canvas.height);
     canvas.width = 0;
     canvas.height = 0;
-    canvas.parentElement?.classList.remove("has-image");
+    const editor = canvas.closest<HTMLElement>(".layer-mask-editor");
+    editor?.classList.remove("has-image");
+    editor?.classList.remove("is-zoomed");
+    editor?.style.removeProperty("--layer-mask-display-width");
+    editor?.style.removeProperty("--layer-mask-display-height");
   }
+  applyLayerTraceZoom();
   renderLayerTraceState();
 }
 
@@ -792,6 +880,8 @@ async function handleSavedStageSelection(stageId: string) {
     };
     layerLassoPoints = [];
     isDrawingLayerMask = false;
+    layerTraceZoom = 1;
+    applyLayerTraceZoom();
     drawLayerMaskCanvas();
     renderLayerTraceState();
     showStatus("info", `Da mo ${formatStageName(stageId)}. Layer cu co the rename, reorder, delete; lasso goc khong duoc luu.`);
@@ -844,6 +934,20 @@ function syncAnimationEditorButton() {
 
 function sanitizeLayerLabel(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "layer";
+}
+
+function createLayerGroupId(label: string): string {
+  return `${sanitizeLayerLabel(label)}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function duplicateLayer(layer: SvgLayerInput): SvgLayerInput {
+  const label = sanitizeLayerLabel(`${layer.label}-copy`);
+  return {
+    groupId: createLayerGroupId(label),
+    label,
+    svgText: layer.svgText,
+    hidden: layer.hidden
+  };
 }
 
 function formatStageName(stageId: string): string {

@@ -2,6 +2,7 @@ export interface SvgLayerInput {
   groupId: string;
   label: string;
   svgText: string;
+  hidden?: boolean;
 }
 
 export interface ComposeSvgOptions {

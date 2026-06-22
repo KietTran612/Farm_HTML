@@ -2,6 +2,16 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 75 (Fix Lasso Zoom Controls Position):** Moved the lasso canvas into a dedicated `.layer-mask-scroll` viewport so only the zoomed source image scrolls. The zoom controls now remain fixed on `.layer-mask-editor` instead of being part of the scrollable content.
+
+- **Implemented Task 74 (Add Source Image Zoom For Lasso):** Added source image zoom controls to the lasso canvas. Zoom changes only the displayed canvas size via CSS variables and scrollable viewport behavior; `canvas.width`, `canvas.height`, source image data, and lasso coordinate mapping remain in original image space.
+
+- **Implemented Task 73 (Remove Layer Sort Buttons):** Removed the manual Up/Down buttons and their click handlers from Crop Editor layer rows because drag-and-drop now owns layer reordering. Visibility, duplicate, delete, rename, and drag handles remain available.
+
+- **Implemented Task 72 (Add Layer Duplicate Button):** Added a duplicate button to each Crop Editor layer row. Duplicated layers are inserted directly below the source layer, preserve the source SVG and hidden state, and receive a new `groupId` so preview/save output does not reuse the original layer group ID.
+
+- **Implemented Task 71 (Add Layer Visibility Toggle):** Added an eye-style visibility button to each Crop Editor layer row. Hidden layers stay in the layer list and saved SVG output, but are filtered out of the composite preview so users can inspect or replace individual layers without deleting them.
+
 - **Implemented Task 70 (Edit Saved Layered Stages):** Added saved layered SVG parsing and wired Crop Editor stage sidebar clicks to reopen mapped stage SVGs. Loaded layers can be renamed, reordered, deleted, extended with newly traced PNG layers, previewed, and saved back to the same stage without needing original lasso metadata. Review fixes preserve root `<defs>` used by loaded layer paths and prevent repeated saves from double-prefixing internal SVG IDs.
 
 - **Implemented Task 69 (Remove Legacy Auto Trace Workflow):** Removed `auto_trace.bat`, deleted `scripts/vtracer/auto-trace-crops.mjs`, and removed the `crop:vtracer:auto` npm script because the full-PNG auto trace path is superseded by the lasso masked layer trace workflow.
@@ -31,6 +41,30 @@
 - **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
 
 ## Verification
+
+- **For Task 75 (Fix Lasso Zoom Controls Position):**
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot Stage03 PNG, zoomed to 200%, scrolled the dedicated canvas viewport horizontally, and confirmed zoom controls kept the same screen position while `.layer-mask-scroll` handled the content scroll.
+
+- **For Task 74 (Add Source Image Zoom For Lasso):**
+  - Wrote `src/layer-trace/layerViewport.test.ts` first and confirmed it failed before implementing the coordinate helper.
+  - `npx vitest run src/layer-trace/layerViewport.test.ts src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 7 tests.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot Stage03 PNG, confirmed zoom controls enabled, clicked zoom in to 125%, and confirmed canvas display rect grew from 334x445 to 418x557 while `canvas.width`/`canvas.height` stayed 768x1024.
+
+- **For Task 73 (Remove Layer Sort Buttons):**
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage and confirmed `data-layer-up`, `data-layer-down`, and `.sort-btn` controls no longer render while duplicate/delete buttons remain.
+
+- **For Task 72 (Add Layer Duplicate Button):**
+  - `npx vitest run src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 6 tests.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage, confirmed one duplicate button, clicked duplicate on the first layer, and confirmed rows/buttons/preview groups increased from 1 to 2 with distinct group IDs.
+
+- **For Task 71 (Add Layer Visibility Toggle):**
+  - `npx vitest run src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 6 tests.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage, confirmed the eye button exists, hiding the first layer changed preview groups from 1 to 0, and showing it restored preview groups to 1 without deleting the row.
 
 - **For Task 70 (Edit Saved Layered Stages):**
   - Wrote parser tests first and verified the initial missing-module failure.
@@ -73,12 +107,8 @@
 
 ## Current Uncommitted Scope
 
-- **Crop Editor Updates:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/` (contains layer composer and math helpers).
-- **Saved Stage Reopen:** `src/layer-trace/layerParser.ts`, `src/layer-trace/layerParser.test.ts`, `src/editor.ts`, and `docs/plans/2026-06-22-edit-saved-layered-stages.md`.
-- **Crop Animation Editor Updates:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/` (group classifier, group editor, types), `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage03.grouped.svg`.
-- **Middleware API:** `scripts/vite-plugins/editorMiddleware.ts` and `scripts/vite-plugins/editorMiddleware.test.ts`.
-- **Removed Legacy Auto Trace:** `auto_trace.bat`, `scripts/vtracer/auto-trace-crops.mjs`, and the `crop:vtracer:auto` npm script.
-- **Cleanup and Planning Docs:** `docs/plans/2026-06-22-clean-obsolete-plans-and-tasks.md`, `docs/plans/2026-06-22-crop-animation-editor-visual-grouping.md`, `docs/plans/archive/` (moved files), `docs/plans/index.md`, `docs/plans/task.md`, `docs/plans/current-handoff.md`.
+- **Layer Trace UI:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/layerComposer.ts`, `src/layer-trace/layerComposer.test.ts`, `src/layer-trace/layerViewport.ts`, `src/layer-trace/layerViewport.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Observed Crop Asset Changes Not Part Of Duplicate UI:** `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/meta.json`, `src/assets/crops/carrot/stage03.svg`, `src/assets/crops/corn/dead.svg`, and `src/assets/crops/corn/stage03.svg` remain modified in the worktree.
 
 ## Recommended Next Task
 

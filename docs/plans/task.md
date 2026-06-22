@@ -73,3 +73,8 @@
 | **Task 68: Fix Layer Composite Preview Scaling** | [x] | Fixed SVG scaling in composite preview container by adding object-fit contain, width/height 100% styles, and making grid layout columns symmetrical to match canvas constraints. |
 | **Task 69: Remove Legacy Auto Trace Workflow** | [x] | Removed the full-PNG auto trace batch file, Node script, and npm script now superseded by lasso layer tracing. |
 | **Task 70: Edit Saved Layered Stages** | [x] | Added saved-stage SVG parsing and sidebar loading so old layers can be renamed, reordered, deleted, extended, and saved again. |
+| **Task 71: Add Layer Visibility Toggle** | [x] | Added eye toggle controls so layers can be hidden or shown in the composite preview without deleting or omitting them from saved output. |
+| **Task 72: Add Layer Duplicate Button** | [x] | Added a duplicate control to layer rows so users can clone an existing SVG layer with a fresh group ID. |
+| **Task 73: Remove Layer Sort Buttons** | [x] | Removed manual up/down layer buttons because drag-and-drop now owns layer reordering. |
+| **Task 74: Add Source Image Zoom For Lasso** | [x] | Added source-canvas zoom controls for more precise lasso cutting while preserving original image data and coordinates. |
+| **Task 75: Fix Lasso Zoom Controls Position** | [x] | Kept zoom controls fixed above the lasso viewport while only the canvas content scrolls. |
