@@ -2,6 +2,12 @@
 
 ## Latest Completed Work
 
+- Reviewed the current crop editor workflow at `http://localhost:4000/crop-editor.html` after the user completed Tasks 46-49.
+- Agreed on a separate crop-level animation editor instead of embedding animation tools inside `crop-editor.html`.
+- Chose a single `Animation Editor` button from `crop-editor.html` that opens `crop-animation-editor.html?crop=<crop>`.
+- Decided the animation editor should select stages inside the new page, auto-classify SVG paths into editable groups, support group-level relabel/merge/split review tools, preview per-part animation, and save grouped SVGs.
+- Decided grouped SVG outputs should not overwrite original stage SVGs. Future runtime integration should prefer `<stage>.grouped.svg` when present and fall back to `<stage>.svg`; current board rendering still uses procedural crop-art renderers.
+- Created `docs/plans/2026-06-22-crop-animation-editor.md` for the separate crop-level animation editor workflow.
 - Reviewed the completed Farm Progression MVP implementation for logic and workflow issues.
 - Fixed crop care edge cases where watering or pest removal could revive crops that were already dead by timeout.
 - Added `growthPausedMs` so active dry/pest conditions pause growth instead of letting crops grow normally until death.
@@ -57,9 +63,11 @@
 - **Implemented Task 48 (Implement Client-side Logic and Validation):** Implemented actual tracing requests, dynamic preset loading, debounced sliders for custom trace, duplication highlight visually with classes and alerts, and footer validation logic in `src/editor.ts`.
 - **Implemented Task 49 (Verify HTML Crop Editor E2E):** Ran complete browser automation smoke check verifying PNG selection, tracing, duplicate error alerts, and successfully saving SVG mappings and `meta.json` on disk.
 - **Implemented Task 50 (Implement Crop Editor Cleanup Drafts Script):** Created `scripts/vtracer/cleanup.mjs` and `clear_drafts.bat` supporting recursive deletion of VTracer SVG/Generated workspace folders either for all crops or a targeted crop (`--crop <name>`), registered as `npm run crop:vtracer:clear`.
+- **Implemented Task 55 (Implement Auto Trace Crops Script):** Created `scripts/vtracer/auto-trace-crops.mjs` and `auto_trace.bat` to trace all crop PNG files and map them to their respective stages under the `animationCandidate` preset. Ran the script to generate all game-ready SVG assets.
 
 ## Verification
 
+- Docs-only crop animation editor plan update: app validation not run - not relevant to this change.
 - Run focused middleware tests: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` (Passed 4/4 tests including cleanup test).
 - Run cleanup CLI command: `npm run crop:vtracer:clear -- --crop Corn` (Passed; successfully deleted `docs/Crops/Corn/SVG/Generated`).
 - Run client production build: `npm run build` (Passed, 0 errors).
@@ -90,7 +98,9 @@
 
 ## Current Uncommitted Scope
 
-- Vite Middleware API & Cleanup Script: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `scripts/vtracer/cleanup.mjs`, `clear_drafts.bat`.
+- Crop animation editor planning docs: `docs/plans/2026-06-22-crop-animation-editor.md`, `docs/plans/task.md`, `docs/plans/current-handoff.md`, and `docs/plans/index.md`.
+- Vite Middleware API, Cleanup & Auto-Trace Scripts: `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `scripts/vtracer/cleanup.mjs`, `scripts/vtracer/auto-trace-crops.mjs`, `clear_drafts.bat`, `auto_trace.bat`.
+- Generated game SVGs & metadata: `src/assets/crops/**/stage*.svg`, `src/assets/crops/**/dead.svg`, `src/assets/crops/**/meta.json`.
 - HTML Crop Editor UI Layout & Logic: `crop-editor.html`, `src/styles/editor.scss`, `src/editor.ts`.
 - Plan files: `docs/plans/2026-06-22-integrate-vite-middleware-api.md`, `docs/plans/2026-06-22-html-crop-editor-layout.md`, `docs/plans/2026-06-22-html-crop-editor-logic-verification.md`.
 - Review polish files: `review.html`, `src/review.ts`, `src/review.test.ts`, and `src/node-test-shims.d.ts`.
@@ -102,4 +112,4 @@
 
 ## Recommended Next Task
 
-- Proceed with Task 40 to prepare one inline SVG candidate for per-part animation and manual part classification (currently marked as in-progress `[/]`).
+- Execute `docs/plans/2026-06-22-crop-animation-editor.md`, starting with Task 1 and Task 2: add the single crop-level animation editor button and create the new `crop-animation-editor.html` shell.

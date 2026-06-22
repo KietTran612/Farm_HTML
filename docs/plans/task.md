@@ -53,4 +53,8 @@
 | **Task 48: Implement Client-side Logic and Validation** | [x] | Write src/editor.ts to handle tracing requests, validation checking, warning display, and save mapping. |
 | **Task 49: Verify HTML Crop Editor E2E** | [x] | Test the entire flow from PNG selection, custom parameter tuning, duplicate validation, to saving crop files. |
 | **Task 50: Implement Crop Editor Cleanup Drafts Script** | [x] | Created scripts/vtracer/cleanup.mjs and clear_drafts.bat to clear crop generated directories. |
-
+| **Task 51: Crop Animation Editor Plan** | [x] | Created a focused plan for a separate crop-level animation editor with grouped SVG outputs. |
+| **Task 52: Implement Crop Animation Editor Navigation And Shell** | [ ] | Add one button from crop editor and create crop-animation-editor.html with crop-level stage selection. |
+| **Task 53: Implement SVG Group Classify And Edit Tools** | [ ] | Add classifier, group operations, overlay/solo review, relabel, merge, split, and save workflow. |
+| **Task 54: Verify Crop Animation Editor Flow** | [ ] | Run focused unit tests, build, and browser smoke for classify, group editing, preview, and save. |
+| **Task 55: Implement Auto Trace Crops Script** | [x] | Created scripts/vtracer/auto-trace-crops.mjs and auto_trace.bat to trace all crops automatically. |

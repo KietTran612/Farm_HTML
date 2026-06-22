@@ -16,7 +16,8 @@
 - `2026-06-22-integrate-vite-middleware-api.md` - Plan for integrating Vite Middleware API endpoints.
 - `2026-06-22-html-crop-editor-layout.md` - Plan for HTML Crop Editor UI layout.
 - `2026-06-22-html-crop-editor-logic-verification.md` - Plan for HTML Crop Editor logic and E2E verification.
+- `2026-06-22-crop-animation-editor.md` - Plan for a separate crop-level SVG group and animation editor that saves grouped stage SVGs and animation metadata.
 
 ## Planned Next
 
-- Execute `2026-06-19-vtracer-cli-crop-pipeline.md` if the user approves VTracer CLI setup.
+- Execute `2026-06-22-crop-animation-editor.md` to add the separate crop-level animation editor workflow.
