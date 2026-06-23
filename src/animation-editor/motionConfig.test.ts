@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAnimationPartsConfig,
   getDefaultMotionForAnimation,
+  getMotionKeysForAnimation,
   mergeStageAnimationCache,
   type MotionConfig
 } from "./motionConfig";
@@ -22,6 +23,15 @@ describe("animation motion config", () => {
       yPx: 4,
       scale: 1.02
     });
+  });
+
+  it("exposes only motion keys that affect each animation preset", () => {
+    expect(getMotionKeysForAnimation("none")).toEqual([]);
+    expect(getMotionKeysForAnimation("soft-sway")).toEqual(["durationMs", "delayMs", "angleDeg"]);
+    expect(getMotionKeysForAnimation("sway-left")).toEqual(["durationMs", "delayMs", "angleDeg", "yPx"]);
+    expect(getMotionKeysForAnimation("sway-right")).toEqual(["durationMs", "delayMs", "angleDeg", "yPx"]);
+    expect(getMotionKeysForAnimation("leaf-breathe")).toEqual(["durationMs", "delayMs", "scale"]);
+    expect(getMotionKeysForAnimation("bob")).toEqual(["durationMs", "delayMs", "yPx"]);
   });
 
   it("serializes motion configs into the saved stage parts payload", () => {

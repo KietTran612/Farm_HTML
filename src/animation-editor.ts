@@ -4,10 +4,13 @@ import { classifySvgPaths, parseSvgPathBounds, type CropGroup } from "./animatio
 import { relabelGroup, serializeGroupedSvg } from "./animation-editor/groupEditor";
 import { createSelectionBoundsRect } from "./animation-editor/selectionOverlay";
 import { calculatePivotFromSvgPoint } from "./animation-editor/pivotDrag";
+import { validateStageAnimationData } from "./animation-editor/stageValidation";
 import {
   buildAnimationPartsConfig,
   getDefaultMotionForAnimation,
+  getMotionKeysForAnimation,
   mergeStageAnimationCache,
+  type MotionConfigKey,
   type MotionConfig
 } from "./animation-editor/motionConfig";
 
@@ -49,6 +52,7 @@ let partMotions: Record<string, MotionConfig> = {};
 let soloPreviewGroupId = "";
 let animationsMetadata: any = null;
 let draggingPivotGroupId = "";
+let isDirty = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
@@ -60,7 +64,22 @@ function setupEvents() {
   cropSelect?.addEventListener("change", () => {
     const nextCrop = cropSelect.value;
     if (!nextCrop || nextCrop === cropName) return;
+    if (isDirty && !window.confirm("Stage hien tai co thay doi chua luu. Doi crop se bo cac thay doi nay. Tiep tuc?")) {
+      cropSelect.value = cropName;
+      return;
+    }
     window.location.href = `/crop-animation-editor.html?crop=${encodeURIComponent(nextCrop)}`;
+  });
+
+  document.getElementById("animation-stage-select")?.addEventListener("change", (event) => {
+    const select = event.currentTarget as HTMLSelectElement;
+    const nextStageId = select.value;
+    if (!nextStageId || nextStageId === activeStage?.stageId) return;
+    if (isDirty && !window.confirm("Stage hien tai co thay doi chua luu. Doi stage se bo cac thay doi nay. Tiep tuc?")) {
+      select.value = activeStage?.stageId || "";
+      return;
+    }
+    selectStage(nextStageId);
   });
 
   document.getElementById("auto-classify-btn")?.addEventListener("click", handleAutoClassify);
@@ -100,7 +119,7 @@ async function initAnimationEditor() {
     const payload = await response.json() as CropStageAssetsResponse;
     stages = payload.stages;
     animationsMetadata = payload.animations;
-    renderStageList();
+    renderStageSelect();
     setStatus("Select a stage to begin.");
 
     const firstStage = stages.find((stage) => stage.activeSvg);
@@ -145,26 +164,22 @@ function renderMissingCrop() {
   `;
 }
 
-function renderStageList() {
-  const container = document.getElementById("animation-stage-list");
-  if (!container) return;
+function renderStageSelect() {
+  const select = document.getElementById("animation-stage-select") as HTMLSelectElement | null;
+  if (!select) return;
 
   if (stages.length === 0) {
-    container.innerHTML = `<p class="animation-empty">No saved stage SVGs found for this crop.</p>`;
+    select.innerHTML = `<option value="">No saved stage SVGs</option>`;
+    select.disabled = true;
     return;
   }
 
-  container.innerHTML = stages.map((stage) => `
-    <button class="stage-card ${activeStage?.stageId === stage.stageId ? "is-active" : ""}" type="button" data-stage-id="${stage.stageId}" ${stage.activeSvg ? "" : "disabled"}>
-      <span class="stage-card__name">${formatStageLabel(stage.stageId)}</span>
-      <span class="stage-card__file">${stage.activeFile || "No SVG"}</span>
-      ${stage.hasGroupedSvg ? `<span class="stage-card__badge">Grouped</span>` : ""}
-    </button>
+  select.innerHTML = stages.map((stage) => `
+    <option value="${stage.stageId}" ${activeStage?.stageId === stage.stageId ? "selected" : ""} ${stage.activeSvg ? "" : "disabled"}>
+      ${formatStageLabel(stage.stageId)}
+    </option>
   `).join("");
-
-  container.querySelectorAll<HTMLButtonElement>(".stage-card").forEach((button) => {
-    button.addEventListener("click", () => selectStage(button.dataset.stageId || ""));
-  });
+  select.disabled = stages.every((stage) => !stage.activeSvg);
 }
 
 function selectStage(stageId: string) {
@@ -174,11 +189,32 @@ function selectStage(stageId: string) {
   activeStage = stage;
   activeGroups = [];
   selectedGroupId = "";
+  soloPreviewGroupId = "";
   isPreviewingAnimation = false;
+  isDirty = false;
+
+  if (!stage.activeSvg) {
+    renderStageSelect();
+    renderPreview();
+    renderGroupList();
+    renderLayerProperties();
+    updateActionState();
+    setStatus(`${formatStageLabel(stage.stageId)} has no SVG data.`, true);
+    return;
+  }
 
   // 1. Group Restoring (load existing grouped SVG & legacy fallback)
   const parser = new DOMParser();
   const doc = parser.parseFromString(stage.activeSvg, "image/svg+xml");
+  if (doc.querySelector("parsererror")) {
+    renderStageSelect();
+    renderPreview();
+    renderGroupList();
+    renderLayerProperties();
+    updateActionState();
+    setStatus(`${formatStageLabel(stage.stageId)} SVG data could not be parsed.`, true);
+    return;
+  }
   const allPathsInDoc = Array.from(doc.querySelectorAll("path"));
   const groupElements = Array.from(doc.querySelectorAll("g[data-group-id]"));
 
@@ -334,9 +370,12 @@ function selectStage(stageId: string) {
     }
   });
 
-  renderStageList();
+  selectedGroupId = activeGroups[0]?.id || "";
+
+  renderStageSelect();
   renderPreview();
   renderGroupList();
+  renderLayerProperties();
   updateActionState();
   setStatus(`${formatStageLabel(stage.stageId)} loaded.`);
 }
@@ -357,9 +396,11 @@ function handleAutoClassify() {
   selectedGroupId = activeGroups[0]?.id || "";
   previewMode = "overlay";
   isPreviewingAnimation = false;
+  setDirty(true);
   syncModeButtons();
   renderPreview();
   renderGroupList();
+  renderLayerProperties();
   updateActionState();
   setStatus(`Classified ${activeGroups.length} groups for ${formatStageLabel(activeStage.stageId)}.`);
 }
@@ -376,6 +417,18 @@ function handlePreviewAnimation() {
 
 async function handleSave() {
   if (!activeStage || activeGroups.length === 0) return;
+  const validation = validateStageAnimationData({
+    stage: activeStage,
+    groups: activeGroups,
+    animations: partAnimations,
+    pivots: partPivots,
+    motions: partMotions
+  });
+  if (!validation.valid) {
+    setStatus(`Save blocked: ${validation.errors[0]}`, true);
+    return;
+  }
+
   const groupedSvg = serializeGroupedSvg(activeStage.activeSvg, activeGroups, cropName, activeStage.stageId);
   const groupedFile = `${activeStage.stageId}.grouped.svg`;
   const parts = buildAnimationPartsConfig(activeGroups, partAnimations, partPivots, partMotions);
@@ -409,7 +462,8 @@ async function handleSave() {
   activeStage.activeSvg = groupedSvg;
   activeStage.activeFile = activeStage.groupedFile;
   activeStage.hasGroupedSvg = true;
-  renderStageList();
+  setDirty(false);
+  renderStageSelect();
   setStatus(`Saved ${activeStage.groupedFile}.`);
 }
 
@@ -486,34 +540,36 @@ function getMotionValueForGroup(groupId: string): Required<MotionConfig> {
 
 function renderMotionControlsForGroup(groupId: string): string {
   const motion = getMotionValueForGroup(groupId);
+  const animation = partAnimations[groupId] || "none";
+  const motionKeys = getMotionKeysForAnimation(animation);
+  if (motionKeys.length === 0) return "";
+
   return `
     <div class="details-field motion-field">
       <span class="field-label-sm">Motion</span>
-      <label class="motion-control">
-        <span>Duration <strong data-motion-value="durationMs">${motion.durationMs}ms</strong></span>
-        <input type="range" min="1000" max="5000" step="100" data-action="motion" data-motion-key="durationMs" value="${motion.durationMs}" />
-      </label>
-      <label class="motion-control">
-        <span>Delay <strong data-motion-value="delayMs">${motion.delayMs}ms</strong></span>
-        <input type="range" min="0" max="3000" step="50" data-action="motion" data-motion-key="delayMs" value="${motion.delayMs}" />
-      </label>
-      <label class="motion-control">
-        <span>Angle <strong data-motion-value="angleDeg">${motion.angleDeg}deg</strong></span>
-        <input type="range" min="0" max="10" step="0.1" data-action="motion" data-motion-key="angleDeg" value="${motion.angleDeg}" />
-      </label>
-      <label class="motion-control">
-        <span>Offset Y <strong data-motion-value="yPx">${motion.yPx}px</strong></span>
-        <input type="range" min="0" max="10" step="1" data-action="motion" data-motion-key="yPx" value="${motion.yPx}" />
-      </label>
-      <label class="motion-control">
-        <span>Scale <strong data-motion-value="scale">${motion.scale.toFixed(2)}</strong></span>
-        <input type="range" min="1" max="1.15" step="0.01" data-action="motion" data-motion-key="scale" value="${motion.scale}" />
-      </label>
+      ${motionKeys.map((key) => renderMotionControl(key, motion[key])).join("")}
     </div>
   `;
 }
 
-function formatMotionValue(key: keyof Required<MotionConfig>, value: number): string {
+function renderMotionControl(key: MotionConfigKey, value: number): string {
+  const controls: Record<MotionConfigKey, { label: string; min: string; max: string; step: string }> = {
+    durationMs: { label: "Duration", min: "1000", max: "5000", step: "100" },
+    delayMs: { label: "Delay", min: "0", max: "3000", step: "50" },
+    angleDeg: { label: "Angle", min: "0", max: "10", step: "0.1" },
+    yPx: { label: "Offset Y", min: "0", max: "10", step: "1" },
+    scale: { label: "Scale", min: "1", max: "1.15", step: "0.01" }
+  };
+  const control = controls[key];
+
+  return `
+      <label class="motion-control">
+        <span>${control.label} <strong data-motion-value="${key}">${formatMotionValue(key, value)}</strong></span>
+        <input type="range" min="${control.min}" max="${control.max}" step="${control.step}" data-action="motion" data-motion-key="${key}" value="${value}" />
+      </label>`;
+}
+
+function formatMotionValue(key: MotionConfigKey, value: number): string {
   if (key === "durationMs" || key === "delayMs") return `${Math.round(value)}ms`;
   if (key === "angleDeg") return `${value.toFixed(1)}deg`;
   if (key === "yPx") return `${Math.round(value)}px`;
@@ -557,12 +613,13 @@ function getSvgPointFromPointer(svg: SVGSVGElement, event: PointerEvent) {
 }
 
 function updatePivotControls(groupId: string, pivot: PivotPoint) {
-  const row = document.querySelector<HTMLElement>(`.group-row[data-group-id="${cssEscape(groupId)}"]`);
-  if (!row) return;
+  if (groupId !== selectedGroupId) return;
+  const panel = document.getElementById("layer-properties");
+  if (!panel) return;
 
-  const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
-  const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
-  const presetSelect = row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
+  const xInput = panel.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+  const yInput = panel.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+  const presetSelect = panel.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
   if (xInput) xInput.value = String(Math.round(pivot.x));
   if (yInput) yInput.value = String(Math.round(pivot.y));
   if (presetSelect) presetSelect.value = "custom";
@@ -587,6 +644,7 @@ function applyDraggedPivot(event: PointerEvent) {
   );
 
   partPivots[group.id] = nextPivot;
+  setDirty(true);
   updatePivotControls(group.id, nextPivot);
   decoratePreviewGroups(preview);
 }
@@ -674,181 +732,214 @@ function renderPivotPresetOptionsForGroup(groupId: string): string {
 }
 
 function renderGroupList() {
-  const container = document.getElementById("group-list");
-  if (!container) return;
+  {
+    const container = document.getElementById("group-list");
+    if (!container) return;
 
-  if (activeGroups.length === 0) {
-    container.innerHTML = `<p class="animation-empty">Run Suggest Candidates to inspect groups.</p>`;
-    return;
-  }
+    if (activeGroups.length === 0) {
+      container.innerHTML = `<p class="animation-empty">${activeStage ? "No editable layers in this stage." : "Select a stage to inspect layers."}</p>`;
+      renderLayerProperties();
+      return;
+    }
 
-  container.innerHTML = activeGroups.map((group) => {
-    const defaultPivot = getDefaultPivotForPart(group.label);
-    const pivot = partPivots[group.id] || defaultPivot;
-    return `
+    container.innerHTML = activeGroups.map((group) => `
       <article class="group-row ${group.id === selectedGroupId ? "is-active" : ""}" data-group-id="${group.id}">
         <div class="group-row__main">
           <button class="group-row__select" type="button" data-action="select">
             <div class="group-row__select-header">
-              <span class="group-row__arrow">▼</span>
+              <span class="group-row__arrow">â–¼</span>
               <span class="group-row__label">${group.label}</span>
             </div>
-            <span class="group-row__meta">${group.paths.length} paths · ${group.colorFamily}</span>
+            <span class="group-row__meta">${group.paths.length} paths Â· ${group.colorFamily}</span>
           </button>
-        </div>
-        <div class="group-row__controls">
-          <select class="form-control group-label-select" data-action="label">
-            ${renderPartOptions(group.label)}
-          </select>
-          <button class="group-preview-btn ${soloPreviewGroupId === group.id ? "is-active" : ""}" type="button" data-action="preview-part" title="${soloPreviewGroupId === group.id ? "Stop Preview" : "Preview Animation"}">
-            ${soloPreviewGroupId === group.id ? "⏹" : "▶"}
-          </button>
-          <button class="group-visibility-btn ${group.hidden ? "is-hidden-btn" : ""}" type="button" data-action="visibility" title="${group.hidden ? "Show Layer" : "Hide Layer"}">
-            👁
-          </button>
-        </div>
-        
-        <div class="group-row__details">
-          <div class="details-field">
-            <span class="field-label-sm">Animation</span>
-            <select class="form-control group-animation-select" data-action="animation">
-              ${renderAnimationOptionsForGroup(group.id)}
-            </select>
+          <div class="group-row__controls">
+            <button class="group-preview-btn ${soloPreviewGroupId === group.id ? "is-active" : ""}" type="button" data-action="preview-part" title="${soloPreviewGroupId === group.id ? "Stop Preview" : "Preview Animation"}">
+              ${soloPreviewGroupId === group.id ? "â¹" : "â–¶"}
+            </button>
+            <button class="group-visibility-btn ${group.hidden ? "is-hidden-btn" : ""}" type="button" data-action="visibility" title="${group.hidden ? "Show Layer" : "Hide Layer"}">
+              ðŸ‘
+            </button>
           </div>
-          <div class="details-field">
-            <span class="field-label-sm">Pivot Point</span>
-            <select class="form-control group-pivot-select" data-action="pivot-preset">
-              ${renderPivotPresetOptionsForGroup(group.id)}
-            </select>
-            <div class="pivot-inputs-row">
-              <div class="pivot-input-wrapper">
-                <span>X</span>
-                <input class="form-control pivot-x-input" type="number" min="0" max="100" step="1" data-action="pivot-x" value="${Math.round(pivot.x)}" />
-                <span>%</span>
-              </div>
-              <div class="pivot-input-wrapper">
-                <span>Y</span>
-                <input class="form-control pivot-y-input" type="number" min="0" max="100" step="1" data-action="pivot-y" value="${Math.round(pivot.y)}" />
-                <span>%</span>
-              </div>
-            </div>
-          </div>
-          ${renderMotionControlsForGroup(group.id)}
         </div>
       </article>
-    `;
-  }).join("");
+    `).join("");
 
-  container.querySelectorAll<HTMLElement>(".group-row").forEach((row) => {
-    const groupId = row.dataset.groupId || "";
-    row.querySelector('[data-action="select"]')?.addEventListener("click", () => {
-      if (selectedGroupId === groupId) {
-        selectedGroupId = "";
-      } else {
+    container.querySelectorAll<HTMLElement>(".group-row").forEach((row) => {
+      const groupId = row.dataset.groupId || "";
+      row.querySelector('[data-action="select"]')?.addEventListener("click", () => {
         selectedGroupId = groupId;
-      }
-      renderPreview();
-      renderGroupList();
-      updateActionState();
-    });
-
-    row.querySelector<HTMLSelectElement>('[data-action="label"]')?.addEventListener("change", (event) => {
-      const target = event.currentTarget as HTMLSelectElement;
-      const oldGroup = activeGroups.find((group) => group.id === groupId);
-      activeGroups = relabelGroup(activeGroups, groupId, target.value);
-      if (oldGroup) {
-        const oldDefault = getDefaultPivotForPart(oldGroup.label);
-        const currentPivot = partPivots[oldGroup.id];
-        if (currentPivot && currentPivot.x === oldDefault.x && currentPivot.y === oldDefault.y) {
-          partPivots[oldGroup.id] = getDefaultPivotForPart(target.value);
-        }
-      }
-      selectedGroupId = groupId;
-      renderPreview();
-      renderGroupList();
-      updateActionState();
-    });
-
-    row.querySelector('[data-action="preview-part"]')?.addEventListener("click", () => {
-      if (soloPreviewGroupId === groupId) {
-        soloPreviewGroupId = "";
-      } else {
-        soloPreviewGroupId = groupId;
-        selectedGroupId = groupId;
-        isPreviewingAnimation = false;
-      }
-      renderPreview();
-      renderGroupList();
-      updateActionState();
-    });
-
-    row.querySelector('[data-action="visibility"]')?.addEventListener("click", () => {
-      activeGroups = activeGroups.map((group) => group.id === groupId ? { ...group, hidden: !group.hidden } : group);
-      renderPreview();
-      renderGroupList();
-    });
-
-    row.querySelector<HTMLSelectElement>('[data-action="animation"]')?.addEventListener("change", (event) => {
-      const target = event.currentTarget as HTMLSelectElement;
-      partAnimations[groupId] = target.value;
-      if (!partMotions[groupId]) {
-        partMotions[groupId] = getDefaultMotionForAnimation(target.value);
-      }
-      renderPreview();
-      renderGroupList();
-      updateActionState();
-    });
-
-    row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]')?.addEventListener("change", (event) => {
-      const target = event.currentTarget as HTMLSelectElement;
-      const preset = PIVOT_PRESETS.find((p) => p.id === target.value);
-      if (preset && preset.id !== "custom") {
-        partPivots[groupId] = { ...preset.pivot };
-        const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
-        const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
-        if (xInput) xInput.value = String(preset.pivot.x);
-        if (yInput) yInput.value = String(preset.pivot.y);
         renderPreview();
-        updateActionState();
-      }
-    });
-
-    const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
-    const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
-    [xInput, yInput].forEach((input) => {
-      input?.addEventListener("input", () => {
-        if (!xInput || !yInput) return;
-        const nextPivot = {
-          x: clampPercent(Number(xInput.value)),
-          y: clampPercent(Number(yInput.value))
-        };
-        partPivots[groupId] = nextPivot;
-        xInput.value = String(Math.round(nextPivot.x));
-        yInput.value = String(Math.round(nextPivot.y));
-        const presetSelect = row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
-        if (presetSelect) {
-          presetSelect.value = "custom";
-        }
-        renderPreview();
+        renderGroupList();
+        renderLayerProperties();
         updateActionState();
       });
-    });
 
-    row.querySelectorAll<HTMLInputElement>('[data-action="motion"]').forEach((input) => {
-      input.addEventListener("input", () => {
-        const key = input.dataset.motionKey as keyof Required<MotionConfig> | undefined;
-        if (!key) return;
-        partMotions[groupId] = {
-          ...getMotionValueForGroup(groupId),
-          [key]: Number(input.value)
-        };
-        const display = row.querySelector<HTMLElement>(`[data-motion-value="${key}"]`);
-        if (display) {
-          display.textContent = formatMotionValue(key, Number(input.value));
+      row.querySelector('[data-action="preview-part"]')?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (soloPreviewGroupId === groupId) {
+          soloPreviewGroupId = "";
+        } else {
+          soloPreviewGroupId = groupId;
+          selectedGroupId = groupId;
+          isPreviewingAnimation = false;
         }
-        applyMotionToPreviewGroup(groupId);
+        renderPreview();
+        renderGroupList();
+        renderLayerProperties();
         updateActionState();
       });
+
+      row.querySelector('[data-action="visibility"]')?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        activeGroups = activeGroups.map((group) => group.id === groupId ? { ...group, hidden: !group.hidden } : group);
+        setDirty(true);
+        renderPreview();
+        renderGroupList();
+        renderLayerProperties();
+      });
+    });
+    return;
+  }
+}
+
+
+function renderLayerProperties() {
+  const container = document.getElementById("layer-properties");
+  if (!container) return;
+
+  const group = activeGroups.find((entry) => entry.id === selectedGroupId);
+  if (!activeStage) {
+    container.innerHTML = `<p class="animation-empty">Select a stage to edit layer properties.</p>`;
+    return;
+  }
+  if (!group) {
+    container.innerHTML = `<p class="animation-empty">Select a layer to edit its properties.</p>`;
+    return;
+  }
+
+  const defaultPivot = getDefaultPivotForPart(group.label);
+  const pivot = partPivots[group.id] || defaultPivot;
+  container.innerHTML = `
+    <div class="layer-properties__header">
+      <span class="layer-properties__title">${group.label}</span>
+      <span class="layer-properties__meta">${group.paths.length} paths Â· ${group.colorFamily}</span>
+    </div>
+    <div class="details-field">
+      <span class="field-label-sm">Layer Label</span>
+      <select class="form-control group-label-select" data-action="label">
+        ${renderPartOptions(group.label)}
+      </select>
+    </div>
+    <div class="details-field">
+      <span class="field-label-sm">Pivot Point</span>
+      <select class="form-control group-pivot-select" data-action="pivot-preset">
+        ${renderPivotPresetOptionsForGroup(group.id)}
+      </select>
+      <div class="pivot-inputs-row">
+        <div class="pivot-input-wrapper">
+          <span>X</span>
+          <input class="form-control pivot-x-input" type="number" min="0" max="100" step="1" data-action="pivot-x" value="${Math.round(pivot.x)}" />
+          <span>%</span>
+        </div>
+        <div class="pivot-input-wrapper">
+          <span>Y</span>
+          <input class="form-control pivot-y-input" type="number" min="0" max="100" step="1" data-action="pivot-y" value="${Math.round(pivot.y)}" />
+          <span>%</span>
+        </div>
+      </div>
+    </div>
+    <div class="details-field">
+      <span class="field-label-sm">Animation</span>
+      <select class="form-control group-animation-select" data-action="animation">
+        ${renderAnimationOptionsForGroup(group.id)}
+      </select>
+    </div>
+    ${renderMotionControlsForGroup(group.id)}
+  `;
+
+  container.querySelector<HTMLSelectElement>('[data-action="label"]')?.addEventListener("change", (event) => {
+    const target = event.currentTarget as HTMLSelectElement;
+    const oldGroup = activeGroups.find((entry) => entry.id === group.id);
+    activeGroups = relabelGroup(activeGroups, group.id, target.value);
+    if (oldGroup) {
+      const oldDefault = getDefaultPivotForPart(oldGroup.label);
+      const currentPivot = partPivots[oldGroup.id];
+      if (currentPivot && currentPivot.x === oldDefault.x && currentPivot.y === oldDefault.y) {
+        partPivots[oldGroup.id] = getDefaultPivotForPart(target.value);
+      }
+    }
+    selectedGroupId = group.id;
+    setDirty(true);
+    renderPreview();
+    renderGroupList();
+    renderLayerProperties();
+    updateActionState();
+  });
+
+  container.querySelector<HTMLSelectElement>('[data-action="animation"]')?.addEventListener("change", (event) => {
+    const target = event.currentTarget as HTMLSelectElement;
+    partAnimations[group.id] = target.value;
+    if (!partMotions[group.id]) {
+      partMotions[group.id] = getDefaultMotionForAnimation(target.value);
+    }
+    setDirty(true);
+    renderPreview();
+    renderLayerProperties();
+    updateActionState();
+  });
+
+  container.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]')?.addEventListener("change", (event) => {
+    const target = event.currentTarget as HTMLSelectElement;
+    const preset = PIVOT_PRESETS.find((p) => p.id === target.value);
+    if (preset && preset.id !== "custom") {
+      partPivots[group.id] = { ...preset.pivot };
+      const xInput = container.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+      const yInput = container.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+      if (xInput) xInput.value = String(preset.pivot.x);
+      if (yInput) yInput.value = String(preset.pivot.y);
+      setDirty(true);
+      renderPreview();
+      updateActionState();
+    }
+  });
+
+  const xInput = container.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+  const yInput = container.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+  [xInput, yInput].forEach((input) => {
+    input?.addEventListener("input", () => {
+      if (!xInput || !yInput) return;
+      const nextPivot = {
+        x: clampPercent(Number(xInput.value)),
+        y: clampPercent(Number(yInput.value))
+      };
+      partPivots[group.id] = nextPivot;
+      xInput.value = String(Math.round(nextPivot.x));
+      yInput.value = String(Math.round(nextPivot.y));
+      const presetSelect = container.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
+      if (presetSelect) {
+        presetSelect.value = "custom";
+      }
+      setDirty(true);
+      renderPreview();
+      updateActionState();
+    });
+  });
+
+  container.querySelectorAll<HTMLInputElement>('[data-action="motion"]').forEach((input) => {
+    input.addEventListener("input", () => {
+      const key = input.dataset.motionKey as keyof Required<MotionConfig> | undefined;
+      if (!key) return;
+      partMotions[group.id] = {
+        ...getMotionValueForGroup(group.id),
+        [key]: Number(input.value)
+      };
+      const display = container.querySelector<HTMLElement>(`[data-motion-value="${key}"]`);
+      if (display) {
+        display.textContent = formatMotionValue(key, Number(input.value));
+      }
+      setDirty(true);
+      applyMotionToPreviewGroup(group.id);
+      updateActionState();
     });
   });
 }
@@ -882,6 +973,10 @@ function updateActionState() {
   setDisabled("auto-classify-btn", !hasStage);
   setDisabled("preview-animation-btn", !hasGroups);
   setDisabled("save-animation-btn", !hasGroups);
+}
+
+function setDirty(value: boolean) {
+  isDirty = value;
 }
 
 function syncModeButtons() {

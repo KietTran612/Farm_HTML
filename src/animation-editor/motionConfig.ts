@@ -8,6 +8,8 @@ export interface MotionConfig {
   scale?: number;
 }
 
+export type MotionConfigKey = keyof Required<MotionConfig>;
+
 export interface AnimationPartConfig {
   label: string;
   animation: string;
@@ -62,8 +64,21 @@ const DEFAULT_MOTIONS: Record<string, Required<MotionConfig>> = {
   }
 };
 
+const MOTION_KEYS_BY_ANIMATION: Record<string, MotionConfigKey[]> = {
+  "soft-sway": ["durationMs", "delayMs", "angleDeg"],
+  "sway-left": ["durationMs", "delayMs", "angleDeg", "yPx"],
+  "sway-right": ["durationMs", "delayMs", "angleDeg", "yPx"],
+  "leaf-breathe": ["durationMs", "delayMs", "scale"],
+  bob: ["durationMs", "delayMs", "yPx"],
+  none: []
+};
+
 export function getDefaultMotionForAnimation(animation: string): Required<MotionConfig> {
   return { ...(DEFAULT_MOTIONS[animation] || DEFAULT_MOTIONS.none) };
+}
+
+export function getMotionKeysForAnimation(animation: string): MotionConfigKey[] {
+  return [...(MOTION_KEYS_BY_ANIMATION[animation] || MOTION_KEYS_BY_ANIMATION.none)];
 }
 
 export function buildAnimationPartsConfig(

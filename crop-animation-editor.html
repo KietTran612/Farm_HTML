@@ -30,10 +30,18 @@
       </header>
 
       <main class="animation-layout">
-        <aside class="animation-panel stage-panel">
-          <h2>Stages</h2>
-          <div id="animation-stage-list" class="animation-stage-list">
-            <p class="animation-empty">Loading stages...</p>
+        <aside class="animation-panel layer-browser-panel">
+          <div class="panel-section">
+            <label class="field-label" for="animation-stage-select">Stage</label>
+            <select id="animation-stage-select" class="form-control" disabled>
+              <option value="">Loading stages...</option>
+            </select>
+          </div>
+          <div class="panel-section" id="panel-groups">
+            <h2>Layers</h2>
+            <div id="group-list" class="group-list">
+              <p class="animation-empty">Select a stage to inspect layers.</p>
+            </div>
           </div>
         </aside>
 
@@ -52,11 +60,11 @@
           </div>
         </section>
 
-        <aside class="animation-panel group-panel">
-          <div class="panel-section" id="panel-groups">
-            <h2>Layers</h2>
-            <div id="group-list" class="group-list">
-              <p class="animation-empty">Run Suggest Candidates to inspect groups.</p>
+        <aside class="animation-panel layer-properties-panel">
+          <div class="panel-section">
+            <h2>Layer Properties</h2>
+            <div id="layer-properties" class="layer-properties">
+              <p class="animation-empty">Select a layer to edit its properties.</p>
             </div>
           </div>
         </aside>

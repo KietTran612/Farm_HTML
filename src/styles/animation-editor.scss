@@ -87,7 +87,7 @@ h2 {
 .animation-layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 260px minmax(360px, 1fr) 360px;
+  grid-template-columns: 300px minmax(420px, 1fr) 320px;
   min-height: 0;
   overflow: hidden;
 }
@@ -104,11 +104,11 @@ h2 {
   }
 }
 
-.stage-panel {
+.layer-browser-panel {
   border-right: 1px solid $border;
 }
 
-.group-panel {
+.layer-properties-panel {
   border-left: 1px solid $border;
 }
 
@@ -244,7 +244,6 @@ h2 {
   }
 }
 
-.animation-stage-list,
 .group-list {
   display: flex;
   flex-direction: column;
@@ -308,29 +307,41 @@ h2 {
 .group-row {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
   border: 1px solid $border-light;
   border-radius: 8px;
   background: $bg-primary;
+  cursor: pointer;
 
   &.is-active {
     border-color: $forest-light;
     background: $forest-pastel;
-
-    .group-row__details {
-      display: flex;
-    }
   }
 }
 
-.group-row__details {
-  display: none;
+.layer-properties {
+  display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px dashed $border;
+}
+
+.layer-properties__header {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed $border;
+}
+
+.layer-properties__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: $forest-dark;
+}
+
+.layer-properties__meta {
+  color: $muted;
+  font-size: 12px;
 }
 
 .details-field {
@@ -395,10 +406,10 @@ h2 {
 }
 
 .group-row__main {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 8px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .group-row__select {
@@ -438,9 +449,10 @@ h2 {
 
 .group-row__controls {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: auto auto;
   gap: 8px;
   align-items: center;
+  justify-content: end;
 }
 
 .group-preview-btn,
@@ -620,10 +632,10 @@ h2 {
 
 @media (max-width: 1100px) {
   .animation-layout {
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 260px 1fr;
   }
 
-  .group-panel {
+  .layer-properties-panel {
     grid-column: 1 / -1;
     border-left: 0;
     border-top: 1px solid $border;
@@ -653,8 +665,8 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .stage-panel,
-  .group-panel {
+  .layer-browser-panel,
+  .layer-properties-panel {
     border: 0;
     border-bottom: 1px solid $border;
   }

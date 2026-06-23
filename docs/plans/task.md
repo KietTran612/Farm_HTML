@@ -11,3 +11,6 @@
 | **Task 106: Add Draggable Pivot Marker** | [x] | Allow dragging the selected layer pivot marker directly on the Animation Editor SVG preview. |
 | **Task 107: Prune Missing Animation Layers On Save** | [x] | Remove animation part configs whose group IDs no longer exist in the saved grouped SVG. |
 | **Task 108: Sync Existing Animated Crop Data** | [x] | Audited existing animated crop data and refreshed stale Potato Stage 01 grouped SVG from the current Crop Editor source layer SVG. |
+| **Task 109: Show Relevant Motion Controls Only** | [x] | Animation Editor now shows only sliders used by the selected animation preset. |
+| **Task 110: Reorder Layer Pivot Controls** | [x] | Moved Pivot Point above Animation in each Animation Editor layer card without changing logic. |
+| **Task 111: Compact Animation Editor Layer Workflow** | [x] | Replaced stage cards with a stage dropdown, moved layer editing into a dedicated properties panel, and added save validation/dirty-stage guarding. |
