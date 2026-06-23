@@ -912,6 +912,50 @@ h1, h2, h3, h4, h5 {
   }
 }
 
+/* Merge mode styles */
+body.is-merge-mode {
+  .layer-mask-canvas {
+    pointer-events: none;
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+  
+  .layer-list {
+    .layer-row {
+      cursor: pointer;
+      
+      &:hover:not(.is-selected-for-merge) {
+        background-color: darken($forest-pastel, 3%);
+        border-color: rgba(66, 139, 77, 0.35);
+      }
+      
+      // Disable interaction of other child buttons during merge
+      button, .rename-icon, .drag-handle {
+        pointer-events: none;
+        opacity: 0.35;
+      }
+    }
+  }
+}
+
+.layer-row.is-selected-for-merge {
+  background-color: #ffe8cc !important;
+  border-color: #ff922b !important;
+  color: #d9480f !important;
+  box-shadow: 0 0 0 2px rgba(253, 126, 20, 0.25);
+  
+  .layer-index-indicator {
+    color: #d9480f !important;
+  }
+}
+
+.layer-composite-preview {
+  .crop-part.is-selected-for-merge {
+    filter: drop-shadow(0 0 8px #ff922b) drop-shadow(0 0 2px #ff922b);
+    opacity: 0.95;
+  }
+}
+
 // BUTTONS
 .btn {
   padding: 8px 16px;
@@ -930,6 +974,10 @@ h1, h2, h3, h4, h5 {
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  &[hidden] {
+    display: none !important;
   }
 
   &.btn-primary {

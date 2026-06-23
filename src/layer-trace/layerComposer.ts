@@ -47,7 +47,7 @@ function stripDefs(svgBody: string): string {
   return svgBody.replace(/<defs\b[^>]*>[\s\S]*?<\/defs>/gi, "");
 }
 
-function prefixInternalIds(svgText: string, prefix: string): string {
+export function prefixInternalIds(svgText: string, prefix: string): string {
   let result = svgText;
   const ids = Array.from(svgText.matchAll(/\bid=["']([^"']+)["']/gi)).map((match) => match[1]);
 
@@ -67,7 +67,7 @@ function indent(value: string, spaces: number): string {
   return value.split("\n").map((line) => line.trim() ? `${padding}${line}` : line).join("\n");
 }
 
-function sanitizeToken(value: string): string {
+export function sanitizeToken(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "layer";
 }
 

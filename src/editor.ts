@@ -1,5 +1,5 @@
 import "./styles/editor.scss";
-import { composeLayeredSvg, type SvgLayerInput } from "./layer-trace/layerComposer";
+import { composeLayeredSvg, prefixInternalIds, sanitizeToken, type SvgLayerInput } from "./layer-trace/layerComposer";
 import { parseLayeredSvg } from "./layer-trace/layerParser";
 import { toUnscaledCanvasPoint } from "./layer-trace/layerViewport";
 
@@ -81,6 +81,8 @@ let isDrawingLayerMask = false;
 let layerTraceLayers: SvgLayerInput[] = [];
 let draggedIndex: number | null = null;
 let layerTraceZoom = 1;
+let isMergeMode = false;
+let mergeSelectedIndices = new Set<number>();
 
 const layerTraceZoomMin = 1;
 const layerTraceZoomMax = 4;
@@ -126,6 +128,11 @@ function setupUIEventListeners() {
   const zoomOutBtn = document.getElementById("layer-zoom-out-btn") as HTMLButtonElement | null;
   const zoomInBtn = document.getElementById("layer-zoom-in-btn") as HTMLButtonElement | null;
   const zoomResetBtn = document.getElementById("layer-zoom-reset-btn") as HTMLButtonElement | null;
+  const mergeLayersBtn = document.getElementById("merge-layers-btn") as HTMLButtonElement | null;
+  const cancelMergeBtn = document.getElementById("cancel-merge-btn") as HTMLButtonElement | null;
+
+  mergeLayersBtn?.addEventListener("click", handleMergeButtonClick);
+  cancelMergeBtn?.addEventListener("click", handleCancelMerge);
 
   cropSelect?.addEventListener("change", () => void handleCropSelection(cropSelect.value));
   pngSelect?.addEventListener("change", () => void handlePngSelection());
@@ -143,7 +150,11 @@ function setupUIEventListeners() {
   clearLayerMaskBtn?.addEventListener("click", clearLayerMask);
   traceLayerBtn?.addEventListener("click", () => void handleTraceLayer());
   saveLayerCompositeBtn?.addEventListener("click", () => void handleSaveLayerComposite());
-  layerStageSelect?.addEventListener("change", renderLayerCompositePreview);
+  layerStageSelect?.addEventListener("change", () => {
+    if (layerStageSelect.value) {
+      void handleSavedStageSelection(layerStageSelect.value);
+    }
+  });
   toggleTraceParamsBtn?.addEventListener("click", toggleTraceParameters);
   zoomOutBtn?.addEventListener("click", () => setLayerTraceZoom(layerTraceZoom - layerTraceZoomStep));
   zoomInBtn?.addEventListener("click", () => setLayerTraceZoom(layerTraceZoom + layerTraceZoomStep));
@@ -329,7 +340,14 @@ function handleLayerPointerDown(event: PointerEvent) {
   if (!layerTraceImage) return;
   const canvas = event.currentTarget as HTMLCanvasElement;
   canvas.setPointerCapture(event.pointerId);
-  layerLassoPoints = [readCanvasPoint(canvas, event)];
+  
+  const pt = readCanvasPoint(canvas, event);
+  if (layerLassoPoints.length === 0) {
+    layerLassoPoints = [pt];
+  } else {
+    layerLassoPoints.push(pt);
+  }
+  
   isDrawingLayerMask = true;
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
@@ -598,13 +616,19 @@ function renderLayerList() {
   const list = document.getElementById("layer-list");
   if (!list) return;
 
+  if (isMergeMode) {
+    list.classList.add("is-merge-mode");
+  } else {
+    list.classList.remove("is-merge-mode");
+  }
+
   if (layerTraceLayers.length === 0) {
     list.innerHTML = `<p class="placeholder-text">Chua co layer nao.</p>`;
     return;
   }
 
   list.innerHTML = layerTraceLayers.map((layer, index) => `
-    <div class="layer-row ${layer.hidden ? "is-hidden" : ""}" draggable="true" data-layer-index="${index}">
+    <div class="layer-row ${layer.hidden ? "is-hidden" : ""} ${isMergeMode && mergeSelectedIndices.has(index) ? "is-selected-for-merge" : ""}" draggable="${!isMergeMode}" data-layer-index="${index}">
       <div class="layer-row-left">
         <span class="drag-handle" title="Keo de sap xep">⋮⋮</span>
         <button class="layer-visibility-btn" type="button" data-layer-visibility="${index}" aria-pressed="${layer.hidden ? "true" : "false"}" title="${layer.hidden ? "Hien layer" : "An layer"}">
@@ -701,9 +725,36 @@ function renderLayerList() {
       draggedIndex = null;
     });
   });
+
+  rows.forEach((row) => {
+    const index = Number(row.dataset.layerIndex);
+    row.addEventListener("click", (event) => {
+      if (!isMergeMode) return;
+      const target = event.target as HTMLElement;
+      if (target.closest("button") || target.closest(".rename-icon")) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (mergeSelectedIndices.has(index)) {
+        mergeSelectedIndices.delete(index);
+      } else {
+        mergeSelectedIndices.add(index);
+      }
+      
+      const mergeBtn = document.getElementById("merge-layers-btn") as HTMLButtonElement | null;
+      if (mergeBtn) {
+        mergeBtn.textContent = `Confirm Merge (${mergeSelectedIndices.size})`;
+        mergeBtn.disabled = mergeSelectedIndices.size < 2;
+      }
+      
+      renderLayerTraceState();
+    });
+  });
 }
 
 function startInlineRename(index: number) {
+  if (isMergeMode) return;
   const list = document.getElementById("layer-list");
   if (!list) return;
 
@@ -774,16 +825,54 @@ function renderLayerCompositePreview() {
 
   const stageId = (document.getElementById("layer-stage-select") as HTMLSelectElement | null)?.value || targetStages[0] || "stage00";
   preview.innerHTML = composeVisibleLayerSvg(stageId);
+
+  if (isMergeMode) {
+    mergeSelectedIndices.forEach((index) => {
+      const gEl = preview.querySelector(`g[data-layer-index="${index}"]`);
+      if (gEl) {
+        gEl.classList.add("is-selected-for-merge");
+      }
+    });
+  }
 }
 
 function updateLayerTraceButtons() {
   const traceBtn = document.getElementById("trace-layer-btn") as HTMLButtonElement | null;
   const saveBtn = document.getElementById("save-layer-composite-btn") as HTMLButtonElement | null;
-  if (traceBtn) {
-    traceBtn.disabled = !layerTraceImage || layerLassoPoints.length < 3;
-  }
-  if (saveBtn) {
-    saveBtn.disabled = !layerTraceSize || layerTraceLayers.length === 0;
+  const mergeBtn = document.getElementById("merge-layers-btn") as HTMLButtonElement | null;
+  const cancelBtn = document.getElementById("cancel-merge-btn") as HTMLButtonElement | null;
+  const clearBtn = document.getElementById("clear-layer-mask-btn") as HTMLButtonElement | null;
+
+  if (isMergeMode) {
+    if (traceBtn) traceBtn.disabled = true;
+    if (saveBtn) saveBtn.disabled = true;
+    if (clearBtn) clearBtn.disabled = true;
+    
+    if (cancelBtn) cancelBtn.hidden = false;
+    
+    if (mergeBtn) {
+      mergeBtn.disabled = mergeSelectedIndices.size < 2;
+      mergeBtn.textContent = `Confirm Merge (${mergeSelectedIndices.size})`;
+      mergeBtn.className = "btn btn-success";
+    }
+  } else {
+    if (cancelBtn) cancelBtn.hidden = true;
+    
+    if (mergeBtn) {
+      mergeBtn.disabled = layerTraceLayers.length < 2;
+      mergeBtn.textContent = "Merge Layers";
+      mergeBtn.className = "btn btn-secondary";
+    }
+    
+    if (traceBtn) {
+      traceBtn.disabled = !layerTraceImage || layerLassoPoints.length < 3;
+    }
+    if (saveBtn) {
+      saveBtn.disabled = !layerTraceSize || layerTraceLayers.length === 0;
+    }
+    if (clearBtn) {
+      clearBtn.disabled = false;
+    }
   }
 }
 
@@ -1013,5 +1102,60 @@ function applyPreset(presetName: string) {
       }
     }
   });
+}
+
+function handleMergeButtonClick() {
+  if (!isMergeMode) {
+    isMergeMode = true;
+    mergeSelectedIndices.clear();
+    clearLayerMask();
+    document.body.classList.add("is-merge-mode");
+    renderLayerTraceState();
+  } else {
+    if (mergeSelectedIndices.size < 2) return;
+    performMerge();
+  }
+}
+
+function handleCancelMerge() {
+  isMergeMode = false;
+  mergeSelectedIndices.clear();
+  document.body.classList.remove("is-merge-mode");
+  renderLayerTraceState();
+}
+
+function readSvgBody(svgText: string): string {
+  return svgText.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/i)?.[1] || svgText;
+}
+
+function performMerge() {
+  const sorted = Array.from(mergeSelectedIndices).sort((a, b) => a - b);
+  const targetIndex = sorted[0];
+  const layersToMerge = sorted.map(idx => layerTraceLayers[idx]);
+
+  const combinedBody = layersToMerge.map(layer => {
+    const rawBody = readSvgBody(layer.svgText);
+    const prefix = sanitizeToken(layer.groupId);
+    return prefixInternalIds(rawBody, prefix);
+  }).join("\n");
+  
+  const mergedSvgText = `<svg xmlns="http://www.w3.org/2000/svg">${combinedBody}</svg>`;
+
+  layerTraceLayers[targetIndex] = {
+    groupId: layerTraceLayers[targetIndex].groupId,
+    label: layerTraceLayers[targetIndex].label,
+    svgText: mergedSvgText,
+    hidden: layersToMerge.every(l => l.hidden)
+  };
+
+  for (let i = sorted.length - 1; i > 0; i--) {
+    layerTraceLayers.splice(sorted[i], 1);
+  }
+
+  isMergeMode = false;
+  mergeSelectedIndices.clear();
+  document.body.classList.remove("is-merge-mode");
+  renderLayerTraceState();
+  showStatus("success", `Merged ${sorted.length} layers.`);
 }
 

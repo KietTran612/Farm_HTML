@@ -2,6 +2,7 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 114 (Load Existing Stage SVG on Stage Select):** Updated the stage dropdown selector (`#layer-stage-select`) change event handler in `src/editor.ts` to call `handleSavedStageSelection(layerStageSelect.value)` instead of only calling `renderLayerCompositePreview`. This loads the existing SVG and its layers for the selected stage, matching the behavior of clicking the stage item in the sidebar.
 - **Implemented Task 112 (Adjust Animation Editor Columns and Fix Encoding):** Repositioned the columns in `crop-animation-editor.html` and adjusted the CSS grid layout in `src/styles/animation-editor.scss` to place the Layer Properties panel next to the Layer Browser (State/Layers list) and shifted the SVG Preview workspace to the end (right side). Replaced all corrupted/mangled characters in the UI templates of `src/animation-editor.ts` with encoding-safe unicode escapes (`\u25BC`, `\u00B7`, `\u23F9`, `\u25B6`, `\u{1F441}`). Also cleaned up a duplicated variable and style block in `animation-editor.scss` that caused a Sass compilation error.
 - **Implemented Task 111 (Compact Animation Editor Layer Workflow):** Reworked `crop-animation-editor.html` so stage selection is a compact dropdown, layer selection sits below it in the left panel, and editable layer controls live in a dedicated `Layer Properties` panel. Stage changes reload data through the existing `selectStage` flow and select the first available layer by default. Added dirty-state guarding before crop/stage switches and validation before saving animation metadata.
 - **Implemented Task 110 (Reorder Layer Pivot Controls):** Moved the `Pivot Point` field above `Animation` inside each Animation Editor layer card. No save/load, pivot, animation, or motion logic was changed.
@@ -23,6 +24,13 @@
 
 ## Verification
 
+- **For Task 114 (Load Existing Stage SVG on Stage Select):**
+  - Unit tests passed: `npx vitest run src/layer-trace/` (composer, parser, and viewport tests passed).
+  - Build check passed: `npm run build`.
+  - Browser smoke check passed: Used browser automation to open `http://127.0.0.1:4000/crop-editor.html?crop=potato`, select Potato, choose "Stage 00" from the "Luu vao stage" dropdown, and verify that the layers list updated with Stage 00 layers (`leaf_1`, `leaf_2`, `leaves`).
+- **For Task 113 (Implement Merge Layers in Crop Editor):**
+  - Unit tests passed: `npx vitest run`
+  - Build check passed: `npm run build`
 - **For Task 112 (Adjust Animation Editor Columns and Fix Encoding):**
   - Unit tests passed: `npx vitest run src/animation-editor/stageValidation.test.ts src/animation-editor/motionConfig.test.ts src/animation-editor/groupEditor.test.ts`
   - Build check passed: `npm run build`
@@ -78,6 +86,7 @@
 
 ## Current Uncommitted Scope
 
+- **Crop Editor load stage SVG on stage select:** `src/editor.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Animation Editor compact layer workflow:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/stageValidation.ts`, `src/animation-editor/stageValidation.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Animation Editor layer field order:** `src/animation-editor.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Animation Editor relevant motion controls:** `src/animation-editor.ts`, `src/animation-editor/motionConfig.ts`, `src/animation-editor/motionConfig.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.

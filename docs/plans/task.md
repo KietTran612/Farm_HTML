@@ -15,3 +15,7 @@
 | **Task 110: Reorder Layer Pivot Controls** | [x] | Moved Pivot Point above Animation in each Animation Editor layer card without changing logic. |
 | **Task 111: Compact Animation Editor Layer Workflow** | [x] | Replaced stage cards with a stage dropdown, moved layer editing into a dedicated properties panel, and added save validation/dirty-stage guarding. |
 | **Task 112: Adjust Animation Editor Columns and Fix Encoding** | [x] | Moved Layer Properties adjacent to Layer Browser, moved SVG preview to the end, replaced mangled UTF-8 text with unicode escapes, and resolved a CSS syntax duplicate. |
+| **Task 113: Implement Merge Layers in Crop Editor** | [x] | Added Merge Mode to crop-editor with selection highlight, gradient ID collision handling, and canvas protection. |
+| **Task 114: Load Existing Stage SVG on Stage Select** | [x] | Updated Crop Editor stage select event listener to load existing stage SVG data instead of just rendering preview. |
+
+
