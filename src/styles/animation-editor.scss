@@ -507,6 +507,10 @@ h2 {
     opacity: 0.5;
   }
 
+  &[hidden] {
+    display: none;
+  }
+
   &.btn-primary {
     background: $forest-light;
     color: #fff;

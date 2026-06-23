@@ -2,6 +2,8 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 103 (Temporarily Hide Suggest Candidates Button):** Added `hidden` to the Animation Editor `Suggest Candidates` button and a `.btn[hidden]` SCSS rule so the control is not shown while preserving its existing DOM id and TypeScript handler for easy restoration later.
+
 - **Implemented Task 102 (Selected Layer Bounds Outline):** Added a padded SVG `selection-bounds` rectangle for the selected layer in Animation Editor preview so users can see the selected layer's visual extent. The outline uses the same dynamic DOM/static bounds path as the pivot marker and renders alongside the pivot marker without blocking interaction.
 
 - **Implemented Task 101 (Fix Motion Save Cache Review Issue):** Reviewed the CSS variable motion implementation and fixed the save cache path so first-time grouped stage saves record the newly created `${stageId}.grouped.svg` file in `animationsMetadata`.
@@ -67,6 +69,10 @@
 - **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
 
 ## Verification
+
+- **For Task 103 (Temporarily Hide Suggest Candidates Button):**
+  - `npm run build` passed.
+  - Browser smoke passed on `http://127.0.0.1:4000/crop-animation-editor.html?crop=corn`: confirmed the `auto-classify-btn` element exists with `hidden=true` and computed `display: none`.
 
 - **For Task 102 (Selected Layer Bounds Outline):**
   - TDD red check: `npx vitest run src/animation-editor/selectionOverlay.test.ts` first failed because the helper module was missing, then passed after implementation.
