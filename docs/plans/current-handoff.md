@@ -2,6 +2,14 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 94 (Collapse Arrow for Layer Rows):** Added a collapse arrow (`▼`) aligned on the exact same header row/line as the layer name inside the group selection button. Updated the click handler on the header to toggle the layer's expand/collapse state (clicking an active header collapses it). Styled the arrow in SCSS to rotate from `-90deg` (pointing right, representing collapsed) to `0deg` (pointing down and highlighted in forest green, representing expanded/active) with a smooth transition.
+
+- **Implemented Dropdown Translations:** Added Vietnamese translations in parentheses next to the part classification option labels (e.g. `base (gốc)`, `stem (thân)`, `leaves (lá)`) in the dropdown selector inside group rows to improve usability.
+
+- **Implemented Tasks 91-93 (Pivot Marker Alignment Fix):** Corrected the visual Pivot Marker (circle/crosshair) placement in the SVG preview canvas to align 1-to-1 with the dynamic rotation center of the selected group. Updated the path parsing regex in `groupClassifier.ts` to support direct dot-decimals (e.g. `.5`, `-.5`) and added bounds checking to command loops to prevent coordinate parser array overflow and `NaN` contamination. Implemented dynamic bounding box calculation using `node.getBBox()` with automatic static bounds fallback. Added the new implementation plan `2026-06-23-animation-editor-pivot-marker-alignment.md`.
+
+- **Implemented Tasks 88-90 (Per-Layer Independent Animation Preview):** Added per-layer icon-only "Preview" / "Stop" (▶/⏹) and "Show" / "Hide" (👁) buttons in the group row controls with custom tooltips. Toggling a layer's preview independently activates its CSS keyframe animations (via a new `.is-animating` class directly on the SVG `<g>` elements) while keeping all other layers static. Any active global preview is automatically stopped when starting a solo preview. **Also updated the Pivot Marker (`.pivot-marker` circle and crosshair) to be visible in all preview modes (including Normal mode) when a layer is selected, so users can visually see where the rotation point is situated.** Added the new implementation plan file `2026-06-23-animation-editor-layer-preview.md` and updated the task tracker.
+
 - **Implemented Tasks 84-87 (Animation Editor UI Cleanup & Logic Simplification):** Cleaned up the Animation Editor sidebar layout by removing the obsolete Selection tools panel, Create/Remove group buttons, and Split/Merge action buttons from HTML (`crop-animation-editor.html`), SCSS (`src/styles/animation-editor.scss`), and TypeScript (`src/animation-editor.ts`). Removed the merge checkboxes wrapper `.group-row__merge` from the group list rows. Cleared selection state, pointer/drag logic, split/merge event handlers, and unused variables. The plan file `2026-06-23-animation-editor-collapsible-panels.md` from the obsolete accordion design has been fully deleted and task tracker has been updated.
 
 - **Implemented Tasks 80-83 (Embedded Animation and Pivot Controls in Animation Editor):** Refactored the Animation Editor so that the Animation Preset Selector, Pivot Preset Selector, and Pivot X & Y percent number inputs are embedded directly inside each individual layer's group row (Group Card). Static panel containers at the bottom of the group sidebar have been removed. The embedded controls automatically expand when a layer is clicked/selected (`.is-active`), and collapse when another layer is selected.
@@ -51,6 +59,16 @@
 - **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
 
 ## Verification
+
+- **For Tasks 91, 92, and 93 (Pivot Marker Alignment Fix):**
+  - Added unit test in `src/animation-editor/groupClassifier.test.ts` for decimal bounds and verified that it and other animation editor tests (`npx vitest run src/animation-editor/...`) pass.
+  - `npm run build` compiled successfully without any errors.
+  - Browser verification using `verify_pivot` subagent: selected a corn stage, verified Pivot Marker is displayed correctly, checked manual presets (Center/Bottom center), and confirmed no console errors occurred.
+
+- **For Tasks 88, 89, and 90 (Per-Layer Independent Animation Preview):**
+  - `npm run build` compiled successfully without any errors.
+  - `npm run test` ran successfully with 77/77 tests passing.
+  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn` to click the Preview/Stop button on individual layer cards and check that only the active layer animates.
 
 - **For Tasks 84, 85, 86, and 87 (Animation Editor UI Cleanup & Logic Simplification):**
   - `npm run build` compiled successfully without any errors.
@@ -141,4 +159,4 @@
 
 ## Recommended Next Task
 
-- **Manual Embedded Controls Verification:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, click to select a group layer (e.g. `base`, `stem`, or `leaves`), verify the Animation and Pivot controls dynamically expand inside that row and check that the Selection panel and Split/Merge buttons are completely gone from the sidebar.
+- **Manual Verification for Per-Layer Preview:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, click the "Preview" button on individual layer cards, and check that only the active layer animates according to its assigned preset, while other layers remain static.

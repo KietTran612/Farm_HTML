@@ -37,6 +37,7 @@ let previewMode: "normal" | "overlay" | "solo" = "normal";
 let isPreviewingAnimation = false;
 let partAnimations: Record<string, string> = {};
 let partPivots: Record<string, PivotPoint> = {};
+let soloPreviewGroupId = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
@@ -348,7 +349,11 @@ function handleAutoClassify() {
 
 function handlePreviewAnimation() {
   isPreviewingAnimation = !isPreviewingAnimation;
+  if (isPreviewingAnimation) {
+    soloPreviewGroupId = "";
+  }
   renderPreview();
+  renderGroupList();
   setStatus(isPreviewingAnimation ? "Animation preview is running." : "Animation preview stopped.");
 }
 
@@ -422,6 +427,9 @@ function decoratePreviewGroups(preview: HTMLElement) {
       node.classList.add(preset.cssClass);
     }
 
+    const isAnimating = isPreviewingAnimation || (soloPreviewGroupId === group.id);
+    node.classList.toggle("is-animating", isAnimating);
+
     const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
     node.style.transformOrigin = `${pivot.x}% ${pivot.y}%`;
   }
@@ -429,14 +437,35 @@ function decoratePreviewGroups(preview: HTMLElement) {
   renderPivotMarker(preview);
 }
 
+function getGroupBounds(node: SVGGElement, group: CropGroup) {
+  try {
+    if (typeof node.getBBox === "function") {
+      const bbox = node.getBBox();
+      if (bbox.width > 0 || bbox.height > 0) {
+        return {
+          minX: bbox.x,
+          minY: bbox.y,
+          maxX: bbox.x + bbox.width,
+          maxY: bbox.y + bbox.height
+        };
+      }
+    }
+  } catch (e) {
+    // Fallback to static bounds on error
+  }
+  return combineGroupBounds(group);
+}
+
 function renderPivotMarker(preview: HTMLElement) {
   preview.querySelector(".pivot-marker")?.remove();
   const group = activeGroups.find((entry) => entry.id === selectedGroupId);
   const svg = preview.querySelector("svg");
-  if (!group || !svg || previewMode === "normal") return;
+  if (!group || !svg) return;
 
   const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
-  const bounds = combineGroupBounds(group);
+  const node = preview.querySelector<SVGGElement>(`[data-group-id="${cssEscape(group.id)}"]`);
+  const bounds = node ? getGroupBounds(node, group) : combineGroupBounds(group);
+
   const markerX = bounds.minX + ((bounds.maxX - bounds.minX) * pivot.x) / 100;
   const markerY = bounds.minY + ((bounds.maxY - bounds.minY) * pivot.y) / 100;
   const marker = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -484,7 +513,10 @@ function renderGroupList() {
       <article class="group-row ${group.id === selectedGroupId ? "is-active" : ""}" data-group-id="${group.id}">
         <div class="group-row__main">
           <button class="group-row__select" type="button" data-action="select">
-            <span class="group-row__label">${group.label}</span>
+            <div class="group-row__select-header">
+              <span class="group-row__arrow">▼</span>
+              <span class="group-row__label">${group.label}</span>
+            </div>
             <span class="group-row__meta">${group.paths.length} paths · ${group.colorFamily}</span>
           </button>
         </div>
@@ -492,7 +524,12 @@ function renderGroupList() {
           <select class="form-control group-label-select" data-action="label">
             ${renderPartOptions(group.label)}
           </select>
-          <button class="btn btn-secondary group-visibility-btn" type="button" data-action="visibility">${group.hidden ? "Show" : "Hide"}</button>
+          <button class="group-preview-btn ${soloPreviewGroupId === group.id ? "is-active" : ""}" type="button" data-action="preview-part" title="${soloPreviewGroupId === group.id ? "Stop Preview" : "Preview Animation"}">
+            ${soloPreviewGroupId === group.id ? "⏹" : "▶"}
+          </button>
+          <button class="group-visibility-btn ${group.hidden ? "is-hidden-btn" : ""}" type="button" data-action="visibility" title="${group.hidden ? "Show Layer" : "Hide Layer"}">
+            👁
+          </button>
         </div>
         
         <div class="group-row__details">
@@ -528,7 +565,11 @@ function renderGroupList() {
   container.querySelectorAll<HTMLElement>(".group-row").forEach((row) => {
     const groupId = row.dataset.groupId || "";
     row.querySelector('[data-action="select"]')?.addEventListener("click", () => {
-      selectedGroupId = groupId;
+      if (selectedGroupId === groupId) {
+        selectedGroupId = "";
+      } else {
+        selectedGroupId = groupId;
+      }
       renderPreview();
       renderGroupList();
       updateActionState();
@@ -546,6 +587,19 @@ function renderGroupList() {
         }
       }
       selectedGroupId = groupId;
+      renderPreview();
+      renderGroupList();
+      updateActionState();
+    });
+
+    row.querySelector('[data-action="preview-part"]')?.addEventListener("click", () => {
+      if (soloPreviewGroupId === groupId) {
+        soloPreviewGroupId = "";
+      } else {
+        soloPreviewGroupId = groupId;
+        selectedGroupId = groupId;
+        isPreviewingAnimation = false;
+      }
       renderPreview();
       renderGroupList();
       updateActionState();
@@ -599,9 +653,26 @@ function renderGroupList() {
 }
 
 function renderPartOptions(value: string): string {
+  const PART_TRANSLATIONS: Record<string, string> = {
+    "base": "gốc",
+    "stem": "thân",
+    "leaves": "lá",
+    "leaves-left": "lá trái",
+    "leaves-right": "lá phải",
+    "fruit": "quả/trái",
+    "ears": "bắp",
+    "tassels": "râu ngô",
+    "flower": "hoa",
+    "dead-leaf": "lá úa/chết",
+    "other": "khác"
+  };
   const parts = ["base", "stem", "leaves", "leaves-left", "leaves-right", "fruit", "ears", "tassels", "flower", "dead-leaf", "other"];
   const unique = Array.from(new Set([value, ...parts]));
-  return unique.map((part) => `<option value="${part}" ${part === value ? "selected" : ""}>${part}</option>`).join("");
+  return unique.map((part) => {
+    const translation = PART_TRANSLATIONS[part];
+    const label = translation ? `${part} (${translation})` : part;
+    return `<option value="${part}" ${part === value ? "selected" : ""}>${label}</option>`;
+  }).join("");
 }
 
 function updateActionState() {

@@ -9,6 +9,8 @@
 - `2026-06-23-hybrid-trace-preset.md` - Plan for implementing Hybrid Trace Preset.
 - `2026-06-23-animation-editor-embedded-controls.md` - Plan for embedded Animation & Pivot controls in Animation Editor.
 - `2026-06-23-animation-editor-ui-cleanup.md` - Plan for Animation Editor UI simplification & cleanup.
+- `2026-06-23-animation-editor-layer-preview.md` - Plan for per-layer independent animation preview.
+- `2026-06-23-animation-editor-pivot-marker-alignment.md` - Plan for fixing pivot marker alignment in Crop Animation Editor.
 
 
 

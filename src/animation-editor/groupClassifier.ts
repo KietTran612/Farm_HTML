@@ -47,8 +47,10 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
   const ys: number[] = [];
 
   const addPoint = (x: number, y: number) => {
-    xs.push(x + transformX);
-    ys.push(y + transformY);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      xs.push(x + transformX);
+      ys.push(y + transformY);
+    }
   };
 
   let match;
@@ -56,7 +58,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
   while ((match = commandRegex.exec(d)) !== null) {
     const cmd = match[1];
     const argsStr = match[2].trim();
-    const args = Array.from(argsStr.matchAll(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi)).map(m => Number(m[0]));
+    const args = Array.from(argsStr.matchAll(/[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/g)).map(m => Number(m[0]));
 
     const isRelative = cmd === cmd.toLowerCase();
     const upperCmd = cmd.toUpperCase();
@@ -64,7 +66,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
 
     switch (upperCmd) {
       case "M":
-        while (argIdx < args.length) {
+        while (argIdx + 1 < args.length) {
           const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
           cx = x;
@@ -75,7 +77,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
         }
         break;
       case "L":
-        while (argIdx < args.length) {
+        while (argIdx + 1 < args.length) {
           const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
           cx = x;
@@ -96,7 +98,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
         }
         break;
       case "C":
-        while (argIdx < args.length) {
+        while (argIdx + 5 < args.length) {
           const x1 = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y1 = isRelative ? cy + args[argIdx++] : args[argIdx++];
           const x2 = isRelative ? cx + args[argIdx++] : args[argIdx++];
@@ -112,7 +114,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
         break;
       case "S":
       case "Q":
-        while (argIdx < args.length) {
+        while (argIdx + 3 < args.length) {
           const x1 = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y1 = isRelative ? cy + args[argIdx++] : args[argIdx++];
           const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
@@ -124,7 +126,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
         }
         break;
       case "T":
-        while (argIdx < args.length) {
+        while (argIdx + 1 < args.length) {
           const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y = isRelative ? cy + args[argIdx++] : args[argIdx++];
           addPoint(x, y);
@@ -133,7 +135,7 @@ export function parseSvgPathBounds(d: string, transformX = 0, transformY = 0): P
         }
         break;
       case "A":
-        while (argIdx < args.length) {
+        while (argIdx + 6 < args.length) {
           argIdx += 5; // Skip rx, ry, xAxisRot, largeArcFlag, sweepFlag
           const x = isRelative ? cx + args[argIdx++] : args[argIdx++];
           const y = isRelative ? cy + args[argIdx++] : args[argIdx++];

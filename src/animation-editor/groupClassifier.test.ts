@@ -32,4 +32,16 @@ describe("classifySvgPaths", () => {
     expect(result.groups[0].colorFamily).toBe("orange");
     expect(result.groups[0].suggestedPart).toBe("fruit-candidate-1");
   });
+
+  it("handles leading dot decimals and negative numbers correctly in path bounds parsing", () => {
+    const svg = `<svg viewBox="0 0 100 100">
+      <path fill="#e27122" d="M.5 .5 L10.5 10.5 M-.5 -.5 L-10.5 -10.5" />
+    </svg>`;
+    const result = classifySvgPaths(svg, "pumpkin");
+    const bounds = result.groups[0].paths[0].bounds;
+    expect(bounds.minX).toBe(-10.5);
+    expect(bounds.maxX).toBe(10.5);
+    expect(bounds.minY).toBe(-10.5);
+    expect(bounds.maxY).toBe(10.5);
+  });
 });

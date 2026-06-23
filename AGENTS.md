@@ -84,6 +84,8 @@ To minimize token usage, prevent context dilution, and maintain strict structura
 
 Do not read unrelated large historical files or perform broad workspace scans unless explicitly instructed.
 
+Reading active context is for orientation only. Do not start or execute any recommended or pending task from `task.md`, `current-handoff.md`, or `index.md` unless the user explicitly asks to do that task.
+
 ## Handoff Update Protocol
 
 After completing any new task, update:

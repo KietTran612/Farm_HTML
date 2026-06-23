@@ -90,4 +90,12 @@
 | **Task 85: Clean Up SCSS Styles for Selection Tools** | [x] | Removed obsolete SCSS rules for selection, overlay, and pivot-grid styles. |
 | **Task 86: Remove Selection, Merge and Split Logic from TS** | [x] | Cleared selection state, pointer/drag logic, split/merge event handlers, and unused variables. |
 | **Task 87: Verify build and user review** | [x] | Verified successful production build and ran Vitest suites (77/77 passing). |
+| **Task 88: Add Part Preview Button and Logic in TS** | [x] | Added dynamic Stop/Preview (▶/⏹) and Show/Hide (👁) icon-only buttons per layer row in renderGroupList and handled soloPreviewGroupId state. |
+| **Task 89: Update Animation SCSS Selectors** | [x] | Modified SCSS to trigger keyframes on .is-animating class and parent is-previewing-animation class. |
+| **Task 90: Verify build, tests, and manual preview** | [x] | Compiled production build successfully and confirmed all Vitest suites passed. |
+| **Task 91: Fix SVG Path Bounds Regex and Command Loops** | [x] | Improve path bounds parsing regex for dot-decimals and protect against NaN in command loops. |
+| **Task 92: Implement Dynamic Pivot Marker Bounds in TS** | [x] | Query getBBox() from DOM groups in renderPivotMarker with static bounds fallback. |
+| **Task 93: Verify Build and Tests** | [x] | Compile production bundle and ensure all unit tests pass. |
+| **Task 94: Add Collapse Arrow for Layer Rows** | [x] | Added collapse arrow (▼) inside header line of select button and implemented click toggle to close/open. |
+
 
