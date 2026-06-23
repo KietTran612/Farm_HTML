@@ -8,3 +8,6 @@
 | **Task 103: Temporarily Hide Suggest Candidates Button** | [x] | Hide the Animation Editor Suggest Candidates button without removing its existing logic. |
 | **Task 104: Compact Planning Context** | [x] | Reduced active task, handoff, and plan index noise while preserving detailed plans as historical references. |
 | **Task 105: Compact Crop Editor Trace Step** | [x] | Reduced the Step 3 trace panel height and spacing so the lasso mask workspace fits better in the current window. |
+| **Task 106: Add Draggable Pivot Marker** | [x] | Allow dragging the selected layer pivot marker directly on the Animation Editor SVG preview. |
+| **Task 107: Prune Missing Animation Layers On Save** | [x] | Remove animation part configs whose group IDs no longer exist in the saved grouped SVG. |
+| **Task 108: Sync Existing Animated Crop Data** | [x] | Audited existing animated crop data and refreshed stale Potato Stage 01 grouped SVG from the current Crop Editor source layer SVG. |

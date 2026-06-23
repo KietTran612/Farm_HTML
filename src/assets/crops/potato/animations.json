@@ -1,0 +1,198 @@
+{
+  "crop": "potato",
+  "stages": {
+    "dead": {
+      "sourceFile": "dead.svg",
+      "groupedFile": "dead.grouped.svg",
+      "parts": {
+        "leaves-1782200957445-jkrl4f": {
+          "label": "other_1",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782200963118-bxsc4j": {
+          "label": "other_2",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782200884190-gf8k1t": {
+          "label": "leaves-left",
+          "animation": "sway-left",
+          "pivot": {
+            "x": 90,
+            "y": 66
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 0.6,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782200903491-o504et": {
+          "label": "leaves-left",
+          "animation": "sway-left",
+          "pivot": {
+            "x": 87,
+            "y": 26
+          },
+          "motion": {
+            "durationMs": 4200,
+            "delayMs": 0,
+            "angleDeg": 0.7,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782200930547-wni7u7": {
+          "label": "leaves-right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 8,
+            "y": 44
+          },
+          "motion": {
+            "durationMs": 5000,
+            "delayMs": 0,
+            "angleDeg": 0.3,
+            "yPx": 1,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782200949792-oj0quh": {
+          "label": "leaves",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 4700,
+            "delayMs": 0,
+            "angleDeg": 0.5,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        }
+      }
+    },
+    "stage00": {
+      "sourceFile": "stage00.svg",
+      "groupedFile": "stage00.grouped.svg",
+      "parts": {
+        "leaves-1782200832247-apdbja": {
+          "label": "leaves-right",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 18,
+            "y": 78
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 4,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782200844306-bsxdje": {
+          "label": "leaves-left",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 92,
+            "y": 51
+          },
+          "motion": {
+            "durationMs": 2600,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 0,
+            "scale": 1.025
+          }
+        },
+        "leaves-1782200854530-40d2ul": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 4200,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 0,
+            "scale": 1.07
+          }
+        }
+      }
+    },
+    "stage01": {
+      "sourceFile": "stage01.svg",
+      "groupedFile": "stage01.grouped.svg",
+      "parts": {
+        "leaves-1782200038455-mvyoki": {
+          "label": "leaves",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 8.5,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782200056326-53ttqg": {
+          "label": "leaves",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2600,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 0,
+            "scale": 1.025
+          }
+        },
+        "leaves-1782200104694-wvvf7v": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782200117251-7ve76n": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782200121535-lnghzg": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        }
+      }
+    }
+  }
+}

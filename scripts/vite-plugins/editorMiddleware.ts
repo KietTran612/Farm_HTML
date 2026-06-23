@@ -267,6 +267,11 @@ export function handleSaveStageAnimationRequest(payload: SaveStageAnimationPaylo
   if (!/<svg\b[^>]*>/i.test(sanitizedSvg)) {
     throw new Error("Grouped SVG must include a root <svg> element.");
   }
+  const existingGroupIds = extractGroupedSvgLayerIds(sanitizedSvg);
+  const animationConfig = {
+    ...payload.animationConfig,
+    parts: pruneAnimationParts(payload.animationConfig?.parts || {}, existingGroupIds)
+  };
 
   const groupedFile = `${stageId}.grouped.svg`;
   writeFileSync(join(cropDir, groupedFile), sanitizedSvg, "utf8");
@@ -285,7 +290,7 @@ export function handleSaveStageAnimationRequest(payload: SaveStageAnimationPaylo
       [stageId]: {
         sourceFile: meta.stages[stageId],
         groupedFile,
-        ...payload.animationConfig
+        ...animationConfig
       }
     }
   };
@@ -303,6 +308,24 @@ export function handleSaveStageAnimationRequest(payload: SaveStageAnimationPaylo
   writeFileSync(metaPath, JSON.stringify(nextMeta, null, 2), "utf8");
 
   return { success: true };
+}
+
+function extractGroupedSvgLayerIds(svgText: string): Set<string> {
+  return new Set(
+    Array.from(svgText.matchAll(/<g\b[^>]*\bdata-group-id=["']([^"']+)["'][^>]*>/gi))
+      .map((match) => match[1])
+      .filter(Boolean)
+  );
+}
+
+function pruneAnimationParts(parts: Record<string, any>, existingGroupIds: Set<string>): Record<string, any> {
+  if (existingGroupIds.size === 0) {
+    return parts;
+  }
+
+  return Object.fromEntries(
+    Object.entries(parts).filter(([groupId]) => existingGroupIds.has(groupId))
+  );
 }
 
 

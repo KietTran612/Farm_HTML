@@ -236,4 +236,45 @@ describe("Editor Middleware API", () => {
     expect(animations.stages.stage01.parts.stem.animation).toBe("soft-sway");
     expect(animations.stages.stage02.parts.leaves.animation).toBe("leaf-breathe");
   });
+
+  it("removes obsolete animation parts for the saved stage", () => {
+    mkdirSync(testAssetsDir, { recursive: true });
+    writeFileSync(join(testAssetsDir, "stage01.svg"), "<svg><path d=\"M0 0\" /></svg>", "utf8");
+    writeFileSync(join(testAssetsDir, "meta.json"), JSON.stringify({
+      cropName: "test-crop",
+      stages: {
+        stage01: "stage01.svg"
+      },
+      animations: "animations.json"
+    }), "utf8");
+    writeFileSync(join(testAssetsDir, "animations.json"), JSON.stringify({
+      crop: "test-crop",
+      stages: {
+        stage01: {
+          sourceFile: "stage01.svg",
+          groupedFile: "stage01.grouped.svg",
+          parts: {
+            removedLayer: { animation: "soft-sway" },
+            keptLayer: { animation: "leaf-breathe" }
+          }
+        }
+      }
+    }), "utf8");
+
+    handleSaveStageAnimationRequest({
+      cropName: "test-crop",
+      stageId: "stage01",
+      groupedSvg: "<svg><g class=\"crop-part crop-part--stem\" data-group-id=\"keptLayer\"><path d=\"M0 0\" /></g></svg>",
+      animationConfig: {
+        parts: {
+          removedLayer: { animation: "soft-sway" },
+          keptLayer: { animation: "bob" }
+        }
+      }
+    });
+
+    const animations = JSON.parse(readFileSync(join(testAssetsDir, "animations.json"), "utf8"));
+    expect(Object.keys(animations.stages.stage01.parts)).toEqual(["keptLayer"]);
+    expect(animations.stages.stage01.parts.keptLayer.animation).toBe("bob");
+  });
 });

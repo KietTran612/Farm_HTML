@@ -213,7 +213,8 @@ h2 {
   }
 
   .pivot-marker {
-    pointer-events: none;
+    cursor: grab;
+    pointer-events: auto;
 
     circle {
       fill: #fff7d6;
@@ -221,11 +222,25 @@ h2 {
       stroke-width: 3;
     }
 
+    .pivot-marker__hit {
+      fill: transparent;
+      stroke: transparent;
+      stroke-width: 0;
+    }
+
     path {
       stroke: #156f3a;
       stroke-width: 3;
       stroke-linecap: round;
     }
+  }
+}
+
+.is-dragging-pivot {
+  cursor: grabbing;
+
+  .pivot-marker {
+    cursor: grabbing;
   }
 }
 

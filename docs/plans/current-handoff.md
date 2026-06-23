@@ -2,6 +2,9 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 108 (Sync Existing Animated Crop Data):** Audited existing `animations.json` files for animated crops and confirmed no orphan/missing part IDs after sync. Refreshed `src/assets/crops/potato/stage01.grouped.svg` from the current `stage01.svg` because the Crop Editor source SVG was newer while group IDs still matched.
+- **Implemented Task 107 (Prune Missing Animation Layers On Save):** `handleSaveStageAnimationRequest` now reads layer `data-group-id`s from the sanitized grouped SVG and removes animation `parts` entries whose group IDs no longer exist before writing `animations.json`.
+- **Implemented Task 106 (Draggable Pivot Marker):** Added a draggable pivot marker handle in the Animation Editor SVG preview. Dragging converts pointer coordinates into selected-layer bounds percentages, clamps the pivot to the selected layer bounds, updates `partPivots`, syncs the X/Y inputs, switches the pivot preset to `Custom`, and keeps the existing save metadata format. Fixed the drag handler to target the real `#svg-preview` container.
 - **Implemented Task 105 (Compact Crop Editor Trace Step):** Reduced Step 3 (`Trace layer bang lasso mask`) panel padding, header spacing, grid gap, and lasso/preview minimum height so the trace workspace fits better within the current browser window without changing trace behavior.
 - **Implemented Task 104 (Compact Planning Context):** Compacted `task.md`, `current-handoff.md`, and `index.md` so new sessions read only current project state instead of long historical logs. Older completed plan files were moved under `docs/plans/archive/`, while recently relevant workflow plans remain in `docs/plans/`.
 - **Implemented Task 103 (Temporarily Hide Suggest Candidates Button):** Added `hidden` to the Animation Editor `Suggest Candidates` button and a `.btn[hidden]` SCSS rule so the control is not shown while preserving its existing DOM id and TypeScript handler.
@@ -16,6 +19,22 @@
 
 ## Verification
 
+- **For Task 108 (Sync Existing Animated Crop Data):**
+  - Read-only audit found animated crop data only for `corn` and `potato`.
+  - Before sync, no animation part orphan IDs were found against current grouped SVGs; `potato/stage01.svg` was newer than `potato/stage01.grouped.svg` with matching group IDs.
+  - Refreshed `potato/stage01.grouped.svg` from `potato/stage01.svg`; SHA256 hashes now match.
+  - Post-sync audit reported `ANIMATION_SYNC_ISSUES=0`.
+- **For Task 107 (Prune Missing Animation Layers On Save):**
+  - TDD red check: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` failed when payload included `removedLayer` but grouped SVG only contained `keptLayer`.
+  - Focused tests passed: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts`.
+  - `npm run build` passed.
+- **For Task 106 (Draggable Pivot Marker):**
+  - TDD red check: `npx vitest run src/animation-editor/pivotDrag.test.ts` first failed because `pivotDrag` did not exist.
+  - Focused tests passed: `npx vitest run src/animation-editor/pivotDrag.test.ts src/animation-editor/selectionOverlay.test.ts src/animation-editor/motionConfig.test.ts`.
+  - `npm run build` passed.
+  - After user reported the marker could be grabbed but not moved, fixed the drag handler's preview element lookup from `animation-preview` to `svg-preview`; focused tests and `npm run build` passed again.
+  - After user requested pivot to stay within the layer area, clamped pivot render, transform-origin, drag output, and X/Y input display to `0-100`; focused tests and `npm run build` passed again.
+  - Browser drag smoke not run because browser automation policy blocked access to `http://127.0.0.1:4000`.
 - **For Task 105 (Compact Crop Editor Trace Step):**
   - `npm run build` passed.
   - Browser smoke passed on `http://127.0.0.1:4000/crop-editor.html`: at a 1280x720 viewport, `.editor-workspace` reported `needsScroll: false`; Step 3 measured 447px tall with lasso/preview panes at 360px.
@@ -32,14 +51,17 @@
 
 ## Known Warnings Or Blockers
 
-- Observed crop asset changes remain in the worktree and are intentionally not part of planning cleanup or the Step 3 compact UI change: `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/stage00.svg`, `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage00.grouped.svg`, `src/assets/crops/corn/stage01.grouped.svg`, `src/assets/crops/corn/stage02.grouped.svg`, and `src/assets/crops/corn/stage03.grouped.svg`.
+- Observed crop asset changes remain in the worktree: `src/assets/crops/potato/meta.json`, `src/assets/crops/potato/stage01.svg`, `src/assets/crops/potato/animations.json`, `src/assets/crops/potato/dead.grouped.svg`, `src/assets/crops/potato/stage00.grouped.svg`, and `src/assets/crops/potato/stage01.grouped.svg`.
 - Corn VTracer raw SVG sizes can be large. Prefer tuned presets or lasso layer selection for runtime-ready assets.
 
 ## Current Uncommitted Scope
 
+- **Existing animated data sync:** `src/assets/crops/potato/stage01.grouped.svg`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Animation save orphan pruning:** `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Animation Editor draggable pivot:** `src/animation-editor.ts`, `src/animation-editor/pivotDrag.ts`, `src/animation-editor/pivotDrag.test.ts`, `src/styles/animation-editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Crop Editor compact trace step:** `src/styles/editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Planning cleanup:** `docs/plans/task.md`, `docs/plans/current-handoff.md`, `docs/plans/index.md`, and archived historical plan file moves under `docs/plans/archive/`.
-- **Observed crop asset changes:** `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/stage00.svg`, `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage00.grouped.svg`, `src/assets/crops/corn/stage01.grouped.svg`, `src/assets/crops/corn/stage02.grouped.svg`, and `src/assets/crops/corn/stage03.grouped.svg`.
+- **Observed crop asset changes:** `src/assets/crops/potato/meta.json`, `src/assets/crops/potato/stage01.svg`, `src/assets/crops/potato/animations.json`, `src/assets/crops/potato/dead.grouped.svg`, `src/assets/crops/potato/stage00.grouped.svg`, and `src/assets/crops/potato/stage01.grouped.svg`.
 
 ## Recommended Next Task
 

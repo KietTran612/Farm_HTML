@@ -3,6 +3,7 @@ import { ANIMATION_PRESETS, PIVOT_PRESETS, getDefaultPivotForPart, type PivotPoi
 import { classifySvgPaths, parseSvgPathBounds, type CropGroup } from "./animation-editor/groupClassifier";
 import { relabelGroup, serializeGroupedSvg } from "./animation-editor/groupEditor";
 import { createSelectionBoundsRect } from "./animation-editor/selectionOverlay";
+import { calculatePivotFromSvgPoint } from "./animation-editor/pivotDrag";
 import {
   buildAnimationPartsConfig,
   getDefaultMotionForAnimation,
@@ -47,6 +48,7 @@ let partPivots: Record<string, PivotPoint> = {};
 let partMotions: Record<string, MotionConfig> = {};
 let soloPreviewGroupId = "";
 let animationsMetadata: any = null;
+let draggingPivotGroupId = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
@@ -446,7 +448,11 @@ function decoratePreviewGroups(preview: HTMLElement) {
     const isAnimating = isPreviewingAnimation || (soloPreviewGroupId === group.id);
     node.classList.toggle("is-animating", isAnimating);
 
-    const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
+    const rawPivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
+    const pivot = {
+      x: clampPercent(rawPivot.x),
+      y: clampPercent(rawPivot.y)
+    };
     node.style.transformOrigin = `${pivot.x}% ${pivot.y}%`;
     applyMotionToDomNode(node, partMotions[group.id] || {});
   }
@@ -541,13 +547,81 @@ function getGroupBounds(node: SVGGElement, group: CropGroup) {
   return combineGroupBounds(group);
 }
 
+function getSvgPointFromPointer(svg: SVGSVGElement, event: PointerEvent) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  return point.matrixTransform(matrix.inverse());
+}
+
+function updatePivotControls(groupId: string, pivot: PivotPoint) {
+  const row = document.querySelector<HTMLElement>(`.group-row[data-group-id="${cssEscape(groupId)}"]`);
+  if (!row) return;
+
+  const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+  const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+  const presetSelect = row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
+  if (xInput) xInput.value = String(Math.round(pivot.x));
+  if (yInput) yInput.value = String(Math.round(pivot.y));
+  if (presetSelect) presetSelect.value = "custom";
+}
+
+function applyDraggedPivot(event: PointerEvent) {
+  if (!draggingPivotGroupId) return;
+  const preview = document.getElementById("svg-preview");
+  const svg = preview?.querySelector<SVGSVGElement>("svg");
+  const group = activeGroups.find((entry) => entry.id === draggingPivotGroupId);
+  if (!preview || !svg || !group) return;
+
+  const point = getSvgPointFromPointer(svg, event);
+  if (!point) return;
+
+  const node = preview.querySelector<SVGGElement>(`[data-group-id="${cssEscape(group.id)}"]`);
+  const bounds = node ? getGroupBounds(node, group) : combineGroupBounds(group);
+  const nextPivot = calculatePivotFromSvgPoint(
+    { x: point.x, y: point.y },
+    bounds,
+    partPivots[group.id] || getDefaultPivotForPart(group.label)
+  );
+
+  partPivots[group.id] = nextPivot;
+  updatePivotControls(group.id, nextPivot);
+  decoratePreviewGroups(preview);
+}
+
+function endPivotDrag() {
+  if (!draggingPivotGroupId) return;
+  draggingPivotGroupId = "";
+  document.body.classList.remove("is-dragging-pivot");
+  window.removeEventListener("pointermove", applyDraggedPivot);
+  window.removeEventListener("pointerup", endPivotDrag);
+  window.removeEventListener("pointercancel", endPivotDrag);
+}
+
+function startPivotDrag(event: PointerEvent, groupId: string) {
+  event.preventDefault();
+  event.stopPropagation();
+  draggingPivotGroupId = groupId;
+  document.body.classList.add("is-dragging-pivot");
+  window.addEventListener("pointermove", applyDraggedPivot);
+  window.addEventListener("pointerup", endPivotDrag);
+  window.addEventListener("pointercancel", endPivotDrag);
+  applyDraggedPivot(event);
+}
+
 function renderPivotMarker(preview: HTMLElement) {
   preview.querySelector(".pivot-marker")?.remove();
   const group = activeGroups.find((entry) => entry.id === selectedGroupId);
   const svg = preview.querySelector("svg");
   if (!group || !svg) return;
 
-  const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
+  const rawPivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
+  const pivot = {
+    x: clampPercent(rawPivot.x),
+    y: clampPercent(rawPivot.y)
+  };
   const node = preview.querySelector<SVGGElement>(`[data-group-id="${cssEscape(group.id)}"]`);
   const bounds = node ? getGroupBounds(node, group) : combineGroupBounds(group);
 
@@ -555,11 +629,14 @@ function renderPivotMarker(preview: HTMLElement) {
   const markerY = bounds.minY + ((bounds.maxY - bounds.minY) * pivot.y) / 100;
   const marker = document.createElementNS("http://www.w3.org/2000/svg", "g");
   marker.setAttribute("class", "pivot-marker");
+  marker.setAttribute("data-group-id", group.id);
   marker.setAttribute("transform", `translate(${markerX} ${markerY})`);
   marker.innerHTML = `
+    <circle class="pivot-marker__hit" r="18" />
     <circle r="7" />
     <path d="M-14 0 H14 M0 -14 V14" />
   `;
+  marker.addEventListener("pointerdown", (event) => startPivotDrag(event, group.id));
   svg.appendChild(marker);
 }
 
@@ -741,10 +818,13 @@ function renderGroupList() {
     [xInput, yInput].forEach((input) => {
       input?.addEventListener("input", () => {
         if (!xInput || !yInput) return;
-        partPivots[groupId] = {
+        const nextPivot = {
           x: clampPercent(Number(xInput.value)),
           y: clampPercent(Number(yInput.value))
         };
+        partPivots[groupId] = nextPivot;
+        xInput.value = String(Math.round(nextPivot.x));
+        yInput.value = String(Math.round(nextPivot.y));
         const presetSelect = row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
         if (presetSelect) {
           presetSelect.value = "custom";
