@@ -5,28 +5,40 @@
       "sourceFile": "dead.svg",
       "groupedFile": "dead.grouped.svg",
       "parts": {
-        "ears": {
+        "leaves-1782124647814": {
+          "label": "leaves",
           "animation": "soft-sway",
           "pivot": {
-            "x": 85,
-            "y": 90
+            "x": 13,
+            "y": 6
           }
         },
-        "other": {
+        "leaves-1782124666272": {
+          "label": "other_1",
           "animation": "none",
           "pivot": {
             "x": 50,
             "y": 100
           }
         },
-        "tassels": {
+        "leaves-1782124659915": {
+          "label": "other_3",
           "animation": "none",
           "pivot": {
             "x": 50,
-            "y": 95
+            "y": 100
           }
         },
-        "base": {
+        "leaves-1782124677081": {
+          "label": "leaf_1",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782124687750": {
+          "label": "other_2",
           "animation": "none",
           "pivot": {
             "x": 50,

@@ -2,6 +2,8 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 95 (State Preservation on Stage Switch/Save):** Fixed a bug where switching stages in the sidebar or clicking stage cards caused the active pivots and animations configuration to revert to defaults in the UI. Introduced a global `animationsMetadata` state variable to store the loaded payload from the API, updated `selectStage` to query this global state instead of using a transient `payload` parameter, and updated the metadata cache upon a successful save.
+
 - **Implemented Task 94 (Collapse Arrow for Layer Rows):** Added a collapse arrow (`▼`) aligned on the exact same header row/line as the layer name inside the group selection button. Updated the click handler on the header to toggle the layer's expand/collapse state (clicking an active header collapses it). Styled the arrow in SCSS to rotate from `-90deg` (pointing right, representing collapsed) to `0deg` (pointing down and highlighted in forest green, representing expanded/active) with a smooth transition.
 
 - **Implemented Dropdown Translations:** Added Vietnamese translations in parentheses next to the part classification option labels (e.g. `base (gốc)`, `stem (thân)`, `leaves (lá)`) in the dropdown selector inside group rows to improve usability.

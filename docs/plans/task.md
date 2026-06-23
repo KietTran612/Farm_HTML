@@ -97,5 +97,11 @@
 | **Task 92: Implement Dynamic Pivot Marker Bounds in TS** | [x] | Query getBBox() from DOM groups in renderPivotMarker with static bounds fallback. |
 | **Task 93: Verify Build and Tests** | [x] | Compile production bundle and ensure all unit tests pass. |
 | **Task 94: Add Collapse Arrow for Layer Rows** | [x] | Added collapse arrow (▼) inside header line of select button and implemented click toggle to close/open. |
+| **Task 95: Fix Animation Editor State Preservation on Save and Stage Switch** | [x] | Store animations metadata globally and read from it in selectStage to preserve settings. |
+| **Task 96: Add Motion Sliders UI to Card Details** | [ ] | Design and render motion sliders (speed, delay, angle, Y-offset, scale) in group list. |
+| **Task 97: Implement Motion Metadata Reading and Writing** | [ ] | Load and save motion configuration to and from animations.json metadata payload. |
+| **Task 98: Apply CSS Variables to Preview Elements Dynamically** | [ ] | Apply --anim-* custom properties inline in decoratePreviewGroups. |
+| **Task 99: Update SCSS Animation Keyframes to use CSS Variables** | [ ] | Refactor SCSS crop-sway/bob/breathe keyframes to read from CSS variables. |
+| **Task 100: Verify Build and Dynamic Customization visually** | [ ] | Check that code builds and verify sliders dynamically affect preview in real-time. |
 
 

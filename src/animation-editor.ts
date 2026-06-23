@@ -38,6 +38,7 @@ let isPreviewingAnimation = false;
 let partAnimations: Record<string, string> = {};
 let partPivots: Record<string, PivotPoint> = {};
 let soloPreviewGroupId = "";
+let animationsMetadata: any = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
@@ -88,12 +89,13 @@ async function initAnimationEditor() {
 
     const payload = await response.json() as CropStageAssetsResponse;
     stages = payload.stages;
+    animationsMetadata = payload.animations;
     renderStageList();
     setStatus("Select a stage to begin.");
 
     const firstStage = stages.find((stage) => stage.activeSvg);
     if (firstStage) {
-      selectStage(firstStage.stageId, payload);
+      selectStage(firstStage.stageId);
     }
   } catch (error: any) {
     setStatus(`Error: ${error.message}`, true);
@@ -155,7 +157,7 @@ function renderStageList() {
   });
 }
 
-function selectStage(stageId: string, payload?: CropStageAssetsResponse) {
+function selectStage(stageId: string) {
   const stage = stages.find((entry) => entry.stageId === stageId);
   if (!stage) return;
 
@@ -305,7 +307,7 @@ function selectStage(stageId: string, payload?: CropStageAssetsResponse) {
   }
 
   // 2. Metadata Migration / Load Config Compatibility
-  const stageParts = payload?.animations.stages?.[stageId]?.parts || {};
+  const stageParts = animationsMetadata?.stages?.[stageId]?.parts || {};
   partAnimations = {};
   partPivots = {};
 
@@ -385,6 +387,18 @@ async function handleSave() {
     setStatus(`Save failed: ${error.error || "Unknown error"}`, true);
     return;
   }
+
+  if (!animationsMetadata) {
+    animationsMetadata = { crop: cropName, stages: {} };
+  }
+  if (!animationsMetadata.stages) {
+    animationsMetadata.stages = {};
+  }
+  animationsMetadata.stages[activeStage.stageId] = {
+    sourceFile: activeStage.sourceFile || `${activeStage.stageId}.svg`,
+    groupedFile: activeStage.groupedFile,
+    parts
+  };
 
   activeStage.groupedSvg = groupedSvg;
   activeStage.groupedFile = `${activeStage.stageId}.grouped.svg`;

@@ -11,6 +11,7 @@
 - `2026-06-23-animation-editor-ui-cleanup.md` - Plan for Animation Editor UI simplification & cleanup.
 - `2026-06-23-animation-editor-layer-preview.md` - Plan for per-layer independent animation preview.
 - `2026-06-23-animation-editor-pivot-marker-alignment.md` - Plan for fixing pivot marker alignment in Crop Animation Editor.
+- `2026-06-23-animation-editor-css-variables.md` - Plan for customizing SVG animations via CSS variables.
 
 
 
