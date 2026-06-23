@@ -62,6 +62,9 @@ const vtracerPresets: Record<string, Record<string, number>> = {
     corner_threshold: 70,
     segment_length: 4.5,
     splice_threshold: 50
+  },
+  hybridDetailedCandidate: {
+    isHybrid: 1
   }
 };
 
@@ -101,7 +104,7 @@ async function initEditor() {
     populateCropDropdown();
     renderStagesSidebar();
     renderLayerTraceState();
-    applyPreset("gameDetailed");
+    applyPreset("hybridDetailedCandidate");
     showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
   } catch (error: any) {
     showStatus("error", `Loi khoi tao editor: ${error.message}`);
@@ -149,9 +152,7 @@ function setupUIEventListeners() {
 
   const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
   presetSelect?.addEventListener("change", () => {
-    if (presetSelect.value !== "custom") {
-      applyPreset(presetSelect.value);
-    }
+    applyPreset(presetSelect.value);
   });
 
   [
@@ -460,11 +461,13 @@ async function handleTraceLayer() {
   showStatus("loading", `Dang trace layer ${label}...`);
 
   try {
+    const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
     const response = await fetch("/api/editor/trace-layer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         imageDataUrl,
+        preset: presetSelect?.value || "custom",
         params: getSliderParams()
       })
     });
@@ -979,25 +982,36 @@ function applyPreset(presetName: string) {
     presetSelect.value = presetName;
   }
 
+  const isHybrid = presetName === "hybridDetailedCandidate";
   const params = vtracerPresets[presetName];
-  if (!params) return;
+  const isCustom = presetName === "custom";
+  if (!params && !isHybrid && !isCustom) return;
 
-  setInputValueAndLabel("color-precision", params.color_precision);
-  setInputValueAndLabel("filter-speckle", params.filter_speckle);
-  setInputValueAndLabel("gradient-step", params.gradient_step);
-  setInputValueAndLabel("corner-threshold", params.corner_threshold);
-  setInputValueAndLabel("segment-length", params.segment_length);
-  setInputValueAndLabel("splice-threshold", params.splice_threshold);
+  const paramKeysMap: Record<string, string> = {
+    "color-precision": "color_precision",
+    "filter-speckle": "filter_speckle",
+    "gradient-step": "gradient_step",
+    "corner-threshold": "corner_threshold",
+    "segment-length": "segment_length",
+    "splice-threshold": "splice_threshold"
+  };
+
+  Object.entries(paramKeysMap).forEach(([idSuffix, key]) => {
+    const slider = document.getElementById(`param-${idSuffix}`) as HTMLInputElement | null;
+    const display = document.getElementById(`val-${idSuffix}`);
+    if (slider) {
+      slider.disabled = isHybrid;
+      if (!isHybrid && params && params[key] !== undefined) {
+        slider.value = String(params[key]);
+        if (display) {
+          display.textContent = slider.value;
+        }
+      } else if (isHybrid && display) {
+        display.textContent = "Auto";
+      } else if (display) {
+        display.textContent = slider.value;
+      }
+    }
+  });
 }
 
-function setInputValueAndLabel(idSuffix: string, value: any) {
-  if (value === undefined) return;
-  const slider = document.getElementById(`param-${idSuffix}`) as HTMLInputElement | null;
-  const display = document.getElementById(`val-${idSuffix}`);
-  if (slider) {
-    slider.value = String(value);
-  }
-  if (display) {
-    display.textContent = String(value);
-  }
-}

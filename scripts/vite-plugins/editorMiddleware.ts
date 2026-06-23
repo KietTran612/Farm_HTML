@@ -70,7 +70,35 @@ export interface TraceParams {
 export interface TraceLayerPayload {
   imageDataUrl: string;
   params: TraceParams;
+  preset?: string;
 }
+
+const SERVER_PRESETS: Record<string, TraceParams> = {
+  gameDetailed: {
+    colormode: "color",
+    mode: "spline",
+    hierarchical: "cutout",
+    color_precision: 8,
+    filter_speckle: 3,
+    gradient_step: 6,
+    corner_threshold: 60,
+    segment_length: 3.5,
+    splice_threshold: 45,
+    path_precision: 3
+  },
+  animationCandidate: {
+    colormode: "color",
+    mode: "spline",
+    hierarchical: "cutout",
+    color_precision: 7,
+    filter_speckle: 6,
+    gradient_step: 14,
+    corner_threshold: 60,
+    segment_length: 4.0,
+    splice_threshold: 45,
+    path_precision: 3
+  }
+};
 
 export function handleCropsRequest(): CropData[] {
   const cropsDir = resolve("docs/Crops");
@@ -327,6 +355,69 @@ export function handleTraceLayerRequest(payload: TraceLayerPayload): any {
   writeFileSync(inputPath, Buffer.from(match[1], "base64"));
 
   try {
+    if (payload.preset === "hybridDetailedCandidate") {
+      const resCandidate = runVTracerOnFile(inputPath, SERVER_PRESETS.animationCandidate);
+      const resDetailed = runVTracerOnFile(inputPath, SERVER_PRESETS.gameDetailed);
+
+      const extractPaths = (svg: string) => {
+        const m = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+        return m ? m[1].trim() : "";
+      };
+
+      const pathsCandidate = extractPaths(resCandidate.rawSvg);
+      const pathsDetailed = extractPaths(resDetailed.rawSvg);
+
+      const rootMatch = resCandidate.rawSvg.match(/<svg[^>]*>/i);
+      const rootTag = rootMatch ? rootMatch[0] : '<svg xmlns="http://www.w3.org/2000/svg">';
+
+      const mergedRawSvg = `${rootTag}\n${pathsCandidate}\n${pathsDetailed}\n</svg>`;
+
+      const optimized = optimize(mergedRawSvg, {
+        multipass: true,
+        plugins: [
+          {
+            name: "preset-default",
+            params: {
+              overrides: {
+                convertColors: {
+                  names2hex: true,
+                  rgb2hex: true,
+                  shorthex: false,
+                  shortname: false
+                }
+              }
+            }
+          },
+          "removeDimensions",
+          {
+            name: "removeAttrs",
+            params: {
+              attrs: ["svg:style", "svg:id"]
+            }
+          }
+        ]
+      });
+
+      let optimizedText = "";
+      if ("data" in optimized) {
+        optimizedText = optimized.data;
+      } else {
+        throw new Error("SVGO optimization failed on hybrid merge.");
+      }
+
+      const rawMetrics = collectSvgMetricsFromText(mergedRawSvg);
+      const optimizedMetrics = collectSvgMetricsFromText(optimizedText);
+
+      return {
+        rawSvg: mergedRawSvg,
+        optimizedSvg: optimizedText,
+        metrics: {
+          raw: rawMetrics,
+          optimized: optimizedMetrics
+        }
+      };
+    }
+
     return runVTracerOnFile(inputPath, payload.params);
   } finally {
     if (existsSync(inputPath)) {

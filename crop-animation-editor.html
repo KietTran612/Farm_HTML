@@ -53,68 +53,10 @@
         </section>
 
         <aside class="animation-panel group-panel">
-          <div class="panel-section selection-controls-section">
-            <h2>Selection</h2>
-            <div class="selection-tool-selector" style="margin: 10px 0;">
-              <label class="field-label">Công cụ chọn</label>
-              <div class="segmented-control" style="display: flex; width: 100%;">
-                <button class="mode-btn is-active" type="button" data-tool="rect" id="tool-rect-btn" style="flex: 1; text-align: center;">Hộp</button>
-                <button class="mode-btn" type="button" data-tool="brush" id="tool-brush-btn" style="flex: 1; text-align: center;">Tô</button>
-                <button class="mode-btn" type="button" data-tool="lasso" id="tool-lasso-btn" style="flex: 1; text-align: center;">Lasso</button>
-              </div>
-            </div>
-            <div class="selection-status" id="selection-status">Selected: 0 paths</div>
-            <div class="selection-label-selector" style="margin: 8px 0;">
-              <label class="field-label" for="selection-label-select">Target Label</label>
-              <select id="selection-label-select" class="form-control">
-                <option value="base">base</option>
-                <option value="stem">stem</option>
-                <option value="leaves">leaves</option>
-                <option value="leaves-left">leaves-left</option>
-                <option value="leaves-right">leaves-right</option>
-                <option value="fruit">fruit</option>
-                <option value="ears">ears</option>
-                <option value="tassels">tassels</option>
-                <option value="flower">flower</option>
-                <option value="dead-leaf">dead-leaf</option>
-                <option value="other">other</option>
-              </select>
-            </div>
-            <div class="group-actions selection-actions" style="margin-top: 8px; display: flex; gap: 8px;">
-              <button id="create-group-btn" class="btn btn-primary" style="flex: 1;" disabled>Create Group</button>
-              <button id="remove-from-group-btn" class="btn btn-danger" style="flex: 1;" disabled>Remove Selection</button>
-            </div>
-          </div>
-
-          <div class="panel-section">
-            <h2>Groups</h2>
-            <div class="group-actions">
-              <button id="merge-groups-btn" class="btn btn-secondary" disabled>Merge Selected</button>
-              <button id="split-left-right-btn" class="btn btn-secondary" disabled>Split L/R</button>
-              <button id="split-top-bottom-btn" class="btn btn-secondary" disabled>Split T/B</button>
-              <button id="split-color-btn" class="btn btn-secondary" disabled>Split Color</button>
-            </div>
+          <div class="panel-section" id="panel-groups">
+            <h2>Layers</h2>
             <div id="group-list" class="group-list">
               <p class="animation-empty">Run Suggest Candidates to inspect groups.</p>
-            </div>
-          </div>
-
-
-          <div class="panel-section">
-            <h2>Animation</h2>
-            <label class="field-label" for="animation-preset-select">Selected group preset</label>
-            <select id="animation-preset-select" class="form-control" disabled></select>
-          </div>
-
-          <div class="panel-section">
-            <h2>Pivot</h2>
-            <label class="field-label" for="pivot-preset-select">Pivot preset</label>
-            <select id="pivot-preset-select" class="form-control" disabled></select>
-            <div class="pivot-grid">
-              <label class="field-label" for="pivot-x-input">Pivot X %</label>
-              <label class="field-label" for="pivot-y-input">Pivot Y %</label>
-              <input id="pivot-x-input" class="form-control" type="number" min="0" max="100" step="1" value="50" disabled />
-              <input id="pivot-y-input" class="form-control" type="number" min="0" max="100" step="1" value="100" disabled />
             </div>
           </div>
         </aside>

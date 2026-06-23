@@ -1,7 +1,7 @@
 import "./styles/animation-editor.scss";
 import { ANIMATION_PRESETS, PIVOT_PRESETS, getDefaultPivotForPart, type PivotPoint } from "./animation-editor/animationPresets";
-import { classifySvgPaths, parseSvgPathBounds, type CropGroup, type ClassifiedPath } from "./animation-editor/groupClassifier";
-import { mergeGroups, relabelGroup, serializeGroupedSvg, splitGroup, isIntersecting, type SplitMode } from "./animation-editor/groupEditor";
+import { classifySvgPaths, parseSvgPathBounds, type CropGroup } from "./animation-editor/groupClassifier";
+import { relabelGroup, serializeGroupedSvg } from "./animation-editor/groupEditor";
 
 interface StageAsset {
   stageId: string;
@@ -38,15 +38,6 @@ let isPreviewingAnimation = false;
 let partAnimations: Record<string, string> = {};
 let partPivots: Record<string, PivotPoint> = {};
 
-let selectedPathIndices = new Set<number>();
-interface CachedPathBBox {
-  pathIndex: number;
-  bounds: { minX: number; minY: number; maxX: number; maxY: number };
-}
-let cachedPathBBoxes: CachedPathBBox[] = [];
-let activeTool: "rect" | "brush" | "lasso" = "rect";
-let lassoPoints: { x: number; y: number }[] = [];
-
 document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
   void initAnimationEditor();
@@ -63,10 +54,6 @@ function setupEvents() {
   document.getElementById("auto-classify-btn")?.addEventListener("click", handleAutoClassify);
   document.getElementById("preview-animation-btn")?.addEventListener("click", handlePreviewAnimation);
   document.getElementById("save-animation-btn")?.addEventListener("click", () => void handleSave());
-  document.getElementById("merge-groups-btn")?.addEventListener("click", handleMergeGroups);
-  document.getElementById("split-left-right-btn")?.addEventListener("click", () => handleSplitGroup("left-right"));
-  document.getElementById("split-top-bottom-btn")?.addEventListener("click", () => handleSplitGroup("top-bottom"));
-  document.getElementById("split-color-btn")?.addEventListener("click", () => handleSplitGroup("fill-color"));
 
   document.querySelectorAll<HTMLButtonElement>(".mode-btn").forEach((button) => {
     button.addEventListener("click", () => {
@@ -75,68 +62,6 @@ function setupEvents() {
       renderPreview();
     });
   });
-
-  const animationSelect = document.getElementById("animation-preset-select") as HTMLSelectElement | null;
-  animationSelect?.addEventListener("change", () => {
-    if (!selectedGroupId) return;
-    const group = activeGroups.find((entry) => entry.id === selectedGroupId);
-    if (!group) return;
-    partAnimations[group.id] = animationSelect.value;
-    renderPreview();
-    updateActionState();
-  });
-
-  const pivotPresetSelect = document.getElementById("pivot-preset-select") as HTMLSelectElement | null;
-  pivotPresetSelect?.addEventListener("change", () => {
-    if (!selectedGroupId) return;
-    const group = activeGroups.find((entry) => entry.id === selectedGroupId);
-    const preset = PIVOT_PRESETS.find((entry) => entry.id === pivotPresetSelect.value);
-    if (!group || !preset || preset.id === "custom") return;
-
-    partPivots[group.id] = { ...preset.pivot };
-    renderPivotControls();
-    renderPreview();
-    updateActionState();
-  });
-
-  const pivotXInput = document.getElementById("pivot-x-input") as HTMLInputElement | null;
-  const pivotYInput = document.getElementById("pivot-y-input") as HTMLInputElement | null;
-  [pivotXInput, pivotYInput].forEach((input) => {
-    input?.addEventListener("input", () => {
-      const group = activeGroups.find((entry) => entry.id === selectedGroupId);
-      if (!group || !pivotXInput || !pivotYInput) return;
-
-      partPivots[group.id] = {
-        x: clampPercent(Number(pivotXInput.value)),
-        y: clampPercent(Number(pivotYInput.value))
-      };
-      const preset = document.getElementById("pivot-preset-select") as HTMLSelectElement | null;
-      if (preset) preset.value = "custom";
-      renderPreview();
-      updateActionState();
-    });
-  });
-
-  document.getElementById("create-group-btn")?.addEventListener("click", handleCreateGroupFromSelection);
-  document.getElementById("remove-from-group-btn")?.addEventListener("click", handleRemoveSelectionFromGroup);
-
-  const toolRectBtn = document.getElementById("tool-rect-btn") as HTMLButtonElement | null;
-  const toolBrushBtn = document.getElementById("tool-brush-btn") as HTMLButtonElement | null;
-  const toolLassoBtn = document.getElementById("tool-lasso-btn") as HTMLButtonElement | null;
-  [toolRectBtn, toolBrushBtn, toolLassoBtn].forEach((btn) => {
-    btn?.addEventListener("click", () => {
-      activeTool = (btn.dataset.tool || "rect") as typeof activeTool;
-      toolRectBtn?.classList.toggle("is-active", activeTool === "rect");
-      toolBrushBtn?.classList.toggle("is-active", activeTool === "brush");
-      toolLassoBtn?.classList.toggle("is-active", activeTool === "lasso");
-      // Clear any leftover selection box UI or lasso overlays
-      const preview = document.getElementById("svg-preview");
-      preview?.querySelector(".selection-box")?.remove();
-      preview?.querySelector(".lasso-preview")?.remove();
-    });
-  });
-
-  setupDragSelection();
 }
 
 async function initAnimationEditor() {
@@ -236,7 +161,6 @@ function selectStage(stageId: string, payload?: CropStageAssetsResponse) {
   activeStage = stage;
   activeGroups = [];
   selectedGroupId = "";
-  selectedPathIndices.clear();
   isPreviewingAnimation = false;
 
   // 1. Group Restoring (load existing grouped SVG & legacy fallback)
@@ -396,9 +320,6 @@ function selectStage(stageId: string, payload?: CropStageAssetsResponse) {
   renderStageList();
   renderPreview();
   renderGroupList();
-  renderAnimationSelect();
-  renderPivotControls();
-  updateSelectionVisuals();
   updateActionState();
   setStatus(`${formatStageLabel(stage.stageId)} loaded.`);
 }
@@ -421,49 +342,8 @@ function handleAutoClassify() {
   syncModeButtons();
   renderPreview();
   renderGroupList();
-  renderAnimationSelect();
-  renderPivotControls();
-  updateSelectionVisuals();
   updateActionState();
   setStatus(`Classified ${activeGroups.length} groups for ${formatStageLabel(activeStage.stageId)}.`);
-}
-
-function handleMergeGroups() {
-  const checked = getCheckedGroupIds();
-  if (checked.length < 2) {
-    setStatus("Select at least two groups to merge.", true);
-    return;
-  }
-  const first = activeGroups.find((group) => group.id === checked[0]);
-  const label = first?.label || "merged";
-  const mergedId = `group-${label}-${Date.now()}`;
-  activeGroups = mergeGroups(activeGroups, checked, label);
-  activeGroups.forEach((g) => {
-    if (g.label === label && g.id.startsWith("merged-")) {
-      g.id = mergedId;
-    }
-  });
-  partPivots[mergedId] = partPivots[mergedId] || getDefaultPivotForPart(label);
-  selectedGroupId = mergedId;
-  renderPreview();
-  renderGroupList();
-  renderAnimationSelect();
-  renderPivotControls();
-  updateActionState();
-}
-
-function handleSplitGroup(mode: SplitMode) {
-  if (!selectedGroupId) return;
-  activeGroups = splitGroup(activeGroups, selectedGroupId, mode);
-  activeGroups.forEach((group) => {
-    partPivots[group.id] = partPivots[group.id] || getDefaultPivotForPart(group.label);
-  });
-  selectedGroupId = activeGroups[0]?.id || "";
-  renderPreview();
-  renderGroupList();
-  renderAnimationSelect();
-  renderPivotControls();
-  updateActionState();
 }
 
 function handlePreviewAnimation() {
@@ -524,9 +404,7 @@ function renderPreview() {
     ? serializeGroupedSvg(activeStage.activeSvg, activeGroups, cropName, activeStage.stageId)
     : activeStage.activeSvg;
 
-  cachePathBBoxes();
   decoratePreviewGroups(preview);
-  updateSelectionVisuals();
 }
 
 function decoratePreviewGroups(preview: HTMLElement) {
@@ -571,6 +449,25 @@ function renderPivotMarker(preview: HTMLElement) {
   svg.appendChild(marker);
 }
 
+function renderAnimationOptionsForGroup(groupId: string): string {
+  const current = partAnimations[groupId] || "none";
+  return ANIMATION_PRESETS.map((preset) =>
+    `<option value="${preset.id}" ${preset.id === current ? "selected" : ""}>${preset.label}</option>`
+  ).join("");
+}
+
+function renderPivotPresetOptionsForGroup(groupId: string): string {
+  const group = activeGroups.find((g) => g.id === groupId);
+  const defaultPivot = getDefaultPivotForPart(group?.label || "");
+  const currentPivot = partPivots[groupId] || defaultPivot;
+  const matchingPreset = PIVOT_PRESETS.find((preset) => preset.pivot.x === currentPivot.x && preset.pivot.y === currentPivot.y);
+  const currentPresetId = matchingPreset?.id || "custom";
+
+  return PIVOT_PRESETS.map((preset) =>
+    `<option value="${preset.id}" ${preset.id === currentPresetId ? "selected" : ""}>${preset.label}</option>`
+  ).join("");
+}
+
 function renderGroupList() {
   const container = document.getElementById("group-list");
   if (!container) return;
@@ -580,25 +477,53 @@ function renderGroupList() {
     return;
   }
 
-  container.innerHTML = activeGroups.map((group) => `
-    <article class="group-row ${group.id === selectedGroupId ? "is-active" : ""}" data-group-id="${group.id}">
-      <div class="group-row__main">
-        <label class="group-row__merge">
-          <input type="checkbox" class="group-merge-check" value="${group.id}" />
-        </label>
-        <button class="group-row__select" type="button" data-action="select">
-          <span class="group-row__label">${group.label}</span>
-          <span class="group-row__meta">${group.paths.length} paths · ${group.colorFamily}</span>
-        </button>
-      </div>
-      <div class="group-row__controls">
-        <select class="form-control group-label-select" data-action="label">
-          ${renderPartOptions(group.label)}
-        </select>
-        <button class="btn btn-secondary group-visibility-btn" type="button" data-action="visibility">${group.hidden ? "Show" : "Hide"}</button>
-      </div>
-    </article>
-  `).join("");
+  container.innerHTML = activeGroups.map((group) => {
+    const defaultPivot = getDefaultPivotForPart(group.label);
+    const pivot = partPivots[group.id] || defaultPivot;
+    return `
+      <article class="group-row ${group.id === selectedGroupId ? "is-active" : ""}" data-group-id="${group.id}">
+        <div class="group-row__main">
+          <button class="group-row__select" type="button" data-action="select">
+            <span class="group-row__label">${group.label}</span>
+            <span class="group-row__meta">${group.paths.length} paths · ${group.colorFamily}</span>
+          </button>
+        </div>
+        <div class="group-row__controls">
+          <select class="form-control group-label-select" data-action="label">
+            ${renderPartOptions(group.label)}
+          </select>
+          <button class="btn btn-secondary group-visibility-btn" type="button" data-action="visibility">${group.hidden ? "Show" : "Hide"}</button>
+        </div>
+        
+        <div class="group-row__details">
+          <div class="details-field">
+            <span class="field-label-sm">Animation</span>
+            <select class="form-control group-animation-select" data-action="animation">
+              ${renderAnimationOptionsForGroup(group.id)}
+            </select>
+          </div>
+          <div class="details-field">
+            <span class="field-label-sm">Pivot Point</span>
+            <select class="form-control group-pivot-select" data-action="pivot-preset">
+              ${renderPivotPresetOptionsForGroup(group.id)}
+            </select>
+            <div class="pivot-inputs-row">
+              <div class="pivot-input-wrapper">
+                <span>X</span>
+                <input class="form-control pivot-x-input" type="number" min="0" max="100" step="1" data-action="pivot-x" value="${Math.round(pivot.x)}" />
+                <span>%</span>
+              </div>
+              <div class="pivot-input-wrapper">
+                <span>Y</span>
+                <input class="form-control pivot-y-input" type="number" min="0" max="100" step="1" data-action="pivot-y" value="${Math.round(pivot.y)}" />
+                <span>%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
 
   container.querySelectorAll<HTMLElement>(".group-row").forEach((row) => {
     const groupId = row.dataset.groupId || "";
@@ -606,7 +531,6 @@ function renderGroupList() {
       selectedGroupId = groupId;
       renderPreview();
       renderGroupList();
-      renderAnimationSelect();
       updateActionState();
     });
 
@@ -624,8 +548,6 @@ function renderGroupList() {
       selectedGroupId = groupId;
       renderPreview();
       renderGroupList();
-      renderAnimationSelect();
-      renderPivotControls();
       updateActionState();
     });
 
@@ -634,43 +556,46 @@ function renderGroupList() {
       renderPreview();
       renderGroupList();
     });
+
+    row.querySelector<HTMLSelectElement>('[data-action="animation"]')?.addEventListener("change", (event) => {
+      const target = event.currentTarget as HTMLSelectElement;
+      partAnimations[groupId] = target.value;
+      renderPreview();
+      updateActionState();
+    });
+
+    row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]')?.addEventListener("change", (event) => {
+      const target = event.currentTarget as HTMLSelectElement;
+      const preset = PIVOT_PRESETS.find((p) => p.id === target.value);
+      if (preset && preset.id !== "custom") {
+        partPivots[groupId] = { ...preset.pivot };
+        const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+        const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+        if (xInput) xInput.value = String(preset.pivot.x);
+        if (yInput) yInput.value = String(preset.pivot.y);
+        renderPreview();
+        updateActionState();
+      }
+    });
+
+    const xInput = row.querySelector<HTMLInputElement>('[data-action="pivot-x"]');
+    const yInput = row.querySelector<HTMLInputElement>('[data-action="pivot-y"]');
+    [xInput, yInput].forEach((input) => {
+      input?.addEventListener("input", () => {
+        if (!xInput || !yInput) return;
+        partPivots[groupId] = {
+          x: clampPercent(Number(xInput.value)),
+          y: clampPercent(Number(yInput.value))
+        };
+        const presetSelect = row.querySelector<HTMLSelectElement>('[data-action="pivot-preset"]');
+        if (presetSelect) {
+          presetSelect.value = "custom";
+        }
+        renderPreview();
+        updateActionState();
+      });
+    });
   });
-}
-
-function renderAnimationSelect() {
-  const select = document.getElementById("animation-preset-select") as HTMLSelectElement | null;
-  if (!select) return;
-
-  const group = activeGroups.find((entry) => entry.id === selectedGroupId);
-  select.innerHTML = ANIMATION_PRESETS.map((preset) => `<option value="${preset.id}">${preset.label}</option>`).join("");
-  select.disabled = !group;
-  select.value = group ? partAnimations[group.id] || "none" : "none";
-}
-
-function renderPivotControls() {
-  const presetSelect = document.getElementById("pivot-preset-select") as HTMLSelectElement | null;
-  const xInput = document.getElementById("pivot-x-input") as HTMLInputElement | null;
-  const yInput = document.getElementById("pivot-y-input") as HTMLInputElement | null;
-  if (!presetSelect || !xInput || !yInput) return;
-
-  const group = activeGroups.find((entry) => entry.id === selectedGroupId);
-  presetSelect.innerHTML = PIVOT_PRESETS.map((preset) => `<option value="${preset.id}">${preset.label}</option>`).join("");
-  presetSelect.disabled = !group;
-  xInput.disabled = !group;
-  yInput.disabled = !group;
-
-  if (!group) {
-    xInput.value = "50";
-    yInput.value = "100";
-    presetSelect.value = "bottom-center";
-    return;
-  }
-
-  const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
-  xInput.value = String(pivot.x);
-  yInput.value = String(pivot.y);
-  const matchingPreset = PIVOT_PRESETS.find((preset) => preset.pivot.x === pivot.x && preset.pivot.y === pivot.y);
-  presetSelect.value = matchingPreset?.id || "custom";
 }
 
 function renderPartOptions(value: string): string {
@@ -682,19 +607,9 @@ function renderPartOptions(value: string): string {
 function updateActionState() {
   const hasStage = Boolean(activeStage);
   const hasGroups = activeGroups.length > 0;
-  const hasSelected = Boolean(selectedGroupId);
   setDisabled("auto-classify-btn", !hasStage);
   setDisabled("preview-animation-btn", !hasGroups);
   setDisabled("save-animation-btn", !hasGroups);
-  setDisabled("merge-groups-btn", !hasGroups);
-  setDisabled("split-left-right-btn", !hasSelected);
-  setDisabled("split-top-bottom-btn", !hasSelected);
-  setDisabled("split-color-btn", !hasSelected);
-  renderPivotControls();
-}
-
-function getCheckedGroupIds(): string[] {
-  return Array.from(document.querySelectorAll<HTMLInputElement>(".group-merge-check:checked")).map((input) => input.value);
 }
 
 function syncModeButtons() {
@@ -743,458 +658,4 @@ function combineGroupBounds(group: CropGroup) {
   };
 }
 
-function cachePathBBoxes() {
-  cachedPathBBoxes = [];
-  const preview = document.getElementById("svg-preview");
-  if (!preview) return;
 
-  const svg = preview.querySelector("svg");
-  if (!svg) return;
-
-  const paths = Array.from(svg.querySelectorAll("path"));
-  paths.forEach((pathEl) => {
-    const dataIndexAttr = pathEl.getAttribute("data-original-index");
-    const pathIndex = dataIndexAttr ? Number(dataIndexAttr) : paths.indexOf(pathEl);
-
-    try {
-      // Browser DOM layout CTM + BBox is the true geometry source of truth
-      const bbox = pathEl.getBBox();
-      const ctm = pathEl.getCTM();
-
-      if (ctm) {
-        const p1 = svg.createSVGPoint(); p1.x = bbox.x; p1.y = bbox.y;
-        const p2 = svg.createSVGPoint(); p2.x = bbox.x + bbox.width; p2.y = bbox.y;
-        const p3 = svg.createSVGPoint(); p3.x = bbox.x; p3.y = bbox.y + bbox.height;
-        const p4 = svg.createSVGPoint(); p4.x = bbox.x + bbox.width; p4.y = bbox.y + bbox.height;
-
-        const tp1 = p1.matrixTransform(ctm);
-        const tp2 = p2.matrixTransform(ctm);
-        const tp3 = p3.matrixTransform(ctm);
-        const tp4 = p4.matrixTransform(ctm);
-
-        const xs = [tp1.x, tp2.x, tp3.x, tp4.x];
-        const ys = [tp1.y, tp2.y, tp3.y, tp4.y];
-
-        const bounds = {
-          minX: Math.min(...xs),
-          minY: Math.min(...ys),
-          maxX: Math.max(...xs),
-          maxY: Math.max(...ys)
-        };
-
-        cachedPathBBoxes.push({ pathIndex, bounds });
-        updatePathBoundsInActiveGroups(pathIndex, bounds);
-      } else {
-        throw new Error("CTM not available");
-      }
-    } catch (e) {
-      // Test environment fallback using parseSvgPathBounds
-      const d = pathEl.getAttribute("d") || "";
-      const transform = pathEl.getAttribute("transform") || "";
-      const translateMatch = transform.match(/translate\(\s*(-?\d+(?:\.\d+)?)(?:[\s,]+(-?\d+(?:\.\d+)?))?\s*\)/i);
-      const tx = translateMatch ? Number(translateMatch[1]) : 0;
-      const ty = translateMatch && translateMatch[2] ? Number(translateMatch[2]) : 0;
-      const bounds = parseSvgPathBounds(d, tx, ty);
-      
-      cachedPathBBoxes.push({ pathIndex, bounds });
-      updatePathBoundsInActiveGroups(pathIndex, bounds);
-    }
-  });
-}
-
-function updatePathBoundsInActiveGroups(pathIndex: number, bounds: { minX: number; minY: number; maxX: number; maxY: number }) {
-  activeGroups.forEach((group) => {
-    const path = group.paths.find((p) => p.pathIndex === pathIndex);
-    if (path) {
-      path.bounds = bounds;
-      path.center = {
-        x: (bounds.minX + bounds.maxX) / 2,
-        y: (bounds.minY + bounds.maxY) / 2
-      };
-    }
-  });
-}
-
-function updateSelectionVisuals() {
-  const preview = document.getElementById("svg-preview");
-  if (!preview) return;
-
-  const svg = preview.querySelector("svg");
-  if (!svg) return;
-
-  const paths = Array.from(svg.querySelectorAll("path"));
-  paths.forEach((pathEl) => {
-    const dataIndexAttr = pathEl.getAttribute("data-original-index");
-    const pathIndex = dataIndexAttr ? Number(dataIndexAttr) : paths.indexOf(pathEl);
-    
-    pathEl.classList.toggle("is-selected-path", selectedPathIndices.has(pathIndex));
-  });
-
-  const status = document.getElementById("selection-status");
-  if (status) {
-    status.textContent = `Selected: ${selectedPathIndices.size} paths`;
-  }
-
-  const createGroupBtn = document.getElementById("create-group-btn") as HTMLButtonElement | null;
-  const removeFromGroupBtn = document.getElementById("remove-from-group-btn") as HTMLButtonElement | null;
-  if (createGroupBtn) createGroupBtn.disabled = selectedPathIndices.size === 0;
-  if (removeFromGroupBtn) removeFromGroupBtn.disabled = selectedPathIndices.size === 0;
-}
-
-function getSvgCoordinates(clientX: number, clientY: number, svg: SVGSVGElement): { x: number; y: number } {
-  const pt = svg.createSVGPoint();
-  pt.x = clientX;
-  pt.y = clientY;
-  const transformed = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-  return { x: transformed.x, y: transformed.y };
-}
-
-function handleCreateGroupFromSelection() {
-  if (selectedPathIndices.size === 0) return;
-
-  const labelSelect = document.getElementById("selection-label-select") as HTMLSelectElement | null;
-  const label = labelSelect?.value || "other";
-  const groupId = `group-${label}-${Date.now()}`;
-
-  const pathsToGroup: ClassifiedPath[] = [];
-  
-  for (const pathIndex of selectedPathIndices) {
-    let foundPath: ClassifiedPath | null = null;
-    for (const group of activeGroups) {
-      const p = group.paths.find((item) => item.pathIndex === pathIndex);
-      if (p) {
-        foundPath = p;
-        group.paths = group.paths.filter((item) => item.pathIndex !== pathIndex);
-        break;
-      }
-    }
-    if (foundPath) {
-      pathsToGroup.push(foundPath);
-    }
-  }
-
-  activeGroups = activeGroups.filter((g) => g.paths.length > 0);
-
-  activeGroups.push({
-    id: groupId,
-    label,
-    suggestedPart: label,
-    colorFamily: "unknown" as any,
-    regionX: "center",
-    regionY: "middle",
-    hidden: false,
-    paths: pathsToGroup.sort((a, b) => a.pathIndex - b.pathIndex)
-  });
-
-  partAnimations[groupId] = "none";
-  partPivots[groupId] = getDefaultPivotForPart(label);
-
-  selectedPathIndices.clear();
-  renderPreview();
-  renderGroupList();
-  updateSelectionVisuals();
-  updateActionState();
-  setStatus(`Created group ${label} with ${pathsToGroup.length} paths.`);
-}
-
-function handleRemoveSelectionFromGroup() {
-  if (selectedPathIndices.size === 0) return;
-
-  let unassignedGroup = activeGroups.find((g) => g.id === "group-unassigned");
-  if (!unassignedGroup) {
-    unassignedGroup = {
-      id: "group-unassigned",
-      label: "other",
-      suggestedPart: "other",
-      colorFamily: "unknown" as any,
-      regionX: "center",
-      regionY: "middle",
-      hidden: false,
-      paths: []
-    };
-    activeGroups.push(unassignedGroup);
-  }
-
-  for (const pathIndex of selectedPathIndices) {
-    let foundPath: ClassifiedPath | null = null;
-    for (const group of activeGroups) {
-      if (group.id === "group-unassigned") continue;
-      const p = group.paths.find((item) => item.pathIndex === pathIndex);
-      if (p) {
-        foundPath = p;
-        group.paths = group.paths.filter((item) => item.pathIndex !== pathIndex);
-        break;
-      }
-    }
-
-    if (foundPath) {
-      if (!unassignedGroup.paths.some((item) => item.pathIndex === pathIndex)) {
-        unassignedGroup.paths.push(foundPath);
-      }
-    }
-  }
-
-  activeGroups = activeGroups.filter((g) => g.paths.length > 0);
-  
-  if (unassignedGroup) {
-    unassignedGroup.paths.sort((a, b) => a.pathIndex - b.pathIndex);
-  }
-
-  selectedPathIndices.clear();
-  renderPreview();
-  renderGroupList();
-  updateSelectionVisuals();
-  updateActionState();
-  setStatus(`Removed selected paths from custom groups.`);
-}
-
-let isDragging = false;
-let dragStartX = 0;
-let dragStartY = 0;
-
-function setupDragSelection() {
-  const preview = document.getElementById("svg-preview");
-  if (!preview) return;
-
-  preview.addEventListener("mousedown", (evt) => {
-    if (evt.button !== 0) return;
-
-    if ((evt.target as HTMLElement).closest(".segmented-control") || (evt.target as HTMLElement).closest("button") || (evt.target as HTMLElement).closest("select") || (evt.target as HTMLElement).closest("input")) {
-      return;
-    }
-
-    const svg = preview.querySelector("svg");
-    if (!svg) return;
-
-    evt.preventDefault();
-    isDragging = true;
-    dragStartX = evt.clientX;
-    dragStartY = evt.clientY;
-
-    if (activeTool === "rect") {
-      preview.querySelector(".selection-box")?.remove();
-
-      const box = document.createElement("div");
-      box.className = "selection-box";
-      const previewRect = preview.getBoundingClientRect();
-      box.style.left = `${evt.clientX - previewRect.left}px`;
-      box.style.top = `${evt.clientY - previewRect.top}px`;
-      box.style.width = "0px";
-      box.style.height = "0px";
-      preview.appendChild(box);
-    } else if (activeTool === "brush") {
-      // Paint select tool
-      if (!evt.shiftKey && !evt.altKey && !evt.ctrlKey) {
-        selectedPathIndices.clear();
-      }
-      paintSelectAtPoint(evt.clientX, evt.clientY, evt.altKey || evt.ctrlKey);
-    } else if (activeTool === "lasso") {
-      lassoPoints = [];
-      const coords = getSvgCoordinates(evt.clientX, evt.clientY, svg);
-      lassoPoints.push(coords);
-
-      svg.querySelector(".lasso-preview")?.remove();
-      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      polygon.setAttribute("class", "lasso-preview");
-      polygon.setAttribute("points", `${coords.x},${coords.y}`);
-      svg.appendChild(polygon);
-    }
-  });
-
-  window.addEventListener("mousemove", (evt) => {
-    if (!isDragging) return;
-
-    const preview = document.getElementById("svg-preview");
-    if (!preview) return;
-
-    if (activeTool === "rect") {
-      const box = preview.querySelector(".selection-box") as HTMLElement | null;
-      if (!box) return;
-
-      const previewRect = preview.getBoundingClientRect();
-      const currentX = evt.clientX;
-      const currentY = evt.clientY;
-
-      const left = Math.min(dragStartX, currentX) - previewRect.left;
-      const top = Math.min(dragStartY, currentY) - previewRect.top;
-      const width = Math.abs(dragStartX - currentX);
-      const height = Math.abs(dragStartY - currentY);
-
-      box.style.left = `${left}px`;
-      box.style.top = `${top}px`;
-      box.style.width = `${width}px`;
-      box.style.height = `${height}px`;
-    } else if (activeTool === "brush") {
-      // Paint select
-      paintSelectAtPoint(evt.clientX, evt.clientY, evt.altKey || evt.ctrlKey);
-    } else if (activeTool === "lasso") {
-      const svg = preview.querySelector("svg");
-      if (!svg) return;
-      const coords = getSvgCoordinates(evt.clientX, evt.clientY, svg);
-      lassoPoints.push(coords);
-
-      const polygon = svg.querySelector(".lasso-preview");
-      if (polygon) {
-        const pointsStr = lassoPoints.map(p => `${p.x},${p.y}`).join(" ");
-        polygon.setAttribute("points", pointsStr);
-      }
-    }
-  });
-
-  window.addEventListener("mouseup", (evt) => {
-    if (!isDragging) return;
-    isDragging = false;
-
-    const preview = document.getElementById("svg-preview");
-    const svg = preview?.querySelector("svg");
-    if (!preview || !svg) return;
-
-    if (activeTool === "rect") {
-      const box = preview.querySelector(".selection-box");
-      if (!box) return;
-      const boxRect = box.getBoundingClientRect();
-      box.remove();
-
-      const diffX = Math.abs(evt.clientX - dragStartX);
-      const diffY = Math.abs(evt.clientY - dragStartY);
-
-      if (diffX < 4 && diffY < 4) {
-        const target = evt.target as SVGElement;
-        if (target && target.tagName.toLowerCase() === "path") {
-          const dataIndexAttr = target.getAttribute("data-original-index");
-          const paths = Array.from(svg.querySelectorAll("path"));
-          const pathIndex = dataIndexAttr ? Number(dataIndexAttr) : paths.indexOf(target as SVGPathElement);
-
-          if (evt.shiftKey) {
-            selectedPathIndices.add(pathIndex);
-          } else if (evt.altKey || evt.ctrlKey) {
-            selectedPathIndices.delete(pathIndex);
-          } else {
-            if (selectedPathIndices.has(pathIndex)) {
-              selectedPathIndices.delete(pathIndex);
-            } else {
-              selectedPathIndices.add(pathIndex);
-            }
-          }
-        }
-      } else {
-        const topLeft = getSvgCoordinates(boxRect.left, boxRect.top, svg);
-        const bottomRight = getSvgCoordinates(boxRect.right, boxRect.bottom, svg);
-
-        const selectionSvgBounds = {
-          minX: Math.min(topLeft.x, bottomRight.x),
-          minY: Math.min(topLeft.y, bottomRight.y),
-          maxX: Math.max(topLeft.x, bottomRight.x),
-          maxY: Math.max(topLeft.y, bottomRight.y)
-        };
-
-        const newlySelected: number[] = [];
-        cachedPathBBoxes.forEach((cached) => {
-          if (isIntersecting(cached.bounds, selectionSvgBounds)) {
-            newlySelected.push(cached.pathIndex);
-          }
-        });
-
-        if (evt.shiftKey) {
-          newlySelected.forEach(idx => selectedPathIndices.add(idx));
-        } else if (evt.altKey || evt.ctrlKey) {
-          newlySelected.forEach(idx => selectedPathIndices.delete(idx));
-        } else {
-          selectedPathIndices.clear();
-          newlySelected.forEach(idx => selectedPathIndices.add(idx));
-        }
-      }
-    } else if (activeTool === "brush") {
-      // Paint brush selection completes
-    } else if (activeTool === "lasso") {
-      svg.querySelector(".lasso-preview")?.remove();
-
-      const diffX = Math.abs(evt.clientX - dragStartX);
-      const diffY = Math.abs(evt.clientY - dragStartY);
-
-      if (diffX < 4 && diffY < 4) {
-        const target = evt.target as SVGElement;
-        if (target && target.tagName.toLowerCase() === "path") {
-          const dataIndexAttr = target.getAttribute("data-original-index");
-          const paths = Array.from(svg.querySelectorAll("path"));
-          const pathIndex = dataIndexAttr ? Number(dataIndexAttr) : paths.indexOf(target as SVGPathElement);
-
-          if (evt.shiftKey) {
-            selectedPathIndices.add(pathIndex);
-          } else if (evt.altKey || evt.ctrlKey) {
-            selectedPathIndices.delete(pathIndex);
-          } else {
-            if (selectedPathIndices.has(pathIndex)) {
-              selectedPathIndices.delete(pathIndex);
-            } else {
-              selectedPathIndices.add(pathIndex);
-            }
-          }
-        }
-      } else if (lassoPoints.length > 2) {
-        const newlySelected: number[] = [];
-        cachedPathBBoxes.forEach((cached) => {
-          const center = {
-            x: (cached.bounds.minX + cached.bounds.maxX) / 2,
-            y: (cached.bounds.minY + cached.bounds.maxY) / 2
-          };
-          if (isPointInPolygon(center, lassoPoints)) {
-            newlySelected.push(cached.pathIndex);
-          }
-        });
-
-        if (evt.shiftKey) {
-          newlySelected.forEach(idx => selectedPathIndices.add(idx));
-        } else if (evt.altKey || evt.ctrlKey) {
-          newlySelected.forEach(idx => selectedPathIndices.delete(idx));
-        } else {
-          selectedPathIndices.clear();
-          newlySelected.forEach(idx => selectedPathIndices.add(idx));
-        }
-      }
-      lassoPoints = [];
-    }
-
-    updateSelectionVisuals();
-  });
-}
-
-function paintSelectAtPoint(clientX: number, clientY: number, isSubtracting: boolean) {
-  const el = document.elementFromPoint(clientX, clientY) as SVGElement | null;
-  if (!el) return;
-
-  const preview = document.getElementById("svg-preview");
-  if (!preview || !preview.contains(el)) return;
-
-  if (el.tagName.toLowerCase() === "path") {
-    const svg = preview.querySelector("svg");
-    if (!svg) return;
-    const paths = Array.from(svg.querySelectorAll("path"));
-    const dataIndexAttr = el.getAttribute("data-original-index");
-    const pathIndex = dataIndexAttr ? Number(dataIndexAttr) : paths.indexOf(el as SVGPathElement);
-
-    if (isSubtracting) {
-      if (selectedPathIndices.has(pathIndex)) {
-        selectedPathIndices.delete(pathIndex);
-        updateSelectionVisuals();
-      }
-    } else {
-      if (!selectedPathIndices.has(pathIndex)) {
-        selectedPathIndices.add(pathIndex);
-        updateSelectionVisuals();
-      }
-    }
-  }
-}
-
-function isPointInPolygon(point: { x: number; y: number }, polygon: Array<{ x: number; y: number }>): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
-    const intersect = ((yi > point.y) !== (yj > point.y))
-        && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}

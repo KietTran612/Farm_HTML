@@ -2,6 +2,16 @@
 
 ## Latest Completed Work
 
+- **Implemented Tasks 84-87 (Animation Editor UI Cleanup & Logic Simplification):** Cleaned up the Animation Editor sidebar layout by removing the obsolete Selection tools panel, Create/Remove group buttons, and Split/Merge action buttons from HTML (`crop-animation-editor.html`), SCSS (`src/styles/animation-editor.scss`), and TypeScript (`src/animation-editor.ts`). Removed the merge checkboxes wrapper `.group-row__merge` from the group list rows. Cleared selection state, pointer/drag logic, split/merge event handlers, and unused variables. The plan file `2026-06-23-animation-editor-collapsible-panels.md` from the obsolete accordion design has been fully deleted and task tracker has been updated.
+
+- **Implemented Tasks 80-83 (Embedded Animation and Pivot Controls in Animation Editor):** Refactored the Animation Editor so that the Animation Preset Selector, Pivot Preset Selector, and Pivot X & Y percent number inputs are embedded directly inside each individual layer's group row (Group Card). Static panel containers at the bottom of the group sidebar have been removed. The embedded controls automatically expand when a layer is clicked/selected (`.is-active`), and collapse when another layer is selected.
+
+- **Implemented Task 79 (Fix Hybrid Preset Review Issues):** Updated hybrid server presets to include the same trace contract used by UI payloads (`color/spline/cutout/path_precision 3`) and fixed preset switching so selecting `Custom` after `Hybrid` re-enables sliders and restores displayed slider values.
+
+- **Implemented Task 78 (Verify build and user manual review):** Checked that Vite production build compiled successfully and verified overall app tests are passing.
+- **Implemented Task 77 (Implement hybrid trace backend logic):** Added logic in Vite middleware to trace a PNG twice (with `animationCandidate` and `gameDetailed` presets), merge the paths in z-order, optimize using SVGO, and return the composite SVG.
+- **Implemented Task 76 (Add hybrid preset UI option and client logic):** Added the Hybrid preset option in `crop-editor.html`, disabled the parameters panel sliders when it is selected, and included the selected preset in the trace request payload.
+
 - **Implemented Task 75 (Fix Lasso Zoom Controls Position):** Moved the lasso canvas into a dedicated `.layer-mask-scroll` viewport so only the zoomed source image scrolls. The zoom controls now remain fixed on `.layer-mask-editor` instead of being part of the scrollable content.
 
 - **Implemented Task 74 (Add Source Image Zoom For Lasso):** Added source image zoom controls to the lasso canvas. Zoom changes only the displayed canvas size via CSS variables and scrollable viewport behavior; `canvas.width`, `canvas.height`, source image data, and lasso coordinate mapping remain in original image space.
@@ -41,6 +51,24 @@
 - **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
 
 ## Verification
+
+- **For Tasks 84, 85, 86, and 87 (Animation Editor UI Cleanup & Logic Simplification):**
+  - `npm run build` compiled successfully without any errors.
+  - `npm run test` ran successfully with 77/77 tests passing.
+  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn` to check clean sidebar without Selection tools & Split/Merge buttons.
+
+- **For Tasks 80, 81, 82, and 83 (Embedded Controls in Group Rows):**
+  - `npm run build` compiled successfully without any errors.
+  - `npm run test` ran successfully with 77/77 tests passing.
+  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn`.
+
+- **For Task 79 (Fix Hybrid Preset Review Issues):**
+  - Not run - user explicitly requested no tests for this fix.
+
+- **For Tasks 76, 77, and 78 (Hybrid Trace Preset):**
+  - `npm run build` compiled successfully without any errors.
+  - `npm run test` ran successfully with 77/77 tests passing.
+  - Manual review prepared for user on `http://localhost:4000/crop-editor.html`.
 
 - **For Task 75 (Fix Lasso Zoom Controls Position):**
   - `npm run build` passed.
@@ -107,9 +135,10 @@
 
 ## Current Uncommitted Scope
 
-- **Layer Trace UI:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/layerComposer.ts`, `src/layer-trace/layerComposer.test.ts`, `src/layer-trace/layerViewport.ts`, `src/layer-trace/layerViewport.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Layer Trace UI:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/layerComposer.ts`, `src/layer-trace/layerComposer.test.ts`, `src/layer-trace/layerViewport.ts`, `src/layer-trace/layerViewport.test.ts`, `scripts/vite-plugins/editorMiddleware.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Animation Editor Embedded Controls:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`.
 - **Observed Crop Asset Changes Not Part Of Duplicate UI:** `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/meta.json`, `src/assets/crops/carrot/stage03.svg`, `src/assets/crops/corn/dead.svg`, and `src/assets/crops/corn/stage03.svg` remain modified in the worktree.
 
 ## Recommended Next Task
 
-- **Manual Save Verification:** Open `http://localhost:4000/crop-editor.html`, load a saved stage from the sidebar, delete one old layer, trace a replacement layer from the PNG source, and save the stage after visually confirming the composite.
+- **Manual Embedded Controls Verification:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, click to select a group layer (e.g. `base`, `stem`, or `leaves`), verify the Animation and Pivot controls dynamically expand inside that row and check that the Selection panel and Split/Merge buttons are completely gone from the sidebar.

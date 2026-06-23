@@ -6,6 +6,12 @@
 - `2026-06-22-crop-animation-editor-visual-grouping.md` - Plan for adding interactive visual selection and grouping to the Crop Animation Editor.
 - `2026-06-22-clean-obsolete-plans-and-tasks.md` - Plan for cleaning obsolete task and plan entries.
 - `2026-06-22-edit-saved-layered-stages.md` - Plan for reopening saved layered SVG stages in Crop Editor.
+- `2026-06-23-hybrid-trace-preset.md` - Plan for implementing Hybrid Trace Preset.
+- `2026-06-23-animation-editor-embedded-controls.md` - Plan for embedded Animation & Pivot controls in Animation Editor.
+- `2026-06-23-animation-editor-ui-cleanup.md` - Plan for Animation Editor UI simplification & cleanup.
+
+
+
 
 ## Archived / Historical Plans
 

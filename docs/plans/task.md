@@ -78,3 +78,16 @@
 | **Task 73: Remove Layer Sort Buttons** | [x] | Removed manual up/down layer buttons because drag-and-drop now owns layer reordering. |
 | **Task 74: Add Source Image Zoom For Lasso** | [x] | Added source-canvas zoom controls for more precise lasso cutting while preserving original image data and coordinates. |
 | **Task 75: Fix Lasso Zoom Controls Position** | [x] | Kept zoom controls fixed above the lasso viewport while only the canvas content scrolls. |
+| **Task 76: Add hybrid preset UI option and client logic** | [x] | Add Hybrid (Detailed + Animation) option, disable sliders when active, and send preset in payload. |
+| **Task 77: Implement hybrid trace backend logic** | [x] | Run VTracer twice for Candidate & Detailed presets, extract/merge paths, and optimize. |
+| **Task 78: Verify build and user manual review** | [x] | Verify Vite production build and prepare for user manual smoke test. |
+| **Task 79: Fix Hybrid Preset Review Issues** | [x] | Align hybrid server presets with UI trace defaults and restore Custom slider editing after Hybrid. |
+| **Task 80: Embedded Controls HTML Cleanup** | [x] | Remove static Animation and Pivot panel sections from crop-animation-editor.html. |
+| **Task 81: Embedded Controls SCSS Layout** | [x] | Add SCSS layout for embedded controls inside group rows and visibility toggle based on active class. |
+| **Task 82: Embedded Controls TS Logic and Event Wiring** | [x] | Populate dynamic selectors/inputs inside renderGroupList and wire up events dynamically in animation-editor.ts. |
+| **Task 83: Verify build and manual review** | [x] | Verify Vite production build and prepare for user manual smoke test. |
+| **Task 84: Remove Obsolete Selection and Group Actions from HTML** | [x] | Removed Selection HTML panel and Split/Merge buttons from crop-animation-editor.html. |
+| **Task 85: Clean Up SCSS Styles for Selection Tools** | [x] | Removed obsolete SCSS rules for selection, overlay, and pivot-grid styles. |
+| **Task 86: Remove Selection, Merge and Split Logic from TS** | [x] | Cleared selection state, pointer/drag logic, split/merge event handlers, and unused variables. |
+| **Task 87: Verify build and user review** | [x] | Verified successful production build and ran Vitest suites (77/77 passing). |
+

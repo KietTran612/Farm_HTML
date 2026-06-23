@@ -175,29 +175,7 @@ h2 {
     radial-gradient(ellipse at 50% 76%, rgba(121, 83, 42, 0.12) 0%, rgba(121, 83, 42, 0.04) 34%, transparent 62%),
     linear-gradient(180deg, #fffcf6 0%, #f6f1e2 100%);
 
-  .selection-box {
-    position: absolute;
-    border: 1.5px dashed #ffa500;
-    background-color: rgba(255, 165, 0, 0.15);
-    pointer-events: none;
-    z-index: 1000;
-  }
 
-  .lasso-preview {
-    fill: rgba(255, 165, 0, 0.12);
-    stroke: #ffa500;
-    stroke-width: 1.5px;
-    stroke-dasharray: 4 2;
-    pointer-events: none;
-  }
-
-  .is-selected-path {
-    stroke: #ffa500 !important;
-    stroke-width: 2.5px !important;
-    stroke-dasharray: 4 2;
-    paint-order: stroke fill;
-    filter: drop-shadow(0 0 4px rgba(255, 165, 0, 0.95)) !important;
-  }
 
   svg {
     width: auto;
@@ -301,17 +279,13 @@ h2 {
   border-top: 1px solid $border-light;
 }
 
-.group-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
-}
+
 
 .group-row {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid $border-light;
   border-radius: 8px;
   background: $bg-primary;
@@ -319,6 +293,52 @@ h2 {
   &.is-active {
     border-color: $forest-light;
     background: $forest-pastel;
+
+    .group-row__details {
+      display: flex;
+    }
+  }
+}
+
+.group-row__details {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed $border;
+}
+
+.details-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label-sm {
+  color: $muted;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.pivot-inputs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+
+  .pivot-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    span {
+      font-size: 11px;
+      color: $muted;
+      font-weight: 700;
+    }
   }
 }
 
@@ -358,12 +378,6 @@ h2 {
   text-transform: uppercase;
 }
 
-.pivot-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
-}
 
 .form-control {
   width: 100%;
