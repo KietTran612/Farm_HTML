@@ -203,6 +203,15 @@ h2 {
     display: none;
   }
 
+  .selection-bounds {
+    pointer-events: none;
+    fill: rgba(255, 178, 56, 0.08);
+    stroke: #ffb238;
+    stroke-width: 4;
+    stroke-dasharray: 14 8;
+    vector-effect: non-scaling-stroke;
+  }
+
   .pivot-marker {
     pointer-events: none;
 
@@ -339,6 +348,34 @@ h2 {
       color: $muted;
       font-weight: 700;
     }
+  }
+}
+
+.motion-field {
+  gap: 8px;
+}
+
+.motion-control {
+  display: grid;
+  gap: 5px;
+  color: $muted;
+  font-size: 12px;
+  font-weight: 700;
+
+  span {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  strong {
+    color: $forest-medium;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input {
+    width: 100%;
+    accent-color: $forest-light;
   }
 }
 
@@ -509,52 +546,57 @@ h2 {
 .is-previewing-animation .crop-part,
 .crop-part.is-animating {
   &.anim-soft-sway {
-    animation: crop-soft-sway 2.8s ease-in-out infinite;
+    animation: crop-soft-sway var(--anim-duration, 2.8s) ease-in-out infinite;
+    animation-delay: var(--anim-delay, 0s);
   }
 
   &.anim-sway-left {
     transform-origin: 80% 90%;
-    animation: crop-sway-left 2.4s ease-in-out infinite;
+    animation: crop-sway-left var(--anim-duration, 2.4s) ease-in-out infinite;
+    animation-delay: var(--anim-delay, 0s);
   }
 
   &.anim-sway-right {
     transform-origin: 20% 90%;
-    animation: crop-sway-right 2.4s ease-in-out infinite;
+    animation: crop-sway-right var(--anim-duration, 2.4s) ease-in-out infinite;
+    animation-delay: var(--anim-delay, 0s);
   }
 
   &.anim-leaf-breathe {
     transform-origin: 50% 100%;
-    animation: crop-leaf-breathe 2.6s ease-in-out infinite;
+    animation: crop-leaf-breathe var(--anim-duration, 2.6s) ease-in-out infinite;
+    animation-delay: var(--anim-delay, 0s);
   }
 
   &.anim-bob {
-    animation: crop-bob 2.2s ease-in-out infinite;
+    animation: crop-bob var(--anim-duration, 2.2s) ease-in-out infinite;
+    animation-delay: var(--anim-delay, 0s);
   }
 }
 
 @keyframes crop-soft-sway {
-  0%, 100% { transform: rotate(-1deg); }
-  50% { transform: rotate(1.2deg); }
+  0%, 100% { transform: rotate(calc(var(--anim-angle, 1.2deg) * -1)); }
+  50% { transform: rotate(var(--anim-angle, 1.2deg)); }
 }
 
 @keyframes crop-sway-left {
   0%, 100% { transform: rotate(1deg) translateY(0); }
-  50% { transform: rotate(-4deg) translateY(-2px); }
+  50% { transform: rotate(calc(var(--anim-angle, 4deg) * -1)) translateY(calc(var(--anim-y, 2px) * -1)); }
 }
 
 @keyframes crop-sway-right {
   0%, 100% { transform: rotate(-1deg) translateY(0); }
-  50% { transform: rotate(4deg) translateY(-2px); }
+  50% { transform: rotate(var(--anim-angle, 4deg)) translateY(calc(var(--anim-y, 2px) * -1)); }
 }
 
 @keyframes crop-leaf-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.025); }
+  50% { transform: scale(var(--anim-scale, 1.025)); }
 }
 
 @keyframes crop-bob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  50% { transform: translateY(calc(var(--anim-y, 4px) * -1)); }
 }
 
 @media (max-width: 1100px) {

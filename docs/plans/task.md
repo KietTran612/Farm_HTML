@@ -98,10 +98,10 @@
 | **Task 93: Verify Build and Tests** | [x] | Compile production bundle and ensure all unit tests pass. |
 | **Task 94: Add Collapse Arrow for Layer Rows** | [x] | Added collapse arrow (▼) inside header line of select button and implemented click toggle to close/open. |
 | **Task 95: Fix Animation Editor State Preservation on Save and Stage Switch** | [x] | Store animations metadata globally and read from it in selectStage to preserve settings. |
-| **Task 96: Add Motion Sliders UI to Card Details** | [ ] | Design and render motion sliders (speed, delay, angle, Y-offset, scale) in group list. |
-| **Task 97: Implement Motion Metadata Reading and Writing** | [ ] | Load and save motion configuration to and from animations.json metadata payload. |
-| **Task 98: Apply CSS Variables to Preview Elements Dynamically** | [ ] | Apply --anim-* custom properties inline in decoratePreviewGroups. |
-| **Task 99: Update SCSS Animation Keyframes to use CSS Variables** | [ ] | Refactor SCSS crop-sway/bob/breathe keyframes to read from CSS variables. |
-| **Task 100: Verify Build and Dynamic Customization visually** | [ ] | Check that code builds and verify sliders dynamically affect preview in real-time. |
-
-
+| **Task 96: Add Motion Sliders UI to Card Details** | [x] | Added duration, delay, angle, Y-offset, and scale sliders inside expanded layer cards. |
+| **Task 97: Implement Motion Metadata Reading and Writing** | [x] | Load motion config from animations metadata and serialize it into saved stage parts. |
+| **Task 98: Apply CSS Variables to Preview Elements Dynamically** | [x] | Apply --anim-* custom properties directly to SVG group elements during preview edits. |
+| **Task 99: Update SCSS Animation Keyframes to use CSS Variables** | [x] | Refactored sway, bob, and breathe keyframes to read CSS custom properties with fallbacks. |
+| **Task 100: Verify Build and Dynamic Customization visually** | [x] | Verified focused tests, production build, and browser smoke for live motion slider updates. |
+| **Task 101: Fix Motion Save Cache Review Issue** | [x] | Ensure first save records the newly created grouped SVG file in the animation metadata cache. |
+| **Task 102: Add Selected Layer Bounds Outline** | [x] | Added a padded SVG bounds outline for the selected animation layer in the preview. |

@@ -2,6 +2,12 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 102 (Selected Layer Bounds Outline):** Added a padded SVG `selection-bounds` rectangle for the selected layer in Animation Editor preview so users can see the selected layer's visual extent. The outline uses the same dynamic DOM/static bounds path as the pivot marker and renders alongside the pivot marker without blocking interaction.
+
+- **Implemented Task 101 (Fix Motion Save Cache Review Issue):** Reviewed the CSS variable motion implementation and fixed the save cache path so first-time grouped stage saves record the newly created `${stageId}.grouped.svg` file in `animationsMetadata`.
+
+- **Implemented Tasks 96-100 (CSS Variable Motion Controls):** Added per-layer motion sliders for duration, delay, sway angle, Y offset, and scale in expanded Animation Editor layer cards. Motion metadata now loads from and saves to `animations.json`, preview SVG groups receive `--anim-*` CSS custom properties dynamically, and SCSS animation keyframes read those variables with fallbacks.
+
 - **Implemented Task 95 (State Preservation on Stage Switch/Save):** Fixed a bug where switching stages in the sidebar or clicking stage cards caused the active pivots and animations configuration to revert to defaults in the UI. Introduced a global `animationsMetadata` state variable to store the loaded payload from the API, updated `selectStage` to query this global state instead of using a transient `payload` parameter, and updated the metadata cache upon a successful save.
 
 - **Implemented Task 94 (Collapse Arrow for Layer Rows):** Added a collapse arrow (`▼`) aligned on the exact same header row/line as the layer name inside the group selection button. Updated the click handler on the header to toggle the layer's expand/collapse state (clicking an active header collapses it). Styled the arrow in SCSS to rotate from `-90deg` (pointing right, representing collapsed) to `0deg` (pointing down and highlighted in forest green, representing expanded/active) with a smooth transition.
@@ -61,6 +67,22 @@
 - **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
 
 ## Verification
+
+- **For Task 102 (Selected Layer Bounds Outline):**
+  - TDD red check: `npx vitest run src/animation-editor/selectionOverlay.test.ts` first failed because the helper module was missing, then passed after implementation.
+  - Focused tests passed: `npx vitest run src/animation-editor/selectionOverlay.test.ts src/animation-editor/motionConfig.test.ts src/animation-editor/groupEditor.test.ts` with 10/10 tests passing.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-animation-editor.html?crop=corn`: selected the first Corn Dead layer and confirmed `.selection-bounds` renders with nonzero width/height while the pivot marker remains visible.
+
+- **For Task 101 (Fix Motion Save Cache Review Issue):**
+  - Focused tests passed: `npx vitest run src/animation-editor/motionConfig.test.ts src/animation-editor/animationPresets.test.ts src/animation-editor/groupEditor.test.ts` with 12/12 tests passing.
+  - `npm run build` passed.
+
+- **For Tasks 96-100 (CSS Variable Motion Controls):**
+  - TDD red check: `npx vitest run src/animation-editor/motionConfig.test.ts` first failed on missing/incorrect motion behavior, then passed after implementation.
+  - Focused tests passed: `npx vitest run src/animation-editor/motionConfig.test.ts src/animation-editor/animationPresets.test.ts src/animation-editor/groupEditor.test.ts` with 12/12 tests passing.
+  - `npm run build` passed.
+  - Browser smoke passed on `http://localhost:4000/crop-animation-editor.html?crop=corn`: opened the first Corn Dead layer card, confirmed motion sliders render, changed Angle to 2.5, and confirmed the active SVG group received `--anim-angle: 2.5deg` without losing the active row. Save/refresh persistence was not run to avoid modifying crop asset files during smoke.
 
 - **For Tasks 91, 92, and 93 (Pivot Marker Alignment Fix):**
   - Added unit test in `src/animation-editor/groupClassifier.test.ts` for decimal bounds and verified that it and other animation editor tests (`npx vitest run src/animation-editor/...`) pass.
@@ -157,8 +179,10 @@
 
 - **Layer Trace UI:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/layerComposer.ts`, `src/layer-trace/layerComposer.test.ts`, `src/layer-trace/layerViewport.ts`, `src/layer-trace/layerViewport.test.ts`, `scripts/vite-plugins/editorMiddleware.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 - **Animation Editor Embedded Controls:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`.
-- **Observed Crop Asset Changes Not Part Of Duplicate UI:** `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/meta.json`, `src/assets/crops/carrot/stage03.svg`, `src/assets/crops/corn/dead.svg`, and `src/assets/crops/corn/stage03.svg` remain modified in the worktree.
+- **Animation Motion Controls:** `src/animation-editor/motionConfig.ts`, `src/animation-editor/motionConfig.test.ts`, `src/animation-editor.ts`, and `src/styles/animation-editor.scss`.
+- **Animation Selection Outline:** `src/animation-editor/selectionOverlay.ts`, `src/animation-editor/selectionOverlay.test.ts`, `src/animation-editor.ts`, and `src/styles/animation-editor.scss`.
+- **Observed Crop Asset Changes:** `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, and `src/assets/crops/corn/stage00.grouped.svg` remain modified in the worktree.
 
 ## Recommended Next Task
 
-- **Manual Verification for Per-Layer Preview:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, click the "Preview" button on individual layer cards, and check that only the active layer animates according to its assigned preset, while other layers remain static.
+- **Manual Save/Refresh Verification for Motion Controls:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, adjust one layer's motion sliders, click "Save Grouped SVG", refresh, and confirm the sliders and animation behavior restore from `animations.json`.

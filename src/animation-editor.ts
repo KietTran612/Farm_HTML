@@ -2,6 +2,13 @@ import "./styles/animation-editor.scss";
 import { ANIMATION_PRESETS, PIVOT_PRESETS, getDefaultPivotForPart, type PivotPoint } from "./animation-editor/animationPresets";
 import { classifySvgPaths, parseSvgPathBounds, type CropGroup } from "./animation-editor/groupClassifier";
 import { relabelGroup, serializeGroupedSvg } from "./animation-editor/groupEditor";
+import { createSelectionBoundsRect } from "./animation-editor/selectionOverlay";
+import {
+  buildAnimationPartsConfig,
+  getDefaultMotionForAnimation,
+  mergeStageAnimationCache,
+  type MotionConfig
+} from "./animation-editor/motionConfig";
 
 interface StageAsset {
   stageId: string;
@@ -23,7 +30,7 @@ interface CropStageAssetsResponse {
   stages: StageAsset[];
   animations: {
     stages?: Record<string, {
-      parts?: Record<string, { animation: string; pivot?: PivotPoint }>;
+      parts?: Record<string, { animation: string; pivot?: PivotPoint; motion?: MotionConfig }>;
     }>;
   };
 }
@@ -37,6 +44,7 @@ let previewMode: "normal" | "overlay" | "solo" = "normal";
 let isPreviewingAnimation = false;
 let partAnimations: Record<string, string> = {};
 let partPivots: Record<string, PivotPoint> = {};
+let partMotions: Record<string, MotionConfig> = {};
 let soloPreviewGroupId = "";
 let animationsMetadata: any = null;
 
@@ -310,6 +318,7 @@ function selectStage(stageId: string) {
   const stageParts = animationsMetadata?.stages?.[stageId]?.parts || {};
   partAnimations = {};
   partPivots = {};
+  partMotions = {};
 
   activeGroups.forEach((group) => {
     let config = stageParts[group.id];
@@ -318,6 +327,9 @@ function selectStage(stageId: string) {
     }
     partAnimations[group.id] = config?.animation || "none";
     partPivots[group.id] = config?.pivot || getDefaultPivotForPart(group.label);
+    if (config?.motion) {
+      partMotions[group.id] = { ...config.motion };
+    }
   });
 
   renderStageList();
@@ -339,6 +351,7 @@ function handleAutoClassify() {
       partPivots[group.id] = getDefaultPivotForPart(group.label);
     }
   });
+  partMotions = {};
   selectedGroupId = activeGroups[0]?.id || "";
   previewMode = "overlay";
   isPreviewingAnimation = false;
@@ -362,13 +375,8 @@ function handlePreviewAnimation() {
 async function handleSave() {
   if (!activeStage || activeGroups.length === 0) return;
   const groupedSvg = serializeGroupedSvg(activeStage.activeSvg, activeGroups, cropName, activeStage.stageId);
-  const parts = Object.fromEntries(
-    activeGroups.map((group) => [group.id, {
-      label: group.label,
-      animation: partAnimations[group.id] || "none",
-      pivot: partPivots[group.id] || getDefaultPivotForPart(group.label)
-    }])
-  );
+  const groupedFile = `${activeStage.stageId}.grouped.svg`;
+  const parts = buildAnimationPartsConfig(activeGroups, partAnimations, partPivots, partMotions);
 
   setStatus("Saving grouped SVG and animation metadata...");
   const response = await fetch("/api/editor/save-stage-animation", {
@@ -388,20 +396,14 @@ async function handleSave() {
     return;
   }
 
-  if (!animationsMetadata) {
-    animationsMetadata = { crop: cropName, stages: {} };
-  }
-  if (!animationsMetadata.stages) {
-    animationsMetadata.stages = {};
-  }
-  animationsMetadata.stages[activeStage.stageId] = {
+  animationsMetadata = mergeStageAnimationCache(animationsMetadata, cropName, activeStage.stageId, {
     sourceFile: activeStage.sourceFile || `${activeStage.stageId}.svg`,
-    groupedFile: activeStage.groupedFile,
+    groupedFile,
     parts
-  };
+  });
 
   activeStage.groupedSvg = groupedSvg;
-  activeStage.groupedFile = `${activeStage.stageId}.grouped.svg`;
+  activeStage.groupedFile = groupedFile;
   activeStage.activeSvg = groupedSvg;
   activeStage.activeFile = activeStage.groupedFile;
   activeStage.hasGroupedSvg = true;
@@ -446,9 +448,78 @@ function decoratePreviewGroups(preview: HTMLElement) {
 
     const pivot = partPivots[group.id] || getDefaultPivotForPart(group.label);
     node.style.transformOrigin = `${pivot.x}% ${pivot.y}%`;
+    applyMotionToDomNode(node, partMotions[group.id] || {});
   }
 
-  renderPivotMarker(preview);
+  renderSelectionOverlay(preview);
+}
+
+function applyMotionToDomNode(node: SVGGElement, motion: MotionConfig) {
+  setMotionProperty(node, "--anim-duration", motion.durationMs, "ms");
+  setMotionProperty(node, "--anim-delay", motion.delayMs, "ms");
+  setMotionProperty(node, "--anim-angle", motion.angleDeg, "deg");
+  setMotionProperty(node, "--anim-y", motion.yPx, "px");
+  setMotionProperty(node, "--anim-scale", motion.scale);
+}
+
+function setMotionProperty(node: SVGGElement, name: string, value: number | undefined, unit = "") {
+  if (value === undefined) {
+    node.style.removeProperty(name);
+    return;
+  }
+  node.style.setProperty(name, `${value}${unit}`);
+}
+
+function getMotionValueForGroup(groupId: string): Required<MotionConfig> {
+  const animation = partAnimations[groupId] || "none";
+  return {
+    ...getDefaultMotionForAnimation(animation),
+    ...(partMotions[groupId] || {})
+  };
+}
+
+function renderMotionControlsForGroup(groupId: string): string {
+  const motion = getMotionValueForGroup(groupId);
+  return `
+    <div class="details-field motion-field">
+      <span class="field-label-sm">Motion</span>
+      <label class="motion-control">
+        <span>Duration <strong data-motion-value="durationMs">${motion.durationMs}ms</strong></span>
+        <input type="range" min="1000" max="5000" step="100" data-action="motion" data-motion-key="durationMs" value="${motion.durationMs}" />
+      </label>
+      <label class="motion-control">
+        <span>Delay <strong data-motion-value="delayMs">${motion.delayMs}ms</strong></span>
+        <input type="range" min="0" max="3000" step="50" data-action="motion" data-motion-key="delayMs" value="${motion.delayMs}" />
+      </label>
+      <label class="motion-control">
+        <span>Angle <strong data-motion-value="angleDeg">${motion.angleDeg}deg</strong></span>
+        <input type="range" min="0" max="10" step="0.1" data-action="motion" data-motion-key="angleDeg" value="${motion.angleDeg}" />
+      </label>
+      <label class="motion-control">
+        <span>Offset Y <strong data-motion-value="yPx">${motion.yPx}px</strong></span>
+        <input type="range" min="0" max="10" step="1" data-action="motion" data-motion-key="yPx" value="${motion.yPx}" />
+      </label>
+      <label class="motion-control">
+        <span>Scale <strong data-motion-value="scale">${motion.scale.toFixed(2)}</strong></span>
+        <input type="range" min="1" max="1.15" step="0.01" data-action="motion" data-motion-key="scale" value="${motion.scale}" />
+      </label>
+    </div>
+  `;
+}
+
+function formatMotionValue(key: keyof Required<MotionConfig>, value: number): string {
+  if (key === "durationMs" || key === "delayMs") return `${Math.round(value)}ms`;
+  if (key === "angleDeg") return `${value.toFixed(1)}deg`;
+  if (key === "yPx") return `${Math.round(value)}px`;
+  return value.toFixed(2);
+}
+
+function applyMotionToPreviewGroup(groupId: string) {
+  const preview = document.getElementById("svg-preview");
+  const node = preview?.querySelector<SVGGElement>(`[data-group-id="${cssEscape(groupId)}"]`);
+  if (node) {
+    applyMotionToDomNode(node, partMotions[groupId] || {});
+  }
 }
 
 function getGroupBounds(node: SVGGElement, group: CropGroup) {
@@ -490,6 +561,20 @@ function renderPivotMarker(preview: HTMLElement) {
     <path d="M-14 0 H14 M0 -14 V14" />
   `;
   svg.appendChild(marker);
+}
+
+function renderSelectionOverlay(preview: HTMLElement) {
+  preview.querySelector(".selection-bounds")?.remove();
+  preview.querySelector(".pivot-marker")?.remove();
+  const group = activeGroups.find((entry) => entry.id === selectedGroupId);
+  const svg = preview.querySelector("svg");
+  if (!group || !svg) return;
+
+  const node = preview.querySelector<SVGGElement>(`[data-group-id="${cssEscape(group.id)}"]`);
+  const bounds = node ? getGroupBounds(node, group) : combineGroupBounds(group);
+  const rect = createSelectionBoundsRect(bounds);
+  svg.appendChild(rect);
+  renderPivotMarker(preview);
 }
 
 function renderAnimationOptionsForGroup(groupId: string): string {
@@ -571,6 +656,7 @@ function renderGroupList() {
               </div>
             </div>
           </div>
+          ${renderMotionControlsForGroup(group.id)}
         </div>
       </article>
     `;
@@ -628,7 +714,11 @@ function renderGroupList() {
     row.querySelector<HTMLSelectElement>('[data-action="animation"]')?.addEventListener("change", (event) => {
       const target = event.currentTarget as HTMLSelectElement;
       partAnimations[groupId] = target.value;
+      if (!partMotions[groupId]) {
+        partMotions[groupId] = getDefaultMotionForAnimation(target.value);
+      }
       renderPreview();
+      renderGroupList();
       updateActionState();
     });
 
@@ -660,6 +750,23 @@ function renderGroupList() {
           presetSelect.value = "custom";
         }
         renderPreview();
+        updateActionState();
+      });
+    });
+
+    row.querySelectorAll<HTMLInputElement>('[data-action="motion"]').forEach((input) => {
+      input.addEventListener("input", () => {
+        const key = input.dataset.motionKey as keyof Required<MotionConfig> | undefined;
+        if (!key) return;
+        partMotions[groupId] = {
+          ...getMotionValueForGroup(groupId),
+          [key]: Number(input.value)
+        };
+        const display = row.querySelector<HTMLElement>(`[data-motion-value="${key}"]`);
+        if (display) {
+          display.textContent = formatMotionValue(key, Number(input.value));
+        }
+        applyMotionToPreviewGroup(groupId);
         updateActionState();
       });
     });
