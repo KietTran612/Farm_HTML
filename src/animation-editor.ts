@@ -747,17 +747,17 @@ function renderGroupList() {
         <div class="group-row__main">
           <button class="group-row__select" type="button" data-action="select">
             <div class="group-row__select-header">
-              <span class="group-row__arrow">â–¼</span>
+              <span class="group-row__arrow">\u25BC</span>
               <span class="group-row__label">${group.label}</span>
             </div>
-            <span class="group-row__meta">${group.paths.length} paths Â· ${group.colorFamily}</span>
+            <span class="group-row__meta">${group.paths.length} paths &middot; ${group.colorFamily}</span>
           </button>
           <div class="group-row__controls">
             <button class="group-preview-btn ${soloPreviewGroupId === group.id ? "is-active" : ""}" type="button" data-action="preview-part" title="${soloPreviewGroupId === group.id ? "Stop Preview" : "Preview Animation"}">
-              ${soloPreviewGroupId === group.id ? "â¹" : "â–¶"}
+              ${soloPreviewGroupId === group.id ? "\u23F9" : "\u25B6"}
             </button>
             <button class="group-visibility-btn ${group.hidden ? "is-hidden-btn" : ""}" type="button" data-action="visibility" title="${group.hidden ? "Show Layer" : "Hide Layer"}">
-              ðŸ‘
+              \u{1F441}
             </button>
           </div>
         </div>
@@ -822,7 +822,7 @@ function renderLayerProperties() {
   container.innerHTML = `
     <div class="layer-properties__header">
       <span class="layer-properties__title">${group.label}</span>
-      <span class="layer-properties__meta">${group.paths.length} paths Â· ${group.colorFamily}</span>
+      <span class="layer-properties__meta">${group.paths.length} paths &middot; ${group.colorFamily}</span>
     </div>
     <div class="details-field">
       <span class="field-label-sm">Layer Label</span>

@@ -2,6 +2,7 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 112 (Adjust Animation Editor Columns and Fix Encoding):** Repositioned the columns in `crop-animation-editor.html` and adjusted the CSS grid layout in `src/styles/animation-editor.scss` to place the Layer Properties panel next to the Layer Browser (State/Layers list) and shifted the SVG Preview workspace to the end (right side). Replaced all corrupted/mangled characters in the UI templates of `src/animation-editor.ts` with encoding-safe unicode escapes (`\u25BC`, `\u00B7`, `\u23F9`, `\u25B6`, `\u{1F441}`). Also cleaned up a duplicated variable and style block in `animation-editor.scss` that caused a Sass compilation error.
 - **Implemented Task 111 (Compact Animation Editor Layer Workflow):** Reworked `crop-animation-editor.html` so stage selection is a compact dropdown, layer selection sits below it in the left panel, and editable layer controls live in a dedicated `Layer Properties` panel. Stage changes reload data through the existing `selectStage` flow and select the first available layer by default. Added dirty-state guarding before crop/stage switches and validation before saving animation metadata.
 - **Implemented Task 110 (Reorder Layer Pivot Controls):** Moved the `Pivot Point` field above `Animation` inside each Animation Editor layer card. No save/load, pivot, animation, or motion logic was changed.
 - **Implemented Task 109 (Show Relevant Motion Controls Only):** Added per-animation motion key metadata and changed Animation Editor layer cards to render only the sliders that affect the selected animation preset. `none` no longer shows unused motion controls, while existing motion metadata remains compatible.
@@ -22,6 +23,9 @@
 
 ## Verification
 
+- **For Task 112 (Adjust Animation Editor Columns and Fix Encoding):**
+  - Unit tests passed: `npx vitest run src/animation-editor/stageValidation.test.ts src/animation-editor/motionConfig.test.ts src/animation-editor/groupEditor.test.ts`
+  - Build check passed: `npm run build`
 - **For Task 111 (Compact Animation Editor Layer Workflow):**
   - TDD red check: `npx vitest run src/animation-editor/stageValidation.test.ts` failed because `stageValidation` did not exist.
   - Focused tests passed: `npx vitest run src/animation-editor/stageValidation.test.ts src/animation-editor/motionConfig.test.ts`.

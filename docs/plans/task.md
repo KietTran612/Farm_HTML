@@ -14,3 +14,4 @@
 | **Task 109: Show Relevant Motion Controls Only** | [x] | Animation Editor now shows only sliders used by the selected animation preset. |
 | **Task 110: Reorder Layer Pivot Controls** | [x] | Moved Pivot Point above Animation in each Animation Editor layer card without changing logic. |
 | **Task 111: Compact Animation Editor Layer Workflow** | [x] | Replaced stage cards with a stage dropdown, moved layer editing into a dedicated properties panel, and added save validation/dirty-stage guarding. |
+| **Task 112: Adjust Animation Editor Columns and Fix Encoding** | [x] | Moved Layer Properties adjacent to Layer Browser, moved SVG preview to the end, replaced mangled UTF-8 text with unicode escapes, and resolved a CSS syntax duplicate. |
