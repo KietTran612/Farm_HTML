@@ -2,193 +2,45 @@
 
 ## Latest Completed Work
 
-- **Implemented Task 103 (Temporarily Hide Suggest Candidates Button):** Added `hidden` to the Animation Editor `Suggest Candidates` button and a `.btn[hidden]` SCSS rule so the control is not shown while preserving its existing DOM id and TypeScript handler for easy restoration later.
+- **Implemented Task 105 (Compact Crop Editor Trace Step):** Reduced Step 3 (`Trace layer bang lasso mask`) panel padding, header spacing, grid gap, and lasso/preview minimum height so the trace workspace fits better within the current browser window without changing trace behavior.
+- **Implemented Task 104 (Compact Planning Context):** Compacted `task.md`, `current-handoff.md`, and `index.md` so new sessions read only current project state instead of long historical logs. Older completed plan files were moved under `docs/plans/archive/`, while recently relevant workflow plans remain in `docs/plans/`.
+- **Implemented Task 103 (Temporarily Hide Suggest Candidates Button):** Added `hidden` to the Animation Editor `Suggest Candidates` button and a `.btn[hidden]` SCSS rule so the control is not shown while preserving its existing DOM id and TypeScript handler.
+- **Implemented Task 102 (Selected Layer Bounds Outline):** Added a padded SVG `selection-bounds` rectangle for the selected layer in Animation Editor preview so users can see the selected layer's visual extent.
+- **Implemented Tasks 96-101 (CSS Variable Motion Controls):** Added per-layer motion sliders for duration, delay, sway angle, Y offset, and scale. Motion metadata loads from and saves to `animations.json`, preview SVG groups receive dynamic `--anim-*` custom properties, and first-time grouped stage saves update the metadata cache.
 
-- **Implemented Task 102 (Selected Layer Bounds Outline):** Added a padded SVG `selection-bounds` rectangle for the selected layer in Animation Editor preview so users can see the selected layer's visual extent. The outline uses the same dynamic DOM/static bounds path as the pivot marker and renders alongside the pivot marker without blocking interaction.
+## Current Workflow State
 
-- **Implemented Task 101 (Fix Motion Save Cache Review Issue):** Reviewed the CSS variable motion implementation and fixed the save cache path so first-time grouped stage saves record the newly created `${stageId}.grouped.svg` file in `animationsMetadata`.
-
-- **Implemented Tasks 96-100 (CSS Variable Motion Controls):** Added per-layer motion sliders for duration, delay, sway angle, Y offset, and scale in expanded Animation Editor layer cards. Motion metadata now loads from and saves to `animations.json`, preview SVG groups receive `--anim-*` CSS custom properties dynamically, and SCSS animation keyframes read those variables with fallbacks.
-
-- **Implemented Task 95 (State Preservation on Stage Switch/Save):** Fixed a bug where switching stages in the sidebar or clicking stage cards caused the active pivots and animations configuration to revert to defaults in the UI. Introduced a global `animationsMetadata` state variable to store the loaded payload from the API, updated `selectStage` to query this global state instead of using a transient `payload` parameter, and updated the metadata cache upon a successful save.
-
-- **Implemented Task 94 (Collapse Arrow for Layer Rows):** Added a collapse arrow (`▼`) aligned on the exact same header row/line as the layer name inside the group selection button. Updated the click handler on the header to toggle the layer's expand/collapse state (clicking an active header collapses it). Styled the arrow in SCSS to rotate from `-90deg` (pointing right, representing collapsed) to `0deg` (pointing down and highlighted in forest green, representing expanded/active) with a smooth transition.
-
-- **Implemented Dropdown Translations:** Added Vietnamese translations in parentheses next to the part classification option labels (e.g. `base (gốc)`, `stem (thân)`, `leaves (lá)`) in the dropdown selector inside group rows to improve usability.
-
-- **Implemented Tasks 91-93 (Pivot Marker Alignment Fix):** Corrected the visual Pivot Marker (circle/crosshair) placement in the SVG preview canvas to align 1-to-1 with the dynamic rotation center of the selected group. Updated the path parsing regex in `groupClassifier.ts` to support direct dot-decimals (e.g. `.5`, `-.5`) and added bounds checking to command loops to prevent coordinate parser array overflow and `NaN` contamination. Implemented dynamic bounding box calculation using `node.getBBox()` with automatic static bounds fallback. Added the new implementation plan `2026-06-23-animation-editor-pivot-marker-alignment.md`.
-
-- **Implemented Tasks 88-90 (Per-Layer Independent Animation Preview):** Added per-layer icon-only "Preview" / "Stop" (▶/⏹) and "Show" / "Hide" (👁) buttons in the group row controls with custom tooltips. Toggling a layer's preview independently activates its CSS keyframe animations (via a new `.is-animating` class directly on the SVG `<g>` elements) while keeping all other layers static. Any active global preview is automatically stopped when starting a solo preview. **Also updated the Pivot Marker (`.pivot-marker` circle and crosshair) to be visible in all preview modes (including Normal mode) when a layer is selected, so users can visually see where the rotation point is situated.** Added the new implementation plan file `2026-06-23-animation-editor-layer-preview.md` and updated the task tracker.
-
-- **Implemented Tasks 84-87 (Animation Editor UI Cleanup & Logic Simplification):** Cleaned up the Animation Editor sidebar layout by removing the obsolete Selection tools panel, Create/Remove group buttons, and Split/Merge action buttons from HTML (`crop-animation-editor.html`), SCSS (`src/styles/animation-editor.scss`), and TypeScript (`src/animation-editor.ts`). Removed the merge checkboxes wrapper `.group-row__merge` from the group list rows. Cleared selection state, pointer/drag logic, split/merge event handlers, and unused variables. The plan file `2026-06-23-animation-editor-collapsible-panels.md` from the obsolete accordion design has been fully deleted and task tracker has been updated.
-
-- **Implemented Tasks 80-83 (Embedded Animation and Pivot Controls in Animation Editor):** Refactored the Animation Editor so that the Animation Preset Selector, Pivot Preset Selector, and Pivot X & Y percent number inputs are embedded directly inside each individual layer's group row (Group Card). Static panel containers at the bottom of the group sidebar have been removed. The embedded controls automatically expand when a layer is clicked/selected (`.is-active`), and collapse when another layer is selected.
-
-- **Implemented Task 79 (Fix Hybrid Preset Review Issues):** Updated hybrid server presets to include the same trace contract used by UI payloads (`color/spline/cutout/path_precision 3`) and fixed preset switching so selecting `Custom` after `Hybrid` re-enables sliders and restores displayed slider values.
-
-- **Implemented Task 78 (Verify build and user manual review):** Checked that Vite production build compiled successfully and verified overall app tests are passing.
-- **Implemented Task 77 (Implement hybrid trace backend logic):** Added logic in Vite middleware to trace a PNG twice (with `animationCandidate` and `gameDetailed` presets), merge the paths in z-order, optimize using SVGO, and return the composite SVG.
-- **Implemented Task 76 (Add hybrid preset UI option and client logic):** Added the Hybrid preset option in `crop-editor.html`, disabled the parameters panel sliders when it is selected, and included the selected preset in the trace request payload.
-
-- **Implemented Task 75 (Fix Lasso Zoom Controls Position):** Moved the lasso canvas into a dedicated `.layer-mask-scroll` viewport so only the zoomed source image scrolls. The zoom controls now remain fixed on `.layer-mask-editor` instead of being part of the scrollable content.
-
-- **Implemented Task 74 (Add Source Image Zoom For Lasso):** Added source image zoom controls to the lasso canvas. Zoom changes only the displayed canvas size via CSS variables and scrollable viewport behavior; `canvas.width`, `canvas.height`, source image data, and lasso coordinate mapping remain in original image space.
-
-- **Implemented Task 73 (Remove Layer Sort Buttons):** Removed the manual Up/Down buttons and their click handlers from Crop Editor layer rows because drag-and-drop now owns layer reordering. Visibility, duplicate, delete, rename, and drag handles remain available.
-
-- **Implemented Task 72 (Add Layer Duplicate Button):** Added a duplicate button to each Crop Editor layer row. Duplicated layers are inserted directly below the source layer, preserve the source SVG and hidden state, and receive a new `groupId` so preview/save output does not reuse the original layer group ID.
-
-- **Implemented Task 71 (Add Layer Visibility Toggle):** Added an eye-style visibility button to each Crop Editor layer row. Hidden layers stay in the layer list and saved SVG output, but are filtered out of the composite preview so users can inspect or replace individual layers without deleting them.
-
-- **Implemented Task 70 (Edit Saved Layered Stages):** Added saved layered SVG parsing and wired Crop Editor stage sidebar clicks to reopen mapped stage SVGs. Loaded layers can be renamed, reordered, deleted, extended with newly traced PNG layers, previewed, and saved back to the same stage without needing original lasso metadata. Review fixes preserve root `<defs>` used by loaded layer paths and prevent repeated saves from double-prefixing internal SVG IDs.
-
-- **Implemented Task 69 (Remove Legacy Auto Trace Workflow):** Removed `auto_trace.bat`, deleted `scripts/vtracer/auto-trace-crops.mjs`, and removed the `crop:vtracer:auto` npm script because the full-PNG auto trace path is superseded by the lasso masked layer trace workflow.
-
-- **Implemented Task 68 (Fix Layer Composite Preview Scaling):** Fixed SVG scaling in the composite preview container by adding `width: 100%; height: 100%; object-fit: contain;` to `.layer-composite-preview svg` in `editor.scss`. Symmetrical grid template columns (`minmax(360px, 1fr) 260px minmax(360px, 1fr)`) were applied to `.layer-trace-layout` so that both the drawing canvas container and the composite SVG preview container have identical dimensions, ensuring their visual scale matches 1-to-1 perfectly.
-- **Implemented Task 67 (Implement Layer Rename Functionality):** Added inline rename input triggers (double-click and edit icon `✎`) for layer names. An input field temporarily replaces the label (disabling drag events to allow text selection) and updates the data array and preview on Enter or blur, and restores the original value on Escape.
-- **Implemented Task 66 (Add VTracer Preset Selector):** Added a preset select box directly in the VTracer parameters section header. This allows users to quickly select one of the four standard project presets (`gameClean`, `gameDetailed`, `animationCandidate`, `tinyRuntime`) even when the parameters panel is collapsed. Selecting a preset updates the sliders and values immediately, and adjusting any slider manually shifts the selector to `Custom` mode.
-- **Implemented Task 65 (Implement Layer Reordering):** Implemented HTML5 drag-and-drop support (with visual dragging and hover feedback classes) and manual Up/Down arrow sort buttons next to each layer. Reordering layers swaps them in the data array and immediately updates the composite SVG preview to reflect new z-ordering.
-- **Implemented Task 64 (Review Layer Trace UX In Browser):** Reviewed Lasso Layer Trace UX, identified the critical z-ordering layout issue, and designed the drag-and-drop + buttons solution.
-- **Implemented Task 63 (Plan Obsolete Planning Cleanup):** Created and executed the cleanup plan to organize `docs/plans/` and the task tracker.
-- **Archived Obsolete Plans:** Moved three plan files describing the old full-PNG candidate workflow to `docs/plans/archive/`:
-  - `docs/plans/archive/2026-06-19-html-crop-editor-implementation.md`
-  - `docs/plans/archive/2026-06-22-html-crop-editor-layout.md`
-  - `docs/plans/archive/2026-06-22-html-crop-editor-logic-verification.md`
-- **Updated Plan Index:** Adjusted `docs/plans/index.md` to list only active plans and move completed/obsolete plans to the Archived/Historical section under their updated paths.
-- **Updated Task Tracker:** Adjusted `docs/plans/task.md` to mark obsolete/incomplete tasks (40-42, 46-49) as completed `[x]` with a `[Superseded]` note. Added Task 64, Task 65, Task 66, and Task 67.
-
----
-
-*Previous Completed Work (for context):*
-- **Implemented Task 62 (Prioritize Crop Editor Lasso Workspace):** Reduced the source panel to only the PNG dropdown, added a collapsible VTracer parameter section defaulting to collapsed, and expanded the lasso/composite workspace sizing.
-- **Implemented Task 61 (Compact Crop Editor Source Panel):** Removed the top PNG image preview, replaced it with a compact selected-file summary, tightened the source/parameter panel spacing, and gave more vertical priority to the lasso layer workspace.
-- **Implemented Task 60 (Replace Crop Editor Full PNG Trace Workflow):** Removed the old full-PNG VTracer candidate workflow. The editor now uses PNG lasso/freeform mask selection, layer accumulation, and compose layered SVG save.
-- **Implemented Task 58 (Crop Animation Editor Visual Grouping):** Completed visual drag selection, stable path IDs (`data-original-index`), CTM transformation bounding-box checks, Shift/Ctrl/Alt selection modifiers, group creation, and empty group cleanup. Added Photoshop-like freeform Lasso selection tool utilizing ray-casting Point-in-Polygon check.
-- **Implemented Task 53 (SVG Group Classify And Edit Tools):** Added crop stage asset middleware endpoints, grouped SVG save/metadata merge flow, SVG sanitization, path classifier, group editing operations, animation presets, animation editor controller, and SCSS for overlay/solo/preview states.
-- **Implemented Task 56 (Pivot Review And Editing):** Added semantic pivot defaults, pivot preset and percent controls, preview marker, per-group transform-origin preview, and saved pivot metadata in `animations.json`.
-- **Implemented Task 57 (Add Crop Switcher To Animation Editor):** Added a crop dropdown to the animation editor header so users can switch crops directly.
+- The active crop-art workflow is lasso masked layer tracing in `crop-editor.html`, followed by grouped SVG animation tuning in `crop-animation-editor.html`.
+- The old full-PNG candidate workflow and auto-trace batch path are superseded by the lasso layer workflow.
+- No detailed implementation plan is currently active. Read a detailed plan from `index.md` only when the next user task specifically needs it.
 
 ## Verification
 
+- **For Task 105 (Compact Crop Editor Trace Step):**
+  - `npm run build` passed.
+  - Browser smoke passed on `http://127.0.0.1:4000/crop-editor.html`: at a 1280x720 viewport, `.editor-workspace` reported `needsScroll: false`; Step 3 measured 447px tall with lasso/preview panes at 360px.
+  - Reproduced the selected-PNG overflow with Potato `World_Crop_Potato_Body_Dead.png`, then verified after the CSS fix that document horizontal overflow is false and `.editor-workspace` has no horizontal or vertical overflow at 1280x720.
+  - Height-responsive follow-up: `npm run build` passed after changing Step 3 layout to flex-fill the panel height. Browser re-check not run because the browser automation policy blocked access to `http://127.0.0.1:4000`.
+- **For Task 104 (Compact Planning Context):** App validation not run - docs-only planning cleanup.
 - **For Task 103 (Temporarily Hide Suggest Candidates Button):**
   - `npm run build` passed.
-  - Browser smoke passed on `http://127.0.0.1:4000/crop-animation-editor.html?crop=corn`: confirmed the `auto-classify-btn` element exists with `hidden=true` and computed `display: none`.
-
+  - Browser smoke passed on `http://127.0.0.1:4000/crop-animation-editor.html?crop=corn`: confirmed `auto-classify-btn` exists with `hidden=true` and computed `display: none`.
 - **For Task 102 (Selected Layer Bounds Outline):**
-  - TDD red check: `npx vitest run src/animation-editor/selectionOverlay.test.ts` first failed because the helper module was missing, then passed after implementation.
-  - Focused tests passed: `npx vitest run src/animation-editor/selectionOverlay.test.ts src/animation-editor/motionConfig.test.ts src/animation-editor/groupEditor.test.ts` with 10/10 tests passing.
+  - Focused tests passed: `npx vitest run src/animation-editor/selectionOverlay.test.ts src/animation-editor/motionConfig.test.ts src/animation-editor/groupEditor.test.ts`.
   - `npm run build` passed.
   - Browser smoke passed on `http://localhost:4000/crop-animation-editor.html?crop=corn`: selected the first Corn Dead layer and confirmed `.selection-bounds` renders with nonzero width/height while the pivot marker remains visible.
 
-- **For Task 101 (Fix Motion Save Cache Review Issue):**
-  - Focused tests passed: `npx vitest run src/animation-editor/motionConfig.test.ts src/animation-editor/animationPresets.test.ts src/animation-editor/groupEditor.test.ts` with 12/12 tests passing.
-  - `npm run build` passed.
-
-- **For Tasks 96-100 (CSS Variable Motion Controls):**
-  - TDD red check: `npx vitest run src/animation-editor/motionConfig.test.ts` first failed on missing/incorrect motion behavior, then passed after implementation.
-  - Focused tests passed: `npx vitest run src/animation-editor/motionConfig.test.ts src/animation-editor/animationPresets.test.ts src/animation-editor/groupEditor.test.ts` with 12/12 tests passing.
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-animation-editor.html?crop=corn`: opened the first Corn Dead layer card, confirmed motion sliders render, changed Angle to 2.5, and confirmed the active SVG group received `--anim-angle: 2.5deg` without losing the active row. Save/refresh persistence was not run to avoid modifying crop asset files during smoke.
-
-- **For Tasks 91, 92, and 93 (Pivot Marker Alignment Fix):**
-  - Added unit test in `src/animation-editor/groupClassifier.test.ts` for decimal bounds and verified that it and other animation editor tests (`npx vitest run src/animation-editor/...`) pass.
-  - `npm run build` compiled successfully without any errors.
-  - Browser verification using `verify_pivot` subagent: selected a corn stage, verified Pivot Marker is displayed correctly, checked manual presets (Center/Bottom center), and confirmed no console errors occurred.
-
-- **For Tasks 88, 89, and 90 (Per-Layer Independent Animation Preview):**
-  - `npm run build` compiled successfully without any errors.
-  - `npm run test` ran successfully with 77/77 tests passing.
-  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn` to click the Preview/Stop button on individual layer cards and check that only the active layer animates.
-
-- **For Tasks 84, 85, 86, and 87 (Animation Editor UI Cleanup & Logic Simplification):**
-  - `npm run build` compiled successfully without any errors.
-  - `npm run test` ran successfully with 77/77 tests passing.
-  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn` to check clean sidebar without Selection tools & Split/Merge buttons.
-
-- **For Tasks 80, 81, 82, and 83 (Embedded Controls in Group Rows):**
-  - `npm run build` compiled successfully without any errors.
-  - `npm run test` ran successfully with 77/77 tests passing.
-  - Manual review prepared on `http://localhost:4000/crop-animation-editor.html?crop=corn`.
-
-- **For Task 79 (Fix Hybrid Preset Review Issues):**
-  - Not run - user explicitly requested no tests for this fix.
-
-- **For Tasks 76, 77, and 78 (Hybrid Trace Preset):**
-  - `npm run build` compiled successfully without any errors.
-  - `npm run test` ran successfully with 77/77 tests passing.
-  - Manual review prepared for user on `http://localhost:4000/crop-editor.html`.
-
-- **For Task 75 (Fix Lasso Zoom Controls Position):**
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot Stage03 PNG, zoomed to 200%, scrolled the dedicated canvas viewport horizontally, and confirmed zoom controls kept the same screen position while `.layer-mask-scroll` handled the content scroll.
-
-- **For Task 74 (Add Source Image Zoom For Lasso):**
-  - Wrote `src/layer-trace/layerViewport.test.ts` first and confirmed it failed before implementing the coordinate helper.
-  - `npx vitest run src/layer-trace/layerViewport.test.ts src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 7 tests.
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot Stage03 PNG, confirmed zoom controls enabled, clicked zoom in to 125%, and confirmed canvas display rect grew from 334x445 to 418x557 while `canvas.width`/`canvas.height` stayed 768x1024.
-
-- **For Task 73 (Remove Layer Sort Buttons):**
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage and confirmed `data-layer-up`, `data-layer-down`, and `.sort-btn` controls no longer render while duplicate/delete buttons remain.
-
-- **For Task 72 (Add Layer Duplicate Button):**
-  - `npx vitest run src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 6 tests.
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage, confirmed one duplicate button, clicked duplicate on the first layer, and confirmed rows/buttons/preview groups increased from 1 to 2 with distinct group IDs.
-
-- **For Task 71 (Add Layer Visibility Toggle):**
-  - `npx vitest run src/layer-trace/layerComposer.test.ts src/layer-trace/layerParser.test.ts` passed with 6 tests.
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: loaded Carrot Dead stage, confirmed the eye button exists, hiding the first layer changed preview groups from 1 to 0, and showing it restored preview groups to 1 without deleting the row.
-
-- **For Task 70 (Edit Saved Layered Stages):**
-  - Wrote parser tests first and verified the initial missing-module failure.
-  - Added review regression tests for preserving root `<defs>` and avoiding double-prefix IDs on loaded layer re-save; both failed before the fixes.
-  - `npx vitest run src/layer-trace/layerParser.test.ts src/layer-trace/layerComposer.test.ts` passed with 5 tests.
-  - `npm run build` passed.
-  - Browser smoke passed on `http://localhost:4000/crop-editor.html`: selected Carrot, clicked Stage 03, confirmed one loaded layer, SVG preview present, and Save enabled without writing files.
-
-- **For Task 69 (Remove Legacy Auto Trace Workflow):**
-  - `package.json` parsed successfully after removing the npm script.
-  - Reference scan confirmed no remaining `auto_trace`, `auto-trace-crops`, or `crop:vtracer:auto` references outside planning history.
-  - App validation not run - obsolete workflow removal only.
-
-- **For Task 68 (Preview Scaling):**
-  - Production build successfully completed.
-  - Project unit tests successfully completed (`npm run test`).
-- **For Task 67 (Layer Rename):**
-  - Production build successfully completed.
-  - Project unit tests successfully completed (`npx vitest run scripts/vite-plugins/editorMiddleware.test.ts src/layer-trace/layerComposer.test.ts`).
-- **For Task 66 (Preset Selector):**
-  - Production build successfully completed.
-  - Project unit tests successfully completed.
-- **For Task 65 (Layer Reordering):**
-  - Production build successfully completed.
-  - Project unit tests successfully completed.
-- **For Task 63 (Planning Cleanup):**
-  - `App validation not run - docs-only planning cleanup.`
-- **For Task 62 (Lasso Workspace Sizing):**
-  - Production build passed.
-- **For Task 60 (Lasso Layer Trace):**
-  - Unit tests passed for layer composer and middleware.
-- **For Task 58 (Visual Grouping):**
-  - Unit tests passed for classifier and group editor.
-
 ## Known Warnings Or Blockers
 
-- Codex in-app browser plugin failed to initialize in this environment due to `EPERM` while accessing `C:\Users\Hoang.H\AppData`. Chrome headless/CDP was used instead for browser smoke testing.
-- Corn VTracer raw SVG sizes are large (Stage03 ~539KB). Presets like `tinyRuntime` have been tuned to reduce path count for production runtime.
-- VTracer CLI is fully set up and presets are verified. The old full-PNG auto-tracing script was removed because lasso masked layer tracing is now the active workflow.
+- Observed crop asset changes remain in the worktree and are intentionally not part of planning cleanup or the Step 3 compact UI change: `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/stage00.svg`, `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage00.grouped.svg`, `src/assets/crops/corn/stage01.grouped.svg`, `src/assets/crops/corn/stage02.grouped.svg`, and `src/assets/crops/corn/stage03.grouped.svg`.
+- Corn VTracer raw SVG sizes can be large. Prefer tuned presets or lasso layer selection for runtime-ready assets.
 
 ## Current Uncommitted Scope
 
-- **Layer Trace UI:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `src/layer-trace/layerComposer.ts`, `src/layer-trace/layerComposer.test.ts`, `src/layer-trace/layerViewport.ts`, `src/layer-trace/layerViewport.test.ts`, `scripts/vite-plugins/editorMiddleware.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation Editor Embedded Controls:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`.
-- **Animation Motion Controls:** `src/animation-editor/motionConfig.ts`, `src/animation-editor/motionConfig.test.ts`, `src/animation-editor.ts`, and `src/styles/animation-editor.scss`.
-- **Animation Selection Outline:** `src/animation-editor/selectionOverlay.ts`, `src/animation-editor/selectionOverlay.test.ts`, `src/animation-editor.ts`, and `src/styles/animation-editor.scss`.
-- **Observed Crop Asset Changes:** `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, and `src/assets/crops/corn/stage00.grouped.svg` remain modified in the worktree.
+- **Crop Editor compact trace step:** `src/styles/editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
+- **Planning cleanup:** `docs/plans/task.md`, `docs/plans/current-handoff.md`, `docs/plans/index.md`, and archived historical plan file moves under `docs/plans/archive/`.
+- **Observed crop asset changes:** `src/assets/crops/carrot/dead.svg`, `src/assets/crops/carrot/stage00.svg`, `src/assets/crops/corn/animations.json`, `src/assets/crops/corn/dead.grouped.svg`, `src/assets/crops/corn/meta.json`, `src/assets/crops/corn/stage00.grouped.svg`, `src/assets/crops/corn/stage01.grouped.svg`, `src/assets/crops/corn/stage02.grouped.svg`, and `src/assets/crops/corn/stage03.grouped.svg`.
 
 ## Recommended Next Task
 
-- **Manual Save/Refresh Verification for Motion Controls:** Open the animation editor at `http://localhost:4000/crop-animation-editor.html?crop=corn`, adjust one layer's motion sliders, click "Save Grouped SVG", refresh, and confirm the sliders and animation behavior restore from `animations.json`.
+- **Manual Save/Refresh Verification for Motion Controls:** Open `http://localhost:4000/crop-animation-editor.html?crop=corn`, adjust one layer's motion sliders, click "Save Grouped SVG", refresh, and confirm the sliders and animation behavior restore from `animations.json`.

@@ -30,11 +30,18 @@
           }
         },
         "leaves-1782124677081": {
-          "label": "leaf_1",
-          "animation": "none",
+          "label": "leaves",
+          "animation": "soft-sway",
           "pivot": {
-            "x": 50,
-            "y": 100
+            "x": 79,
+            "y": 58
+          },
+          "motion": {
+            "durationMs": 2600,
+            "delayMs": 0,
+            "angleDeg": 1.2,
+            "yPx": 0,
+            "scale": 1
           }
         },
         "leaves-1782124687750": {
@@ -51,7 +58,37 @@
       "sourceFile": "stage03.svg",
       "groupedFile": "stage03.grouped.svg",
       "parts": {
-        "group-unassigned": {
+        "leaves-1782183205395-nuj7oe": {
+          "label": "leaves",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 1.9,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782183243576-746dtg": {
+          "label": "fruit",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 84,
+            "y": 82
+          },
+          "motion": {
+            "durationMs": 1500,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 2,
+            "scale": 1.06
+          }
+        },
+        "leaves-1782183280870-pvvj50": {
           "label": "other",
           "animation": "none",
           "pivot": {
@@ -59,8 +96,253 @@
             "y": 100
           }
         },
-        "group-leaves-1782115734145": {
+        "leaves-1782183299590-fw01je": {
+          "label": "fruit",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 22,
+            "y": 81
+          },
+          "motion": {
+            "durationMs": 1500,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 0,
+            "scale": 1.05
+          }
+        },
+        "leaves-1782183358265-y3r7lq": {
+          "label": "other",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        }
+      }
+    },
+    "stage00": {
+      "sourceFile": "stage00.svg",
+      "groupedFile": "stage00.grouped.svg",
+      "parts": {
+        "leaves-1782182902452-an1bqd": {
+          "label": "other",
+          "animation": "bob",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2200,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 4,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782182773970-7e9myv": {
           "label": "leaves",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 70,
+            "y": 94
+          },
+          "motion": {
+            "durationMs": 2600,
+            "delayMs": 0,
+            "angleDeg": 4.4,
+            "yPx": 6,
+            "scale": 1.07
+          }
+        },
+        "leaves-1782182788145-fznlix": {
+          "label": "leaves-right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 15,
+            "y": 90
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 0.1,
+            "yPx": 0,
+            "scale": 1
+          }
+        },
+        "leaves-1782182797483-pia9zn": {
+          "label": "leaves-left",
+          "animation": "sway-left",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2200,
+            "delayMs": 0,
+            "angleDeg": 0.3,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782182827759-fcjmij": {
+          "label": "leaf_4",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        }
+      }
+    },
+    "stage01": {
+      "sourceFile": "stage01.svg",
+      "groupedFile": "stage01.grouped.svg",
+      "parts": {
+        "leaves-1782182603836-ii2pkk": {
+          "label": "other",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782182464896-vnjkzs": {
+          "label": "leaves",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 39,
+            "y": 93
+          },
+          "motion": {
+            "durationMs": 2200,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 1,
+            "scale": 1.04
+          }
+        },
+        "leaves-1782182488210-91qmc0": {
+          "label": "leaves-right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 15,
+            "y": 90
+          },
+          "motion": {
+            "durationMs": 3600,
+            "delayMs": 0,
+            "angleDeg": 1.5,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782182557433-kbjf1l": {
+          "label": "leaves-right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 15,
+            "y": 90
+          },
+          "motion": {
+            "durationMs": 4500,
+            "delayMs": 0,
+            "angleDeg": 2.1,
+            "yPx": 1,
+            "scale": 1.01
+          }
+        },
+        "leaves-1782182579361-turmpm": {
+          "label": "leaves-left",
+          "animation": "sway-left",
+          "pivot": {
+            "x": 85,
+            "y": 90
+          },
+          "motion": {
+            "durationMs": 3300,
+            "delayMs": 0,
+            "angleDeg": 1.5,
+            "yPx": 2,
+            "scale": 1.12
+          }
+        }
+      }
+    },
+    "stage02": {
+      "sourceFile": "stage02.svg",
+      "groupedFile": "stage02.grouped.svg",
+      "parts": {
+        "leaves-1782182966755-51ukqn": {
+          "label": "leaves",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 58,
+            "y": 92
+          },
+          "motion": {
+            "durationMs": 4600,
+            "delayMs": 0,
+            "angleDeg": 0.5,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782182981975-xdsv4v": {
+          "label": "fruit",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 50,
+            "y": 65
+          },
+          "motion": {
+            "durationMs": 2700,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 1,
+            "scale": 1.06
+          }
+        },
+        "leaves-1782183001788-96330z": {
+          "label": "leaves",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaves-1782183058626-ajf1n7": {
+          "label": "leaves-left",
+          "animation": "sway-left",
+          "pivot": {
+            "x": 85,
+            "y": 90
+          },
+          "motion": {
+            "durationMs": 3000,
+            "delayMs": 0,
+            "angleDeg": 2.9,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782183072975-83vrij": {
+          "label": "leaves-right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 10,
+            "y": 88
+          },
+          "motion": {
+            "durationMs": 2400,
+            "delayMs": 0,
+            "angleDeg": 2.2,
+            "yPx": 2,
+            "scale": 1.02
+          }
+        },
+        "leaves-1782183111325-6k1bgy": {
+          "label": "other",
           "animation": "none",
           "pivot": {
             "x": 50,

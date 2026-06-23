@@ -502,31 +502,49 @@ h1, h2, h3, h4, h5 {
 }
 
 .layer-trace-panel {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
+  padding: 14px 18px;
 
   .panel-header {
-    margin-bottom: 14px;
+    align-items: baseline;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+
+    h3 {
+      border-bottom: 0;
+      flex: 0 0 auto;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
 
     .panel-subtitle {
       font-size: 13px;
       color: $color-muted;
-      margin-top: 4px;
+      line-height: 1.35;
     }
   }
 }
 
 .layer-trace-layout {
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) 260px minmax(360px, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px) minmax(0, 1fr);
+  gap: 16px;
   align-items: stretch;
-  min-height: min(560px, calc(100vh - 300px));
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
 }
 
 .layer-mask-editor,
 .layer-composite-preview {
-  min-height: min(560px, calc(100vh - 300px));
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
   background:
     linear-gradient(45deg, rgba(184, 169, 120, 0.12) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(184, 169, 120, 0.12) 25%, transparent 25%),
@@ -540,7 +558,7 @@ h1, h2, h3, h4, h5 {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 12px;
+  padding: 10px;
   position: relative;
 }
 

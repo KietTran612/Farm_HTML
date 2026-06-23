@@ -8,7 +8,11 @@
     "stage03": "stage03.svg"
   },
   "groupedStages": {
-    "dead": "dead.grouped.svg"
+    "dead": "dead.grouped.svg",
+    "stage00": "stage00.grouped.svg",
+    "stage01": "stage01.grouped.svg",
+    "stage02": "stage02.grouped.svg",
+    "stage03": "stage03.grouped.svg"
   },
   "animations": "animations.json"
 }
