@@ -31,8 +31,12 @@ describe("Editor Middleware API", () => {
     
     const corn = crops.find(c => c.name.toLowerCase() === "corn");
     expect(corn).toBeDefined();
-    expect(corn!.pngs.length).toBeGreaterThan(0);
-    expect(corn!.pngs[0]).toContain("World_Crop_Corn_Body_");
+    expect(corn!.folders.length).toBeGreaterThan(0);
+    
+    const rootFolder = corn!.folders.find(f => f.name === "[Gốc]");
+    expect(rootFolder).toBeDefined();
+    expect(rootFolder!.pngs.length).toBeGreaterThan(0);
+    expect(rootFolder!.pngs[0]).toContain("World_Crop_Corn_Body_");
   });
 
   it("saves stage mappings and creates meta.json file", () => {

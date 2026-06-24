@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Crop Editor Premium Styles
 // CURATED COLOR PALETTE (Farm Green & Warm Cream)
 $bg-primary: #fbfaf5;
@@ -270,7 +272,7 @@ h1, h2, h3, h4, h5 {
 // CONFIG STEP 1 & 2
 .config-panel {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) 1fr;
+  grid-template-columns: minmax(320px, 420px) 1fr;
   gap: 16px;
   align-items: start;
   padding-bottom: 10px;
@@ -285,9 +287,13 @@ h1, h2, h3, h4, h5 {
 
   .png-selector-wrapper {
     margin-bottom: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
     
     select {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
     }
   }
 }
@@ -896,7 +902,7 @@ h1, h2, h3, h4, h5 {
       align-items: center;
       justify-content: center;
       &:hover {
-        background-color: darken($error-bg, 5%);
+        background-color: color.adjust($error-bg, $lightness: -5%);
       }
     }
   }
@@ -925,7 +931,7 @@ body.is-merge-mode {
       cursor: pointer;
       
       &:hover:not(.is-selected-for-merge) {
-        background-color: darken($forest-pastel, 3%);
+        background-color: color.adjust($forest-pastel, $lightness: -3%);
         border-color: rgba(66, 139, 77, 0.35);
       }
       
@@ -994,7 +1000,7 @@ body.is-merge-mode {
     color: $color-text;
     &:hover:not(:disabled) {
       background-color: $bg-primary;
-      border-color: darken($border-color, 10%);
+      border-color: color.adjust($border-color, $lightness: -10%);
     }
   }
 
@@ -1003,7 +1009,7 @@ body.is-merge-mode {
     color: white;
     box-shadow: 0 4px 10px rgba(59, 121, 63, 0.2);
     &:hover:not(:disabled) {
-      background-color: darken(#3b793f, 5%);
+      background-color: color.adjust(#3b793f, $lightness: -5%);
     }
   }
 

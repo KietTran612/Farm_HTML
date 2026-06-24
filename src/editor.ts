@@ -3,9 +3,14 @@ import { composeLayeredSvg, prefixInternalIds, sanitizeToken, type SvgLayerInput
 import { parseLayeredSvg } from "./layer-trace/layerParser";
 import { toUnscaledCanvasPoint } from "./layer-trace/layerViewport";
 
-interface Crop {
+interface CropFolder {
   name: string;
   pngs: string[];
+}
+
+interface Crop {
+  name: string;
+  folders: CropFolder[];
 }
 
 interface TraceParams {
@@ -134,6 +139,9 @@ function setupUIEventListeners() {
   mergeLayersBtn?.addEventListener("click", handleMergeButtonClick);
   cancelMergeBtn?.addEventListener("click", handleCancelMerge);
 
+  const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+  folderSelect?.addEventListener("change", () => handleFolderSelection());
+
   cropSelect?.addEventListener("change", () => void handleCropSelection(cropSelect.value));
   pngSelect?.addEventListener("change", () => void handlePngSelection());
   addStageBtn?.addEventListener("click", handleAddStage);
@@ -200,6 +208,7 @@ async function handleCropSelection(cropName: string) {
   activeCrop = cropName;
   mappedStages = {};
   targetStages = [...defaultStages];
+  resetFolderSelection();
   resetPngSelection();
   resetLayerWorkflow();
   syncAnimationEditorButton();
@@ -214,13 +223,68 @@ async function handleCropSelection(cropName: string) {
 
   try {
     const crop = cropsList.find((item) => item.name.toLowerCase() === activeCrop);
-    renderPngOptions(crop?.pngs || []);
+    if (crop && crop.folders) {
+      renderFolderOptions(crop.folders);
+      
+      // Mặc định chọn thư mục gốc "[Gốc]" nếu có, nếu không thì chọn thư mục đầu tiên
+      let defaultFolder = crop.folders.find(f => f.name === "[Gốc]");
+      if (!defaultFolder && crop.folders.length > 0) {
+        defaultFolder = crop.folders[0];
+      }
+      
+      if (defaultFolder) {
+        const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+        if (folderSelect) {
+          folderSelect.value = defaultFolder.name;
+        }
+        renderPngOptions(defaultFolder.pngs);
+      }
+    }
     await loadExistingMeta(activeCrop);
     renderStagesSidebar();
     showStatus("info", "Chon PNG, ve lasso quanh mot phan anh, roi trace thanh layer.");
   } catch (error: any) {
     showStatus("error", `Khong the tai crop: ${error.message}`);
   }
+}
+
+function handleFolderSelection() {
+  const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+  if (!folderSelect) return;
+
+  const folderName = folderSelect.value;
+  resetPngSelection();
+  resetLayerWorkflow();
+
+  if (!folderName || !activeCrop) {
+    showStatus("info", "Chon folder de hien thi danh sach anh PNG.");
+    return;
+  }
+
+  const crop = cropsList.find((item) => item.name.toLowerCase() === activeCrop);
+  if (!crop) return;
+
+  const folder = crop.folders.find((f) => f.name === folderName);
+  if (folder) {
+    renderPngOptions(folder.pngs);
+  }
+  showStatus("info", "Chon PNG trong folder, ve lasso quanh mot phan anh, roi trace thanh layer.");
+}
+
+function resetFolderSelection() {
+  const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+  if (folderSelect) {
+    folderSelect.innerHTML = `<option value="">-- Chon Folder --</option>`;
+  }
+}
+
+function renderFolderOptions(folders: CropFolder[]) {
+  const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+  if (!folderSelect) return;
+
+  folderSelect.innerHTML = folders
+    .map((folder) => `<option value="${folder.name}">${folder.name}</option>`)
+    .join("");
 }
 
 function resetPngSelection() {

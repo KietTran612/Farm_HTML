@@ -7,9 +7,14 @@ import { sanitizeSvgText } from "../../src/animation-editor/groupEditor";
 // @ts-ignore
 import { collectSvgMetricsFromText } from "../vtracer/svg-metrics.mjs";
 
-export interface CropData {
+export interface CropFolder {
   name: string;
   pngs: string[];
+}
+
+export interface CropData {
+  name: string;
+  folders: CropFolder[];
 }
 
 export interface SavePayload {
@@ -100,6 +105,42 @@ const SERVER_PRESETS: Record<string, TraceParams> = {
   }
 };
 
+function scanCropDir(dirPath: string, rootCropDir: string, relativePath: string = ""): CropFolder[] {
+  const entries = readdirSync(dirPath, { withFileTypes: true });
+  const pngs: string[] = [];
+  const subDirs: { name: string; path: string; rel: string }[] = [];
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      subDirs.push({
+        name: entry.name,
+        path: join(dirPath, entry.name),
+        rel: relativePath ? `${relativePath}/${entry.name}` : entry.name
+      });
+    } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".png")) {
+      const cropName = resolve(rootCropDir).split(/[\\/]/).pop() || "";
+      const fileRelPath = relativePath ? `${cropName}/${relativePath}/${entry.name}` : `${cropName}/${entry.name}`;
+      pngs.push(`docs/Crops/${fileRelPath}`);
+    }
+  }
+
+  let foldersResult: CropFolder[] = [];
+  
+  if (pngs.length > 0) {
+    foldersResult.push({
+      name: relativePath || "[Gốc]",
+      pngs
+    });
+  }
+
+  for (const sub of subDirs) {
+    const subResult = scanCropDir(sub.path, rootCropDir, sub.rel);
+    foldersResult = foldersResult.concat(subResult);
+  }
+
+  return foldersResult;
+}
+
 export function handleCropsRequest(): CropData[] {
   const cropsDir = resolve("docs/Crops");
   if (!existsSync(cropsDir)) {
@@ -113,14 +154,12 @@ export function handleCropsRequest(): CropData[] {
     if (entry.isDirectory() && entry.name !== "SVG" && entry.name !== "Generated") {
       const cropName = entry.name;
       const cropPath = join(cropsDir, cropName);
-      const files = readdirSync(cropPath);
-      const pngs = files
-        .filter(f => f.toLowerCase().endsWith(".png"))
-        .map(f => `docs/Crops/${cropName}/${f}`);
+      
+      const folders = scanCropDir(cropPath, cropPath);
 
       crops.push({
         name: cropName,
-        pngs
+        folders
       });
     }
   }
