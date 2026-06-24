@@ -87,17 +87,7 @@
 
 ## Current Uncommitted Scope
 
-- **Crop Editor folder selection:** `crop-editor.html`, `src/editor.ts`, `src/styles/editor.scss`, `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Crop Editor load stage SVG on stage select:** `src/editor.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation Editor compact layer workflow:** `crop-animation-editor.html`, `src/animation-editor.ts`, `src/styles/animation-editor.scss`, `src/animation-editor/stageValidation.ts`, `src/animation-editor/stageValidation.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation Editor layer field order:** `src/animation-editor.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation Editor relevant motion controls:** `src/animation-editor.ts`, `src/animation-editor/motionConfig.ts`, `src/animation-editor/motionConfig.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Existing animated data sync:** `src/assets/crops/potato/stage01.grouped.svg`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation save orphan pruning:** `scripts/vite-plugins/editorMiddleware.ts`, `scripts/vite-plugins/editorMiddleware.test.ts`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Animation Editor draggable pivot:** `src/animation-editor.ts`, `src/animation-editor/pivotDrag.ts`, `src/animation-editor/pivotDrag.test.ts`, `src/styles/animation-editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Crop Editor compact trace step:** `src/styles/editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
-- **Planning cleanup:** `docs/plans/task.md`, `docs/plans/current-handoff.md`, `docs/plans/index.md`, and archived historical plan file moves under `docs/plans/archive/`.
-- **Observed crop asset changes:** `src/assets/crops/potato/meta.json`, `src/assets/crops/potato/stage01.svg`, `src/assets/crops/potato/animations.json`, `src/assets/crops/potato/dead.grouped.svg`, `src/assets/crops/potato/stage00.grouped.svg`, and `src/assets/crops/potato/stage01.grouped.svg`.
+- None (working tree is clean).
 
 ## Recommended Next Task
 
