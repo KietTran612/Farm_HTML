@@ -33,11 +33,15 @@ export function parseLayeredSvg(svgText: string): ParsedLayeredSvg {
   return {
     width,
     height,
-    layers: orderedGroups.map(({ group, domIndex }) => ({
-      groupId: group.getAttribute("data-group-id") || `loaded-layer-${domIndex}`,
-      label: readLayerLabel(group),
-      svgText: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">\n${rootDefs}${group.innerHTML.trim()}\n</svg>`
-    }))
+    layers: orderedGroups.map(({ group, domIndex }) => {
+      const isHidden = group.getAttribute("display") === "none";
+      return {
+        groupId: group.getAttribute("data-group-id") || `loaded-layer-${domIndex}`,
+        label: readLayerLabel(group),
+        svgText: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">\n${rootDefs}${group.innerHTML.trim()}\n</svg>`,
+        hidden: isHidden
+      };
+    })
   };
 }
 

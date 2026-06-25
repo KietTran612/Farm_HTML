@@ -1433,6 +1433,28 @@ body.is-merge-mode {
       word-break: break-all;
     }
   }
+
+  .psd-file-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+
+    .btn {
+      padding: 3px 8px;
+      font-size: 11px;
+
+      &.btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+      }
+    }
+  }
 }
 
 .psd-layers-header {

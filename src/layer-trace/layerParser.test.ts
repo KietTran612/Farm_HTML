@@ -57,4 +57,20 @@ describe("parseLayeredSvg", () => {
     expect(result.layers[0].svgText).toContain('id="leafGradient"');
     expect(result.layers[0].svgText).toContain('fill="url(#leafGradient)"');
   });
+
+  it("decodes hidden layers from group display none attribute", () => {
+    const result = parseLayeredSvg(`
+      <svg viewBox="0 0 64 64">
+        <g class="crop-part crop-part--leaves" data-group-id="leaves" display="none">
+          <path d="M0 0H10V10Z"/>
+        </g>
+        <g class="crop-part crop-part--root" data-group-id="root">
+          <path d="M20 20H30V30Z"/>
+        </g>
+      </svg>
+    `);
+
+    expect(result.layers[0].hidden).toBe(true);
+    expect(result.layers[1].hidden).toBe(false);
+  });
 });

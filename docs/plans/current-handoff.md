@@ -2,6 +2,20 @@
 
 ## Latest Completed Work
 
+- **Added PSD Refresh Button (Task 135):**
+  - **Reload Action Button:** Integrated a refresh icon button (`#psd-refresh-file-btn`) next to the "Chọn file khác" button in the `.psd-file-actions` container in `crop-editor.html`, styled elegantly using SCSS without inline styles.
+  - **State-Preserving File Reloading:** Programmed the click event listener in `src/editor.ts` to re-parse and reload the currently active PSD file using a persistent `currentPsdFile` reference. When the user modifies their PSD file in Photoshop and saves it on disk, clicking the refresh button instantly reads the updated file, refreshes the layer checklist, and updates all thumbnails without requiring them to re-open the file browser dialog.
+  - **Dynamic Toggle:** Synchronized the refresh button's visibility inside `renderPsdWorkspaceState()`, hiding it when the workspace is empty and showing it as soon as a PSD file is loaded.
+  - **Verification:** Verified all 14/14 unit tests pass, typechecking has zero errors, and the production Vite bundle compiles successfully in 456ms.
+- **Corrected PSD Layer Stacking and Rendering Order (Task 134):**
+  - **Checklist Order Inversion:** Updated the PSD layers checklist rendering in `src/editor.ts` to iterate in reverse order (from `length - 1` down to `0`). This ensures the layers list in the editor dialog visually matches Photoshop's layers panel (topmost layer like `seed` on top, bottommost layer like `plot` on bottom).
+  - **SVG Stacking Order Sync:** Adjusted the batch import sorting logic in `handleBatchPsdTrace` to sort selected layers in **ascending** index order (from bottommost `0` to topmost `length - 1`). This ensures layers are processed and appended bottom-to-top, matching the SVG DOM rendering order (where elements written first render at the bottom, and elements written last render on top). This completely resolves the layer hiding/clipping issue (e.g. plot rendering on top of and hiding the seed).
+  - **Robust Verification:** Verified that all 14 unit tests pass, typechecking is clean, and the production Vite bundle compiles successfully in 384ms.
+- **Implemented PSD Layer Visibility Syncing (Task 133):**
+  - **Direct Visibility Mapping:** Linked the PSD layer's `hidden` attribute directly to the imported layer's `hidden` property in `layerTraceLayers` inside `src/editor.ts`. If a layer is hidden in Photoshop, it is imported as a hidden layer in the editor's workspace by default (showing the crossed-out eye icon in the layers list).
+  - **Preserved Hidden States in SVG:** Upgraded `composeLayeredSvg` in `src/layer-trace/layerComposer.ts` to append the standard SVG `display="none"` attribute on group tags `<g>` for hidden layers, ensuring their hidden state is saved to the final SVG markup.
+  - **Decoded Hidden States on Load:** Updated `parseLayeredSvg` in `src/layer-trace/layerParser.ts` to read the `display` attribute from SVG groups, restoring the correct layer visibility state (active/hidden) when loading/opening a saved stage in the editor.
+  - **Unit Test Coverage:** Added unit test assertions in `layerComposer.test.ts` and a new test case in `layerParser.test.ts` to verify correct hidden attribute encoding and decoding (all 14/14 tests pass).
 - **Implemented PSD Downscale Ratio Selector (Task 132):**
   - **Resolution Selector Dropdown:** Integrated a dropdown selector (`512x512`, `256x256`, `1024x1024`, `1254x1254`) right above the "Nhập & Vector hóa" button in `crop-editor.html`, styled elegantly to match the premium dark/glassmorphic look using SCSS in `editor.scss`.
   - **On-the-fly Canvas Scaling:** Upgraded `createFullSizeLayerPng` in `src/layer-trace/psdParser.ts` to scale canvas dimensions and layer coordinate offsets proportionally when target dimensions are provided. This ensures layers stay perfectly aligned while reducing high-res pixel density before vectorization.
@@ -28,11 +42,11 @@
 
 ## Verification
 
-- **For Task 132 (PSD Downscale Ratio Selector):**
-  - Unit tests updated and verified: `npx vitest run src/layer-trace/psdParser.test.ts` (3/3 tests passed).
-  - All unit tests verified: `npx vitest run src/layer-trace/` (13/13 tests passed).
+- **For Task 135 (PSD Refresh Button), Task 133 (PSD Layer Visibility Syncing), & Task 132 (PSD Downscale Ratio Selector):**
+  - Unit tests updated and verified: `npx vitest run src/layer-trace/layerComposer.test.ts` and `layerParser.test.ts` (14/14 tests passed).
+  - All unit tests verified: `npx vitest run src/layer-trace/` (14/14 tests passed).
   - Typecheck passed: `npx tsc --noEmit`.
-  - Build check passed: `npm run build` (bundled in 381ms).
+  - Build check passed: `npm run build` (bundled in 456ms).
 - **For Task 131 (Add Browser Debug Config):**
   - Dev script check passed: `powershell -ExecutionPolicy Bypass -File .\run_dev.ps1 -Check`.
 - **Lasso/Brush Regression Smoke Check:** Confirmed that the Lasso/Brush mask canvas, floating toolbar, and drawing keyboard shortcuts continue to function perfectly when "Ảnh PNG" mode is active, with all events safely blocked in PSD mode.

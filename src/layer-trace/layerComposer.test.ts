@@ -69,6 +69,7 @@ describe("composeLayeredSvg", () => {
     });
 
     expect(result).toContain('data-group-id="hidden-layer"');
+    expect(result).toContain('display="none"');
     expect(result).toContain('fill="#4c6522"');
   });
 });

@@ -105,6 +105,7 @@ let loadedPsdLayers: FlatPsdLayer[] = [];
 let psdWidth = 0;
 let psdHeight = 0;
 let psdFileName = "";
+let currentPsdFile: File | null = null;
 let projectPath = "";
 
 const layerTraceZoomMin = 1;
@@ -134,7 +135,7 @@ async function initEditor() {
 
     cropsList = await cropsResponse.json() as Crop[];
     populateCropDropdown();
-    
+
     // Automatically select the first crop by default
     if (cropsList.length > 0) {
       const firstCrop = cropsList[0].name.toLowerCase();
@@ -191,7 +192,7 @@ function setupUIEventListeners() {
   layerCanvas?.addEventListener("pointermove", handleLayerPointerMove);
   layerCanvas?.addEventListener("pointerup", handleLayerPointerUp);
   layerCanvas?.addEventListener("pointerleave", handleLayerPointerLeave);
-  
+
   const toolLassoBtn = document.getElementById("tool-lasso-btn") as HTMLButtonElement | null;
   const toolBrushBtn = document.getElementById("tool-brush-btn") as HTMLButtonElement | null;
   const toolEraserBtn = document.getElementById("tool-eraser-btn") as HTMLButtonElement | null;
@@ -233,7 +234,7 @@ function setupUIEventListeners() {
       appWrapper.classList.toggle("focus-mode", isFocusMode);
     }
     toolFocusBtn?.classList.toggle("active", isFocusMode);
-    
+
     if (toolFocusBtn) {
       if (isFocusMode) {
         toolFocusBtn.title = "Thu nhỏ khung vẽ (F)";
@@ -351,13 +352,13 @@ async function handleCropSelection(cropName: string) {
     const crop = cropsList.find((item) => item.name.toLowerCase() === activeCrop);
     if (crop && crop.folders) {
       renderFolderOptions(crop.folders);
-      
+
       // Mặc định chọn thư mục gốc "[Gốc]" nếu có, nếu không thì chọn thư mục đầu tiên
       let defaultFolder = crop.folders.find(f => f.name === "[Gốc]");
       if (!defaultFolder && crop.folders.length > 0) {
         defaultFolder = crop.folders[0];
       }
-      
+
       if (defaultFolder) {
         const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
         if (folderSelect) {
@@ -506,7 +507,7 @@ async function loadLayerTraceImage(pngPath: string) {
 
   canvas.width = layerTraceImage.naturalWidth;
   canvas.height = layerTraceImage.naturalHeight;
-  
+
   // Initialize brush mask canvas at native resolution
   brushMaskCanvas = document.createElement("canvas");
   brushMaskCanvas.width = layerTraceImage.naturalWidth;
@@ -546,7 +547,7 @@ function handleLayerPointerDown(event: PointerEvent) {
   if (!layerTraceImage) return;
   const canvas = event.currentTarget as HTMLCanvasElement;
   canvas.setPointerCapture(event.pointerId);
-  
+
   const pt = readCanvasPoint(canvas, event);
   lastMousePosition = pt;
 
@@ -562,7 +563,7 @@ function handleLayerPointerDown(event: PointerEvent) {
       drawStrokeOnMask(brushMaskCtx, pt, pt, brushSize, activeTool);
     }
   }
-  
+
   isDrawingLayerMask = true;
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
@@ -686,7 +687,7 @@ function drawLayerMaskCanvas() {
   if (brushMaskCanvas && tintCanvas && tintCtx) {
     context.save();
     context.globalAlpha = 0.35;
-    
+
     // Refresh the green tinted mask on our persistent cache canvas
     tintCtx.save();
     tintCtx.globalCompositeOperation = "source-over"; // Reset to default first!
@@ -696,7 +697,7 @@ function drawLayerMaskCanvas() {
     tintCtx.fillStyle = "#428b4d"; // Premium Forest Green tint
     tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
     tintCtx.restore();
-    
+
     // Draw onto the main viewport canvas
     context.drawImage(tintCanvas, 0, 0);
     context.restore();
@@ -734,7 +735,7 @@ function drawLayerMaskCanvas() {
     context.strokeStyle = "rgba(255, 255, 255, 0.85)";
     context.lineWidth = 1.5;
     context.stroke();
-    
+
     // Outer dashed black circle for high contrast against any background color
     context.beginPath();
     context.arc(lastMousePosition.x, lastMousePosition.y, brushSize, 0, Math.PI * 2);
@@ -754,7 +755,7 @@ function setTool(tool: "lasso" | "brush" | "eraser") {
   const brushSizeContainer = document.getElementById("brush-size-container");
 
   [toolLassoBtn, toolBrushBtn, toolEraserBtn].forEach((btn) => btn?.classList.remove("active"));
-  
+
   if (tool === "lasso") {
     toolLassoBtn?.classList.add("active");
     if (brushSizeContainer) brushSizeContainer.style.display = "none";
@@ -788,7 +789,7 @@ async function handleTraceLayer() {
   const hasLasso = activeTool === "lasso" && layerLassoPoints.length >= 3;
   const hasBrush = activeTool !== "lasso";
   if (!layerTraceImage || (!hasLasso && !hasBrush)) return;
-  
+
   const imageDataUrl = createMaskedLayerDataUrl();
   if (!imageDataUrl) return;
 
@@ -1067,13 +1068,13 @@ function renderLayerList() {
       } else {
         mergeSelectedIndices.add(index);
       }
-      
+
       const mergeBtn = document.getElementById("merge-layers-btn") as HTMLButtonElement | null;
       if (mergeBtn) {
         mergeBtn.textContent = `Confirm Merge (${mergeSelectedIndices.size})`;
         mergeBtn.disabled = mergeSelectedIndices.size < 2;
       }
-      
+
       renderLayerTraceState();
     });
   });
@@ -1173,9 +1174,9 @@ function updateLayerTraceButtons() {
     if (traceBtn) traceBtn.disabled = true;
     if (saveBtn) saveBtn.disabled = true;
     if (clearBtn) clearBtn.disabled = true;
-    
+
     if (cancelBtn) cancelBtn.hidden = false;
-    
+
     if (mergeBtn) {
       mergeBtn.disabled = mergeSelectedIndices.size < 2;
       mergeBtn.textContent = `Confirm Merge (${mergeSelectedIndices.size})`;
@@ -1183,13 +1184,13 @@ function updateLayerTraceButtons() {
     }
   } else {
     if (cancelBtn) cancelBtn.hidden = true;
-    
+
     if (mergeBtn) {
       mergeBtn.disabled = layerTraceLayers.length < 2;
       mergeBtn.textContent = "Merge Layers";
       mergeBtn.className = "btn btn-secondary";
     }
-    
+
     if (traceBtn) {
       const hasLasso = activeTool === "lasso" && layerLassoPoints.length >= 3;
       const hasBrush = activeTool !== "lasso";
@@ -1215,6 +1216,7 @@ function resetLayerWorkflow() {
   psdWidth = 0;
   psdHeight = 0;
   psdFileName = "";
+  currentPsdFile = null;
   const psdFileInput = document.getElementById("psd-file-input") as HTMLInputElement | null;
   if (psdFileInput) psdFileInput.value = "";
   renderPsdWorkspaceState();
@@ -1481,7 +1483,7 @@ function performMerge() {
     const prefix = sanitizeToken(layer.groupId);
     return prefixInternalIds(rawBody, prefix);
   }).join("\n");
-  
+
   const mergedSvgText = `<svg xmlns="http://www.w3.org/2000/svg">${combinedBody}</svg>`;
 
   layerTraceLayers[targetIndex] = {
@@ -1504,7 +1506,7 @@ function performMerge() {
 
 function setInputMode(mode: "png" | "psd") {
   activeInputMode = mode;
-  
+
   const pngBtn = document.getElementById("mode-png-btn");
   const psdBtn = document.getElementById("mode-psd-btn");
   const pngSelect = document.getElementById("png-select");
@@ -1635,6 +1637,15 @@ function setupPsdEventListeners() {
     void handleBatchPsdTrace();
   });
 
+  const refreshFileBtn = document.getElementById("psd-refresh-file-btn");
+  refreshFileBtn?.addEventListener("click", () => {
+    if (currentPsdFile) {
+      void handlePsdFileSelect(currentPsdFile);
+    } else {
+      showStatus("error", "Khong co file nao dang duoc nap de tai lai.");
+    }
+  });
+
   const changeFileBtn = document.getElementById("psd-change-file-btn");
   changeFileBtn?.addEventListener("click", () => {
     // Also auto-copy the path when selecting a different file
@@ -1669,11 +1680,12 @@ async function handlePsdFileSelect(file: File) {
 
   showStatus("loading", "Dang phan tich file PSD...");
   psdFileName = file.name;
+  currentPsdFile = file;
 
   try {
     const buffer = await file.arrayBuffer();
     const result = parsePsdFile(buffer);
-    
+
     loadedPsdLayers = result.layers;
     psdWidth = result.width;
     psdHeight = result.height;
@@ -1698,27 +1710,32 @@ function renderPsdWorkspaceState() {
   const layersList = document.getElementById("psd-layers-list");
   const filename = document.getElementById("psd-filename");
   const dimensions = document.getElementById("psd-dimensions");
+  const refreshFileBtn = document.getElementById("psd-refresh-file-btn");
 
   if (!panel || !dropzoneWrapper || !layersList) return;
 
   if (loadedPsdLayers.length === 0) {
     dropzoneWrapper.style.display = "flex";
     panel.style.display = "none";
+    if (refreshFileBtn) refreshFileBtn.style.display = "none";
     return;
   }
 
   dropzoneWrapper.style.display = "none";
   panel.style.display = "flex";
+  if (refreshFileBtn) refreshFileBtn.style.display = "inline-flex";
 
   if (filename) filename.textContent = psdFileName;
   if (dimensions) dimensions.textContent = `${psdWidth} x ${psdHeight}px`;
 
   layersList.innerHTML = "";
-  
-  loadedPsdLayers.forEach((layer, index) => {
+
+  // Render in reverse order (top-to-bottom) to match Photoshop's layers panel layout
+  for (let i = loadedPsdLayers.length - 1; i >= 0; i--) {
+    const layer = loadedPsdLayers[i];
     const item = document.createElement("div");
     item.className = `psd-layer-item ${layer.hidden ? "is-hidden-layer" : ""}`;
-    item.dataset.index = String(index);
+    item.dataset.index = String(i);
 
     let thumbnailHtml = `<div class="layer-thumbnail-placeholder"></div>`;
     if (layer.canvas) {
@@ -1730,7 +1747,7 @@ function renderPsdWorkspaceState() {
 
     item.innerHTML = `
       <label class="psd-layer-label-wrapper">
-        <input type="checkbox" class="psd-layer-checkbox" data-index="${index}" ${checkedAttr} />
+        <input type="checkbox" class="psd-layer-checkbox" data-index="${i}" ${checkedAttr} />
         ${thumbnailHtml}
         <div class="psd-layer-info-group">
           <span class="psd-layer-name" title="${layer.name}">${layer.name}</span>
@@ -1738,16 +1755,16 @@ function renderPsdWorkspaceState() {
         </div>
       </label>
       <div class="psd-layer-input-group">
-        <input type="text" class="form-control psd-layer-rename-input" data-index="${index}" value="${layer.name}" placeholder="Nhan layer" />
+        <input type="text" class="form-control psd-layer-rename-input" data-index="${i}" value="${layer.name}" placeholder="Nhan layer" />
       </div>
-      <div class="psd-layer-status" id="psd-layer-status-${index}">
+      <div class="psd-layer-status" id="psd-layer-status-${i}">
         <span class="status-dot status-pending"></span>
         <span class="status-label">Cho</span>
       </div>
     `;
 
     layersList.appendChild(item);
-  });
+  }
 
   const checkboxes = layersList.querySelectorAll(".psd-layer-checkbox");
   checkboxes.forEach((cb) => {
@@ -1796,7 +1813,7 @@ function getPsdTargetDimensions(): { width: number; height: number } {
     return { width: 1254, height: 1254 };
   }
   const ratioSelect = document.getElementById("psd-ratio-select") as HTMLSelectElement | null;
-  const ratioVal = ratioSelect?.value || "512";
+  const ratioVal = ratioSelect?.value || "1024";
   if (ratioVal === "original") {
     return { width: psdWidth, height: psdHeight };
   }
@@ -1840,14 +1857,15 @@ async function handleBatchPsdTrace() {
   const preset = presetSelect?.value || "custom";
   const params = getSliderParams();
 
+  // Sort in ascending index order (bottom-to-top) so they stack correctly in SVG DOM order (first written = bottommost)
   const sortedCheckboxes = [...checkboxes].sort((a, b) => {
-    return Number(b.dataset.index) - Number(a.dataset.index);
+    return Number(a.dataset.index) - Number(b.dataset.index);
   });
 
   for (const cb of sortedCheckboxes) {
     const idx = Number(cb.dataset.index);
     const layer = loadedPsdLayers[idx];
-    
+
     const renameInput = document.querySelector(`.psd-layer-rename-input[data-index="${idx}"]`) as HTMLInputElement | null;
     const label = sanitizeLayerLabel(renameInput?.value || layer.name);
     const groupId = createLayerGroupId(label);
@@ -1899,7 +1917,8 @@ async function handleBatchPsdTrace() {
       layerTraceLayers.push({
         groupId: finalGroupId,
         label: finalLabel,
-        svgText: result.optimizedSvg
+        svgText: result.optimizedSvg,
+        hidden: layer.hidden
       });
 
       if (statusEl) {
@@ -1919,9 +1938,9 @@ async function handleBatchPsdTrace() {
 
   renderLayerTraceState();
   showStatus("success", `Da nhap thanh cong ${completed} layers tu PSD vao stage.`);
-  
+
   setPsdUiDisabled(false);
-  
+
   setTimeout(() => {
     if (progressContainer) progressContainer.style.display = "none";
     if (progressBar) progressBar.style.width = "0%";
@@ -1943,7 +1962,7 @@ function setPsdUiDisabled(disabled: boolean) {
   if (selectNoneBtn) selectNoneBtn.disabled = disabled;
   checkboxes.forEach((cb) => cb.disabled = disabled);
   renameInputs.forEach((inp) => inp.disabled = disabled);
-  
+
   if (dropzone) {
     if (disabled) {
       dropzone.style.pointerEvents = "none";

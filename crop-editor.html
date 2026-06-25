@@ -51,8 +51,10 @@
       <section class="editor-workspace">
         <div class="workspace-card config-panel">
           <div class="input-mode-switcher" role="tablist" aria-label="Input mode">
-            <button id="mode-png-btn" class="mode-btn active" type="button" role="tab" aria-selected="true">Ảnh PNG (Lasso/Brush)</button>
-            <button id="mode-psd-btn" class="mode-btn" type="button" role="tab" aria-selected="false">Photoshop PSD</button>
+            <button id="mode-png-btn" class="mode-btn active" type="button" role="tab" aria-selected="true">Ảnh PNG
+              (Lasso/Brush)</button>
+            <button id="mode-psd-btn" class="mode-btn" type="button" role="tab" aria-selected="false">Photoshop
+              PSD</button>
           </div>
 
           <div class="config-section png-selection">
@@ -153,42 +155,63 @@
               <div class="layer-editor-toolbar" id="layer-editor-toolbar" aria-label="Editor toolbar">
                 <!-- Zoom Group -->
                 <div class="toolbar-group zoom-group">
-                  <button id="layer-zoom-out-btn" class="btn btn-secondary btn-icon" type="button" title="Thu nhỏ ảnh gốc" disabled>-</button>
-                  <button id="layer-zoom-reset-btn" class="btn btn-secondary layer-zoom-reset" type="button" title="Về zoom 100%" disabled>
+                  <button id="layer-zoom-out-btn" class="btn btn-secondary btn-icon" type="button"
+                    title="Thu nhỏ ảnh gốc" disabled>-</button>
+                  <button id="layer-zoom-reset-btn" class="btn btn-secondary layer-zoom-reset" type="button"
+                    title="Về zoom 100%" disabled>
                     <span id="layer-zoom-value">100%</span>
                   </button>
-                  <button id="layer-zoom-in-btn" class="btn btn-secondary btn-icon" type="button" title="Phóng to ảnh gốc" disabled>+</button>
+                  <button id="layer-zoom-in-btn" class="btn btn-secondary btn-icon" type="button"
+                    title="Phóng to ảnh gốc" disabled>+</button>
                 </div>
-                
+
                 <div class="toolbar-separator"></div>
-                
+
                 <!-- Tools Group -->
                 <div class="toolbar-group tools-group">
                   <button id="tool-lasso-btn" class="btn btn-icon active" type="button" title="Lasso Tool (L)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10V4a2 2 0 0 0-2-2h-8Z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2a10 10 0 1 0 10 10V4a2 2 0 0 0-2-2h-8Z" />
+                      <path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    </svg>
                   </button>
                   <button id="tool-brush-btn" class="btn btn-icon" type="button" title="Selection Brush Tool (B)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                    </svg>
                   </button>
                   <button id="tool-eraser-btn" class="btn btn-icon" type="button" title="Eraser Tool (E)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-.4-.4-.4-1 0-1.4l9.6-9.6c.4-.4 1-.4 1.4 0l4.3 4.3c.4.4.4 1 0 1.4L8.4 21c-.4.4-1 .4-1.4 0Z"/><path d="M22 21H12"/><path d="m14 11 4 4"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="m7 21-4.3-4.3c-.4-.4-.4-1 0-1.4l9.6-9.6c.4-.4 1-.4 1.4 0l4.3 4.3c.4.4.4 1 0 1.4L8.4 21c-.4.4-1 .4-1.4 0Z" />
+                      <path d="M22 21H12" />
+                      <path d="m14 11 4 4" />
+                    </svg>
                   </button>
                 </div>
-                
+
                 <!-- Brush Size Slider Group (Hidden by default) -->
                 <div class="toolbar-group brush-size-group" id="brush-size-container" style="display: none;">
                   <div class="toolbar-separator"></div>
                   <span class="toolbar-label">Size:</span>
-                  <input type="range" id="brush-size-input" min="5" max="50" step="1" value="15" class="toolbar-slider" />
+                  <input type="range" id="brush-size-input" min="5" max="50" step="1" value="15"
+                    class="toolbar-slider" />
                   <span id="brush-size-value" class="toolbar-value">15px</span>
                 </div>
-                
+
                 <div class="toolbar-separator"></div>
-                
+
                 <!-- Layout Group -->
                 <div class="toolbar-group layout-group">
                   <button id="tool-focus-btn" class="btn btn-icon" type="button" title="Mở rộng khung vẽ (F)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -202,13 +225,18 @@
             <div id="psd-workspace" class="psd-workspace" style="display: none;">
               <div id="psd-dropzone-wrapper" class="psd-dropzone-wrapper">
                 <div id="psd-dropzone" class="psd-dropzone">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropzone-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="dropzone-icon">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
                   <p class="dropzone-text">Kéo thả file Photoshop (.psd) vào đây</p>
                   <span class="dropzone-subtext">hoặc click để chọn từ thiết bị</span>
                   <input type="file" id="psd-file-input" accept=".psd" style="display: none;" />
                 </div>
               </div>
-              
+
               <div id="psd-layers-panel" class="psd-layers-panel" style="display: none;">
                 <div class="psd-file-info">
                   <div class="info-item">
@@ -219,9 +247,14 @@
                     <span class="info-label">Kích thước:</span>
                     <span id="psd-dimensions" class="info-value">512 x 512px</span>
                   </div>
-                  <button id="psd-change-file-btn" class="btn btn-secondary btn-xs" type="button" style="margin-left: auto; padding: 3px 8px; font-size: 11px;">Chọn file khác</button>
+                  <div class="psd-file-actions">
+                    <button id="psd-refresh-file-btn" class="btn btn-secondary btn-xs btn-icon" type="button" title="Tải lại file hiện tại">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                    <button id="psd-change-file-btn" class="btn btn-secondary btn-xs" type="button">Chọn file khác</button>
+                  </div>
                 </div>
-                
+
                 <div class="psd-layers-header">
                   <h4>Chọn layer nhập (Chọn lớp)</h4>
                   <div class="psd-layers-actions">
@@ -229,26 +262,27 @@
                     <button id="psd-select-none-btn" class="btn btn-secondary btn-xs" type="button">Bỏ chọn</button>
                   </div>
                 </div>
-                
+
                 <div class="psd-layers-list-wrapper">
                   <div id="psd-layers-list" class="psd-layers-list">
                     <!-- Dynamic layer items with thumbnails and checkboxes -->
                   </div>
                 </div>
-                
+
                 <div class="psd-import-actions">
                   <div class="psd-ratio-selector-group">
                     <label for="psd-ratio-select" class="psd-ratio-label">Độ phân giải SVG:</label>
                     <select id="psd-ratio-select" class="form-control psd-ratio-select">
-                      <option value="512" selected>512 x 512 (Khuyên dùng - Mượt & Nét)</option>
+                      <option value="512">512 x 512 (Khuyên dùng - Mượt & Nét)</option>
                       <option value="256">256 x 256 (Tối ưu nhất - Siêu nhẹ)</option>
-                      <option value="1024">1024 x 1024 (Chất lượng cao)</option>
+                      <option value="1024" selected>1024 x 1024 (Chất lượng cao)</option>
                       <option value="original">1254 x 1254 (Giữ nguyên gốc)</option>
                     </select>
                   </div>
-                  
-                  <button id="psd-import-btn" class="btn btn-primary w-full" type="button" disabled>Nhập & Vector hóa</button>
-                  
+
+                  <button id="psd-import-btn" class="btn btn-primary w-full" type="button" disabled>Nhập & Vector
+                    hóa</button>
+
                   <div id="psd-progress-container" class="psd-progress-container" style="display: none;">
                     <div class="progress-bar-bg">
                       <div id="psd-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>

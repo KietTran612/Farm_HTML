@@ -21,8 +21,9 @@ export function composeLayeredSvg(options: ComposeSvgOptions): string {
     defs.push(...extractDefs(body));
     const drawableBody = stripDefs(body).trim();
     const label = sanitizeToken(layer.label);
+    const hiddenAttr = layer.hidden ? ' display="none"' : '';
 
-    return `  <g class="crop-part crop-part--${label}" data-group-id="${escapeAttribute(layer.groupId)}" data-layer-index="${index}">\n${indent(drawableBody, 4)}\n  </g>`;
+    return `  <g class="crop-part crop-part--${label}" data-group-id="${escapeAttribute(layer.groupId)}" data-layer-index="${index}"${hiddenAttr}>\n${indent(drawableBody, 4)}\n  </g>`;
   });
 
   const defsBlock = defs.length > 0
