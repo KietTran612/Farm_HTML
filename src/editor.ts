@@ -1638,11 +1638,52 @@ function setupPsdEventListeners() {
   });
 
   const refreshFileBtn = document.getElementById("psd-refresh-file-btn");
-  refreshFileBtn?.addEventListener("click", () => {
-    if (currentPsdFile) {
-      void handlePsdFileSelect(currentPsdFile);
-    } else {
-      showStatus("error", "Khong co file nao dang duoc nap de tai lai.");
+  refreshFileBtn?.addEventListener("click", async () => {
+    const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
+    const selectedCropName = cropSelect?.options[cropSelect.selectedIndex]?.text || "";
+    const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+    const selectedFolder = folderSelect?.value || "";
+
+    if (!selectedCropName || !psdFileName) {
+      showStatus("error", "Khong the xac dinh file PSD dang mo.");
+      return;
+    }
+
+    const baseDir = projectPath || "d:\\soflware\\Unity\\Source\\Farm_HTML";
+    let absolutePath = `${baseDir}\\docs\\Crops\\${selectedCropName}`;
+    if (selectedFolder && selectedFolder !== "[Gốc]") {
+      absolutePath += `\\${selectedFolder}`;
+    }
+    absolutePath += `\\${psdFileName}`;
+
+    showStatus("loading", "Dang doc lai file PSD tu o dia...");
+
+    try {
+      const response = await fetch(`/api/editor/read-local-psd?path=${encodeURIComponent(absolutePath)}`);
+      if (!response.ok) {
+        // Fallback to browser File object if backend read fails
+        if (currentPsdFile) {
+          showStatus("info", "Khong the doc tu o dia. Dang dung tep cache tu trinh duyet...");
+          void handlePsdFileSelect(currentPsdFile);
+          return;
+        }
+        const errJson = await response.json();
+        throw new Error(errJson.error || "Khong the doc file tu o dia.");
+      }
+
+      const buffer = await response.arrayBuffer();
+      showStatus("loading", "Dang phan tich du lieu PSD moi...");
+      const result = parsePsdFile(buffer);
+      
+      loadedPsdLayers = result.layers;
+      psdWidth = result.width;
+      psdHeight = result.height;
+      layerTraceSize = getPsdTargetDimensions();
+
+      renderPsdWorkspaceState();
+      showStatus("success", `Da nap lai file PSD tu o dia thanh cong (${psdWidth}x${psdHeight}px, ${loadedPsdLayers.length} layers).`);
+    } catch (error: any) {
+      showStatus("error", `Loi khi tai lai file PSD: ${error.message}`);
     }
   });
 

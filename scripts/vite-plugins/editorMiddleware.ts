@@ -696,11 +696,30 @@ export function cropEditorPlugin(): Plugin {
             return;
           }
 
-          if (pathname === "/api/editor/project-path" && req.method === "GET") {
-            res.statusCode = 200;
-            res.end(JSON.stringify({ projectPath: process.cwd() }));
-            return;
-          }
+           if (pathname === "/api/editor/project-path" && req.method === "GET") {
+             res.statusCode = 200;
+             res.end(JSON.stringify({ projectPath: process.cwd() }));
+             return;
+           }
+
+           if (pathname === "/api/editor/read-local-psd" && req.method === "GET") {
+             const filePath = url.searchParams.get("path") || "";
+             if (!filePath || !filePath.toLowerCase().endsWith(".psd")) {
+               res.statusCode = 400;
+               res.end(JSON.stringify({ error: "Invalid file path. Must be a PSD file." }));
+               return;
+             }
+             if (!existsSync(filePath)) {
+               res.statusCode = 404;
+               res.end(JSON.stringify({ error: `File not found: ${filePath}` }));
+               return;
+             }
+             const buffer = readFileSync(filePath);
+             res.setHeader("Content-Type", "application/octet-stream");
+             res.statusCode = 200;
+             res.end(buffer);
+             return;
+           }
 
           res.statusCode = 404;
           res.end(JSON.stringify({ error: "Endpoint not found" }));
