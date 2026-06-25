@@ -689,7 +689,7 @@ h1, h2, h3, h4, h5 {
 
   &.is-drag-over {
     border-color: $forest-light;
-    background: lighten($forest-pastel, 2%);
+    background: color.adjust($forest-pastel, $lightness: 2%);
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(66, 139, 77, 0.12);
   }

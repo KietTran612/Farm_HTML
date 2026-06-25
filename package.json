@@ -18,6 +18,7 @@
     "crop:vtracer:clear": "node scripts/vtracer/cleanup.mjs"
   },
   "devDependencies": {
+    "@types/node": "^26.0.1",
     "@vitest/ui": "^3.2.4",
     "jsdom": "^26.1.0",
     "sass": "^1.89.2",

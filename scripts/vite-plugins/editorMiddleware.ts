@@ -1,5 +1,6 @@
 import type { Plugin } from "vite";
 import { existsSync, readdirSync, writeFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { Buffer } from "node:buffer";
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { optimize } from "svgo";
@@ -414,7 +415,7 @@ export function handleTraceLayerRequest(payload: TraceLayerPayload): any {
   }
 
   const inputPath = join(tmpDir, `masked_layer_${Date.now()}_${Math.random().toString(36).slice(2)}.png`);
-  writeFileSync(inputPath, Buffer.from(match[1], "base64"));
+  writeFileSync(inputPath, Buffer.from(match[1], "base64" as BufferEncoding));
 
   try {
     if (payload.preset === "hybridDetailedCandidate") {

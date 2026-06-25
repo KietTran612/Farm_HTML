@@ -2,6 +2,8 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 117 (Fix Sass Color Function Warning):** Replaced the remaining deprecated `lighten($forest-pastel, 2%)` call in `src/styles/editor.scss` with `color.adjust($forest-pastel, $lightness: 2%)`.
+- **Implemented Task 116 (Fix Editor Warnings and TypeScript Config for Scripts):** Fixed the persistent IDE red-line warnings under Node.js imports and Vitest globals in the `scripts` directory. Installed `@types/node` as a devDependency to provide Node.js typings. Updated `tsconfig.json` to include `"vite.config.ts"` and `"scripts/vite-plugins/**/*"` within the `"include"` array, and added `"node"` to `"types"` to expose Node.js globals. Resolved a type overload mismatch with `Buffer.from` in `editorMiddleware.ts` by explicitly importing `Buffer` from `"node:buffer"` and casting the `"base64"` encoding parameter as `BufferEncoding`.
 - **Implemented Task 115 (Add Folder Selection in Crop Editor):** Added a Folder selection dropdown side-by-side with the PNG selection dropdown in `crop-editor.html`. Expanded the left column width in `src/styles/editor.scss` (from `minmax(220px, 280px)` to `minmax(320px, 420px)`) to provide more space for the side-by-side dropdown layout. Resolved Sass deprecation warnings across `editor.scss` by importing `sass:color` and replacing all legacy `darken()` calls with `color.adjust()`. Updated the Vite middleware (`editorMiddleware.ts`) to recursively scan crop folders and group PNG assets under their relative paths (defaulting to `[Gốc]` for the root directory). Implemented dynamic loading and event handling in `src/editor.ts` and updated corresponding unit tests.
 - **Implemented Task 114 (Load Existing Stage SVG on Stage Select):** Updated the stage dropdown selector (`#layer-stage-select`) change event handler in `src/editor.ts` to call `handleSavedStageSelection(layerStageSelect.value)` instead of only calling `renderLayerCompositePreview`. This loads the existing SVG and its layers for the selected stage, matching the behavior of clicking the stage item in the sidebar.
 - **Implemented Task 112 (Adjust Animation Editor Columns and Fix Encoding):** Repositioned the columns in `crop-animation-editor.html` and adjusted the CSS grid layout in `src/styles/animation-editor.scss` to place the Layer Properties panel next to the Layer Browser (State/Layers list) and shifted the SVG Preview workspace to the end (right side). Replaced all corrupted/mangled characters in the UI templates of `src/animation-editor.ts` with encoding-safe unicode escapes (`\u25BC`, `\u00B7`, `\u23F9`, `\u25B6`, `\u{1F441}`). Also cleaned up a duplicated variable and style block in `animation-editor.scss` that caused a Sass compilation error.
@@ -25,6 +27,12 @@
 
 ## Verification
 
+- **For Task 117 (Fix Sass Color Function Warning):**
+  - Build check passed: `npm run build` completed successfully without the deprecated `lighten()` Sass warning.
+- **For Task 116 (Fix Editor Warnings and TypeScript Config for Scripts):**
+  - Typecheck passed: `npx tsc --noEmit` completed successfully with zero errors.
+  - Unit tests passed: `npx vitest run scripts/vite-plugins/editorMiddleware.test.ts` passed with 9/9 tests.
+  - Build check passed: `npm run build` completed successfully.
 - **For Task 114 (Load Existing Stage SVG on Stage Select):**
   - Unit tests passed: `npx vitest run src/layer-trace/` (composer, parser, and viewport tests passed).
   - Build check passed: `npm run build`.
@@ -87,7 +95,7 @@
 
 ## Current Uncommitted Scope
 
-- None (working tree is clean).
+- **Sass warning fix:** `src/styles/editor.scss`, `docs/plans/task.md`, and `docs/plans/current-handoff.md`.
 
 ## Recommended Next Task
 

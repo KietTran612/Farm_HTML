@@ -18,5 +18,6 @@
 | **Task 113: Implement Merge Layers in Crop Editor** | [x] | Added Merge Mode to crop-editor with selection highlight, gradient ID collision handling, and canvas protection. |
 | **Task 114: Load Existing Stage SVG on Stage Select** | [x] | Updated Crop Editor stage select event listener to load existing stage SVG data instead of just rendering preview. |
 | **Task 115: Add Folder Selection in Crop Editor** | [x] | Added dynamic folder select next to PNG select in Crop Editor, supporting recursive folder scanning and default root selection. |
-
+| **Task 116: Fix Editor Warnings and TypeScript Config for Scripts** | [x] | Configured TypeScript and Node types for the scripts directory and resolved the Buffer type-checking conflict. |
+| **Task 117: Fix Sass Color Function Warning** | [x] | Replaced the remaining deprecated `lighten()` call in editor SCSS with `color.adjust()`. |
 
