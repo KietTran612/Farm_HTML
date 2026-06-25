@@ -20,4 +20,19 @@
 | **Task 115: Add Folder Selection in Crop Editor** | [x] | Added dynamic folder select next to PNG select in Crop Editor, supporting recursive folder scanning and default root selection. |
 | **Task 116: Fix Editor Warnings and TypeScript Config for Scripts** | [x] | Configured TypeScript and Node types for the scripts directory and resolved the Buffer type-checking conflict. |
 | **Task 117: Fix Sass Color Function Warning** | [x] | Replaced the remaining deprecated `lighten()` call in editor SCSS with `color.adjust()`. |
+| **Task 118: Implement Brush Mask Helper and Unit Tests (TDD)** | [x] | Created brushMask helper file, wrote and verified unit tests, and resolved TS compilation errors. |
+| **Task 119: Update HTML UI Layout with Floating Toolbar** | [x] | Replaced old zoom controls with the new integrated floating toolbar in HTML. |
+| **Task 120: Implement Floating Toolbar Styling (SCSS)** | [x] | Added SCSS styles for the new floating toolbar and brush size slider. |
+| **Task 121: Implement Brush and Eraser Drawing Logic (TypeScript)** | [x] | Connected toolbar buttons, handled brush size input, and implemented high-performance drawing strokes on offscreen canvas. |
+| **Task 122: Implement Focus Mode and Keyboard Shortcuts** | [x] | Implemented expanded focus mode layout, viewport recalculations via requestAnimationFrame, and keyboard shortcuts. |
+| **Task 123: Move Crop Selector to Main Workspace Row** | [x] | Moved the crop selector from the header to the main selector row (crop > folder > image) and enabled first-crop default loading. |
+| **Task 124: Install ag-psd Dependency** | [x] | Installed ag-psd client-side library to decode Photoshop documents in the browser. |
+| **Task 125: Implement PSD Parser Helpers** | [x] | Implemented src/layer-trace/psdParser.ts with recursive flattening and full-sized coordinate canvas drawing. |
+| **Task 126: Add PSD Parser Helper Unit Tests** | [x] | Wrote src/layer-trace/psdParser.test.ts verifying layout flattening and canvas rendering offsets (2/2 passing). |
+| **Task 127: Update HTML UI Layout with PSD Controls** | [x] | Integrated Input Mode Switcher and Photoshop PSD workspace inside crop-editor.html. |
+| **Task 128: Implement PSD UI and Batch Tracing Logic** | [x] | Implemented PSD file drops, downscaled 48px thumbnails, progress bars, and index-reversed batch VTracer API requests in src/editor.ts. |
+| **Task 129: Add PSD Importer CSS Styling** | [x] | Styled switcher tabs, dashed glassmorphic dropzones, layer rows, thumbnail frames, status indicators, and animated progress bars in editor.scss. |
+| **Task 130: Verify PSD Importer and Lasso/Brush Regression** | [x] | Verified zero typecheck errors, 5/5 passing layer-trace unit tests, successful production build, and added safety guards. |
+
+
 

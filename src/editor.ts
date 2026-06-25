@@ -2,6 +2,9 @@ import "./styles/editor.scss";
 import { composeLayeredSvg, prefixInternalIds, sanitizeToken, type SvgLayerInput } from "./layer-trace/layerComposer";
 import { parseLayeredSvg } from "./layer-trace/layerParser";
 import { toUnscaledCanvasPoint } from "./layer-trace/layerViewport";
+import { drawStrokeOnMask, clearMask } from "./layer-trace/brushMask";
+import { parsePsdFile, createFullSizeLayerPng, type FlatPsdLayer } from "./layer-trace/psdParser";
+
 
 interface CropFolder {
   name: string;
@@ -88,6 +91,20 @@ let draggedIndex: number | null = null;
 let layerTraceZoom = 1;
 let isMergeMode = false;
 let mergeSelectedIndices = new Set<number>();
+let activeTool: "lasso" | "brush" | "eraser" = "lasso";
+let brushSize = 15;
+let brushMaskCanvas: HTMLCanvasElement | null = null;
+let brushMaskCtx: CanvasRenderingContext2D | null = null;
+let tintCanvas: HTMLCanvasElement | null = null;
+let tintCtx: CanvasRenderingContext2D | null = null;
+let lastBrushPoint: { x: number; y: number } | null = null;
+let lastMousePosition: { x: number; y: number } | null = null;
+let isFocusMode = false;
+let activeInputMode: "png" | "psd" = "png";
+let loadedPsdLayers: FlatPsdLayer[] = [];
+let psdWidth = 0;
+let psdHeight = 0;
+let psdFileName = "";
 
 const layerTraceZoomMin = 1;
 const layerTraceZoomMax = 4;
@@ -109,6 +126,17 @@ async function initEditor() {
 
     cropsList = await cropsResponse.json() as Crop[];
     populateCropDropdown();
+    
+    // Automatically select the first crop by default
+    if (cropsList.length > 0) {
+      const firstCrop = cropsList[0].name.toLowerCase();
+      const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
+      if (cropSelect) {
+        cropSelect.value = firstCrop;
+      }
+      await handleCropSelection(firstCrop);
+    }
+
     renderStagesSidebar();
     renderLayerTraceState();
     applyPreset("hybridDetailedCandidate");
@@ -154,7 +182,26 @@ function setupUIEventListeners() {
   layerCanvas?.addEventListener("pointerdown", handleLayerPointerDown);
   layerCanvas?.addEventListener("pointermove", handleLayerPointerMove);
   layerCanvas?.addEventListener("pointerup", handleLayerPointerUp);
-  layerCanvas?.addEventListener("pointerleave", handleLayerPointerUp);
+  layerCanvas?.addEventListener("pointerleave", handleLayerPointerLeave);
+  
+  const toolLassoBtn = document.getElementById("tool-lasso-btn") as HTMLButtonElement | null;
+  const toolBrushBtn = document.getElementById("tool-brush-btn") as HTMLButtonElement | null;
+  const toolEraserBtn = document.getElementById("tool-eraser-btn") as HTMLButtonElement | null;
+  const brushSizeInput = document.getElementById("brush-size-input") as HTMLInputElement | null;
+  const brushSizeValue = document.getElementById("brush-size-value");
+
+  toolLassoBtn?.addEventListener("click", () => setTool("lasso"));
+  toolBrushBtn?.addEventListener("click", () => setTool("brush"));
+  toolEraserBtn?.addEventListener("click", () => setTool("eraser"));
+
+  brushSizeInput?.addEventListener("input", () => {
+    if (brushSizeInput) {
+      brushSize = Number(brushSizeInput.value);
+      if (brushSizeValue) brushSizeValue.textContent = `${brushSize}px`;
+      drawLayerMaskCanvas();
+    }
+  });
+
   clearLayerMaskBtn?.addEventListener("click", clearLayerMask);
   traceLayerBtn?.addEventListener("click", () => void handleTraceLayer());
   saveLayerCompositeBtn?.addEventListener("click", () => void handleSaveLayerComposite());
@@ -168,6 +215,69 @@ function setupUIEventListeners() {
   zoomInBtn?.addEventListener("click", () => setLayerTraceZoom(layerTraceZoom + layerTraceZoomStep));
   zoomResetBtn?.addEventListener("click", () => setLayerTraceZoom(1));
   window.addEventListener("resize", applyLayerTraceZoom);
+
+  const toolFocusBtn = document.getElementById("tool-focus-btn") as HTMLButtonElement | null;
+
+  const toggleFocusMode = () => {
+    isFocusMode = !isFocusMode;
+    const appWrapper = document.querySelector(".editor-app");
+    if (appWrapper) {
+      appWrapper.classList.toggle("focus-mode", isFocusMode);
+    }
+    toolFocusBtn?.classList.toggle("active", isFocusMode);
+    
+    if (toolFocusBtn) {
+      if (isFocusMode) {
+        toolFocusBtn.title = "Thu nhỏ khung vẽ (F)";
+        toolFocusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>`;
+      } else {
+        toolFocusBtn.title = "Mở rộng khung vẽ (F)";
+        toolFocusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`;
+      }
+    }
+
+    requestAnimationFrame(() => {
+      applyLayerTraceZoom();
+    });
+  };
+
+  toolFocusBtn?.addEventListener("click", toggleFocusMode);
+
+  window.addEventListener("keydown", (event) => {
+    if (activeInputMode !== "png") return;
+    const labelInput = document.getElementById("layer-label-input");
+    if (document.activeElement === labelInput) return;
+
+    const key = event.key.toLowerCase();
+    if (key === "f") {
+      event.preventDefault();
+      toggleFocusMode();
+    } else if (key === "l") {
+      setTool("lasso");
+    } else if (key === "b") {
+      setTool("brush");
+    } else if (key === "e") {
+      setTool("eraser");
+    } else if (key === "[") {
+      if (activeTool !== "lasso") {
+        brushSize = Math.max(5, brushSize - 2);
+        const brushSizeInput = document.getElementById("brush-size-input") as HTMLInputElement | null;
+        const brushSizeValue = document.getElementById("brush-size-value");
+        if (brushSizeInput) brushSizeInput.value = String(brushSize);
+        if (brushSizeValue) brushSizeValue.textContent = `${brushSize}px`;
+        drawLayerMaskCanvas();
+      }
+    } else if (key === "]") {
+      if (activeTool !== "lasso") {
+        brushSize = Math.min(50, brushSize + 2);
+        const brushSizeInput = document.getElementById("brush-size-input") as HTMLInputElement | null;
+        const brushSizeValue = document.getElementById("brush-size-value");
+        if (brushSizeInput) brushSizeInput.value = String(brushSize);
+        if (brushSizeValue) brushSizeValue.textContent = `${brushSize}px`;
+        drawLayerMaskCanvas();
+      }
+    }
+  });
 
   const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
   presetSelect?.addEventListener("change", () => {
@@ -193,15 +303,23 @@ function setupUIEventListeners() {
       }
     });
   });
+
+  // PSD Input Mode Switcher listeners
+  const modePngBtn = document.getElementById("mode-png-btn");
+  const modePsdBtn = document.getElementById("mode-psd-btn");
+  modePngBtn?.addEventListener("click", () => setInputMode("png"));
+  modePsdBtn?.addEventListener("click", () => setInputMode("psd"));
+
+  setupPsdEventListeners();
 }
 
 function populateCropDropdown() {
   const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
-  if (!cropSelect) return;
+  if (!cropSelect || cropsList.length === 0) return;
 
-  cropSelect.innerHTML = `<option value="">-- Chon crop --</option>${cropsList
+  cropSelect.innerHTML = cropsList
     .map((crop) => `<option value="${crop.name.toLowerCase()}">${crop.name}</option>`)
-    .join("")}`;
+    .join("");
 }
 
 async function handleCropSelection(cropName: string) {
@@ -380,6 +498,22 @@ async function loadLayerTraceImage(pngPath: string) {
 
   canvas.width = layerTraceImage.naturalWidth;
   canvas.height = layerTraceImage.naturalHeight;
+  
+  // Initialize brush mask canvas at native resolution
+  brushMaskCanvas = document.createElement("canvas");
+  brushMaskCanvas.width = layerTraceImage.naturalWidth;
+  brushMaskCanvas.height = layerTraceImage.naturalHeight;
+  brushMaskCtx = brushMaskCanvas.getContext("2d");
+  if (brushMaskCtx) {
+    clearMask(brushMaskCtx, brushMaskCanvas.width, brushMaskCanvas.height);
+  }
+
+  // Initialize persistent overlay tint canvas to eliminate per-frame GC allocations
+  tintCanvas = document.createElement("canvas");
+  tintCanvas.width = layerTraceImage.naturalWidth;
+  tintCanvas.height = layerTraceImage.naturalHeight;
+  tintCtx = tintCanvas.getContext("2d");
+
   layerTraceZoom = 1;
   layerTraceSize = {
     width: layerTraceImage.naturalWidth,
@@ -406,10 +540,19 @@ function handleLayerPointerDown(event: PointerEvent) {
   canvas.setPointerCapture(event.pointerId);
   
   const pt = readCanvasPoint(canvas, event);
-  if (layerLassoPoints.length === 0) {
-    layerLassoPoints = [pt];
+  lastMousePosition = pt;
+
+  if (activeTool === "lasso") {
+    if (layerLassoPoints.length === 0) {
+      layerLassoPoints = [pt];
+    } else {
+      layerLassoPoints.push(pt);
+    }
   } else {
-    layerLassoPoints.push(pt);
+    lastBrushPoint = pt;
+    if (brushMaskCtx) {
+      drawStrokeOnMask(brushMaskCtx, pt, pt, brushSize, activeTool);
+    }
   }
   
   isDrawingLayerMask = true;
@@ -418,13 +561,30 @@ function handleLayerPointerDown(event: PointerEvent) {
 }
 
 function handleLayerPointerMove(event: PointerEvent) {
-  if (!isDrawingLayerMask || !layerTraceImage) return;
+  if (!layerTraceImage) return;
   const canvas = event.currentTarget as HTMLCanvasElement;
   const nextPoint = readCanvasPoint(canvas, event);
-  const previousPoint = layerLassoPoints[layerLassoPoints.length - 1];
-  if (!previousPoint || Math.hypot(nextPoint.x - previousPoint.x, nextPoint.y - previousPoint.y) >= 3) {
-    layerLassoPoints.push(nextPoint);
-    drawLayerMaskCanvas();
+  lastMousePosition = nextPoint;
+
+  if (!isDrawingLayerMask) {
+    if (activeTool !== "lasso") {
+      drawLayerMaskCanvas();
+    }
+    return;
+  }
+
+  if (activeTool === "lasso") {
+    const previousPoint = layerLassoPoints[layerLassoPoints.length - 1];
+    if (!previousPoint || Math.hypot(nextPoint.x - previousPoint.x, nextPoint.y - previousPoint.y) >= 3) {
+      layerLassoPoints.push(nextPoint);
+      drawLayerMaskCanvas();
+    }
+  } else {
+    if (brushMaskCtx && lastBrushPoint) {
+      drawStrokeOnMask(brushMaskCtx, lastBrushPoint, nextPoint, brushSize, activeTool);
+      lastBrushPoint = nextPoint;
+      drawLayerMaskCanvas();
+    }
   }
 }
 
@@ -435,8 +595,14 @@ function handleLayerPointerUp(event: PointerEvent) {
     canvas.releasePointerCapture(event.pointerId);
   }
   isDrawingLayerMask = false;
+  lastBrushPoint = null;
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
+}
+
+function handleLayerPointerLeave(event: PointerEvent) {
+  lastMousePosition = null;
+  handleLayerPointerUp(event);
 }
 
 function readCanvasPoint(canvas: HTMLCanvasElement, event: PointerEvent): { x: number; y: number } {
@@ -498,43 +664,123 @@ function applyLayerTraceZoom() {
 }
 
 function drawLayerMaskCanvas() {
+  if (activeInputMode !== "png") return;
   const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
   if (!canvas || !layerTraceImage) return;
   const context = canvas.getContext("2d");
   if (!context) return;
 
+  // 1. Draw original crop image
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
 
-  if (layerLassoPoints.length === 0) return;
+  // 2. Draw the brush selection overlay using the persistent offscreen tintCanvas
+  if (brushMaskCanvas && tintCanvas && tintCtx) {
+    context.save();
+    context.globalAlpha = 0.35;
+    
+    // Refresh the green tinted mask on our persistent cache canvas
+    tintCtx.save();
+    tintCtx.globalCompositeOperation = "source-over"; // Reset to default first!
+    tintCtx.clearRect(0, 0, tintCanvas.width, tintCanvas.height);
+    tintCtx.drawImage(brushMaskCanvas, 0, 0);
+    tintCtx.globalCompositeOperation = "source-in";
+    tintCtx.fillStyle = "#428b4d"; // Premium Forest Green tint
+    tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+    tintCtx.restore();
+    
+    // Draw onto the main viewport canvas
+    context.drawImage(tintCanvas, 0, 0);
+    context.restore();
+  }
 
-  context.save();
-  context.beginPath();
-  context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
-  for (const point of layerLassoPoints.slice(1)) {
-    context.lineTo(point.x, point.y);
+  // 3. Draw the lasso path (only if lasso tool is active)
+  if (activeTool === "lasso" && layerLassoPoints.length > 0) {
+    context.save();
+    context.beginPath();
+    context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
+    for (const point of layerLassoPoints.slice(1)) {
+      context.lineTo(point.x, point.y);
+    }
+    if (!isDrawingLayerMask && layerLassoPoints.length >= 3) {
+      context.closePath();
+      context.fillStyle = "rgba(66, 139, 77, 0.22)";
+      context.fill();
+      context.strokeStyle = "#428b4d";
+      context.lineWidth = 1.5;
+      context.stroke();
+    } else if (isDrawingLayerMask && layerLassoPoints.length >= 2) {
+      context.strokeStyle = "#428b4d";
+      context.lineWidth = 1.5;
+      context.stroke();
+    }
+    context.restore();
   }
-  if (!isDrawingLayerMask && layerLassoPoints.length >= 3) {
-    context.closePath();
-    context.fillStyle = "rgba(66, 139, 77, 0.22)";
-    context.fill();
+
+  // 4. Draw the high-contrast circular brush cursor preview (if hovering and brush/eraser is active)
+  if (activeTool !== "lasso" && lastMousePosition) {
+    context.save();
+    // Inner white circle
+    context.beginPath();
+    context.arc(lastMousePosition.x, lastMousePosition.y, brushSize, 0, Math.PI * 2);
+    context.strokeStyle = "rgba(255, 255, 255, 0.85)";
+    context.lineWidth = 1.5;
+    context.stroke();
+    
+    // Outer dashed black circle for high contrast against any background color
+    context.beginPath();
+    context.arc(lastMousePosition.x, lastMousePosition.y, brushSize, 0, Math.PI * 2);
+    context.strokeStyle = "rgba(0, 0, 0, 0.65)";
+    context.lineWidth = 1;
+    context.setLineDash([3, 3]);
+    context.stroke();
+    context.restore();
   }
-  context.strokeStyle = "#ffb238";
-  context.lineWidth = 4;
-  context.setLineDash([12, 8]);
-  context.stroke();
-  context.restore();
+}
+
+function setTool(tool: "lasso" | "brush" | "eraser") {
+  activeTool = tool;
+  const toolLassoBtn = document.getElementById("tool-lasso-btn") as HTMLButtonElement | null;
+  const toolBrushBtn = document.getElementById("tool-brush-btn") as HTMLButtonElement | null;
+  const toolEraserBtn = document.getElementById("tool-eraser-btn") as HTMLButtonElement | null;
+  const brushSizeContainer = document.getElementById("brush-size-container");
+
+  [toolLassoBtn, toolBrushBtn, toolEraserBtn].forEach((btn) => btn?.classList.remove("active"));
+  
+  if (tool === "lasso") {
+    toolLassoBtn?.classList.add("active");
+    if (brushSizeContainer) brushSizeContainer.style.display = "none";
+    if (brushMaskCtx && brushMaskCanvas) {
+      clearMask(brushMaskCtx, brushMaskCanvas.width, brushMaskCanvas.height);
+    }
+  } else {
+    if (tool === "brush") {
+      toolBrushBtn?.classList.add("active");
+    } else if (tool === "eraser") {
+      toolEraserBtn?.classList.add("active");
+    }
+    if (brushSizeContainer) brushSizeContainer.style.display = "flex";
+    layerLassoPoints = [];
+  }
+  drawLayerMaskCanvas();
+  updateLayerTraceButtons();
 }
 
 function clearLayerMask() {
   layerLassoPoints = [];
   isDrawingLayerMask = false;
+  if (brushMaskCtx && brushMaskCanvas) {
+    clearMask(brushMaskCtx, brushMaskCanvas.width, brushMaskCanvas.height);
+  }
   drawLayerMaskCanvas();
   updateLayerTraceButtons();
 }
 
 async function handleTraceLayer() {
-  if (!layerTraceImage || layerLassoPoints.length < 3) return;
+  const hasLasso = activeTool === "lasso" && layerLassoPoints.length >= 3;
+  const hasBrush = activeTool !== "lasso";
+  if (!layerTraceImage || (!hasLasso && !hasBrush)) return;
+  
   const imageDataUrl = createMaskedLayerDataUrl();
   if (!imageDataUrl) return;
 
@@ -574,7 +820,7 @@ async function handleTraceLayer() {
 }
 
 function createMaskedLayerDataUrl(): string | null {
-  if (!layerTraceImage || layerLassoPoints.length < 3) return null;
+  if (!layerTraceImage) return null;
   const canvas = document.createElement("canvas");
   canvas.width = layerTraceImage.naturalWidth;
   canvas.height = layerTraceImage.naturalHeight;
@@ -582,14 +828,22 @@ function createMaskedLayerDataUrl(): string | null {
   if (!context) return null;
 
   context.save();
-  context.beginPath();
-  context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
-  for (const point of layerLassoPoints.slice(1)) {
-    context.lineTo(point.x, point.y);
+  if (activeTool === "lasso") {
+    if (layerLassoPoints.length < 3) return null;
+    context.beginPath();
+    context.moveTo(layerLassoPoints[0].x, layerLassoPoints[0].y);
+    for (const point of layerLassoPoints.slice(1)) {
+      context.lineTo(point.x, point.y);
+    }
+    context.closePath();
+    context.clip();
+    context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
+  } else {
+    if (!brushMaskCanvas) return null;
+    context.drawImage(brushMaskCanvas, 0, 0);
+    context.globalCompositeOperation = "source-in";
+    context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
   }
-  context.closePath();
-  context.clip();
-  context.drawImage(layerTraceImage, 0, 0, canvas.width, canvas.height);
   context.restore();
 
   return canvas.toDataURL("image/png");
@@ -929,7 +1183,9 @@ function updateLayerTraceButtons() {
     }
     
     if (traceBtn) {
-      traceBtn.disabled = !layerTraceImage || layerLassoPoints.length < 3;
+      const hasLasso = activeTool === "lasso" && layerLassoPoints.length >= 3;
+      const hasBrush = activeTool !== "lasso";
+      traceBtn.disabled = !layerTraceImage || (!hasLasso && !hasBrush);
     }
     if (saveBtn) {
       saveBtn.disabled = !layerTraceSize || layerTraceLayers.length === 0;
@@ -947,6 +1203,13 @@ function resetLayerWorkflow() {
   layerTraceLayers = [];
   isDrawingLayerMask = false;
   layerTraceZoom = 1;
+  loadedPsdLayers = [];
+  psdWidth = 0;
+  psdHeight = 0;
+  psdFileName = "";
+  const psdFileInput = document.getElementById("psd-file-input") as HTMLInputElement | null;
+  if (psdFileInput) psdFileInput.value = "";
+  renderPsdWorkspaceState();
   const canvas = document.getElementById("layer-mask-canvas") as HTMLCanvasElement | null;
   if (canvas) {
     const context = canvas.getContext("2d");
@@ -1222,4 +1485,370 @@ function performMerge() {
   renderLayerTraceState();
   showStatus("success", `Merged ${sorted.length} layers.`);
 }
+
+function setInputMode(mode: "png" | "psd") {
+  activeInputMode = mode;
+  
+  const pngBtn = document.getElementById("mode-png-btn");
+  const psdBtn = document.getElementById("mode-psd-btn");
+  const pngSelect = document.getElementById("png-select");
+  const maskEditor = document.querySelector(".layer-mask-editor") as HTMLElement | null;
+  const psdWorkspace = document.getElementById("psd-workspace");
+  const traceLayerBtn = document.getElementById("trace-layer-btn") as HTMLButtonElement | null;
+  const clearLassoBtn = document.getElementById("clear-layer-mask-btn") as HTMLButtonElement | null;
+
+  if (pngBtn && psdBtn) {
+    if (mode === "png") {
+      pngBtn.classList.add("active");
+      pngBtn.setAttribute("aria-selected", "true");
+      psdBtn.classList.remove("active");
+      psdBtn.setAttribute("aria-selected", "false");
+    } else {
+      psdBtn.classList.add("active");
+      psdBtn.setAttribute("aria-selected", "true");
+      pngBtn.classList.remove("active");
+      pngBtn.setAttribute("aria-selected", "false");
+    }
+  }
+
+  if (pngSelect) {
+    pngSelect.style.display = mode === "png" ? "block" : "none";
+  }
+  if (maskEditor) {
+    maskEditor.style.display = mode === "png" ? "block" : "none";
+  }
+  if (psdWorkspace) {
+    psdWorkspace.style.display = mode === "psd" ? "block" : "none";
+  }
+
+  if (traceLayerBtn) {
+    traceLayerBtn.style.display = mode === "png" ? "inline-block" : "none";
+  }
+  if (clearLassoBtn) {
+    clearLassoBtn.style.display = mode === "png" ? "inline-block" : "none";
+  }
+
+  if (mode === "png") {
+    showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
+  } else {
+    showStatus("info", "Keo tha file PSD de giai nen va nhap layer tu dong.");
+    renderPsdWorkspaceState();
+  }
+}
+
+function setupPsdEventListeners() {
+  const dropzone = document.getElementById("psd-dropzone");
+  const fileInput = document.getElementById("psd-file-input") as HTMLInputElement | null;
+  const importBtn = document.getElementById("psd-import-btn") as HTMLButtonElement | null;
+  const selectAllBtn = document.getElementById("psd-select-all-btn");
+  const selectNoneBtn = document.getElementById("psd-select-none-btn");
+
+  dropzone?.addEventListener("click", () => {
+    fileInput?.click();
+  });
+
+  dropzone?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  });
+
+  dropzone?.addEventListener("dragleave", () => {
+    dropzone.classList.remove("dragover");
+  });
+
+  dropzone?.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      void handlePsdFileSelect(files[0]);
+    }
+  });
+
+  fileInput?.addEventListener("change", () => {
+    const files = fileInput.files;
+    if (files && files.length > 0) {
+      void handlePsdFileSelect(files[0]);
+    }
+  });
+
+  selectAllBtn?.addEventListener("click", () => {
+    setPsdLayersSelection(true);
+  });
+
+  selectNoneBtn?.addEventListener("click", () => {
+    setPsdLayersSelection(false);
+  });
+
+  importBtn?.addEventListener("click", () => {
+    void handleBatchPsdTrace();
+  });
+}
+
+async function handlePsdFileSelect(file: File) {
+  if (!file.name.toLowerCase().endsWith(".psd")) {
+    showStatus("error", "Chi ho tro file Photoshop .psd.");
+    return;
+  }
+
+  showStatus("loading", "Dang phan tich file PSD...");
+  psdFileName = file.name;
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const result = parsePsdFile(buffer);
+    
+    loadedPsdLayers = result.layers;
+    psdWidth = result.width;
+    psdHeight = result.height;
+
+    layerTraceSize = { width: psdWidth, height: psdHeight };
+
+    if (!activeCrop) {
+      showStatus("error", "Vui long chon Crop truoc khi nhap PSD.");
+      return;
+    }
+
+    renderPsdWorkspaceState();
+    showStatus("success", `Da nap file ${file.name} (${psdWidth}x${psdHeight}px, ${loadedPsdLayers.length} layers).`);
+  } catch (error: any) {
+    showStatus("error", `Khong the doc file PSD: ${error.message}`);
+  }
+}
+
+function renderPsdWorkspaceState() {
+  const dropzoneWrapper = document.getElementById("psd-dropzone-wrapper");
+  const panel = document.getElementById("psd-layers-panel");
+  const layersList = document.getElementById("psd-layers-list");
+  const filename = document.getElementById("psd-filename");
+  const dimensions = document.getElementById("psd-dimensions");
+
+  if (!panel || !dropzoneWrapper || !layersList) return;
+
+  if (loadedPsdLayers.length === 0) {
+    dropzoneWrapper.style.display = "block";
+    panel.style.display = "none";
+    return;
+  }
+
+  dropzoneWrapper.style.display = "none";
+  panel.style.display = "block";
+
+  if (filename) filename.textContent = psdFileName;
+  if (dimensions) dimensions.textContent = `${psdWidth} x ${psdHeight}px`;
+
+  layersList.innerHTML = "";
+  
+  loadedPsdLayers.forEach((layer, index) => {
+    const item = document.createElement("div");
+    item.className = `psd-layer-item ${layer.hidden ? "is-hidden-layer" : ""}`;
+    item.dataset.index = String(index);
+
+    let thumbnailHtml = `<div class="layer-thumbnail-placeholder"></div>`;
+    if (layer.canvas) {
+      const thumbUrl = getLayerThumbnailUrl(layer.canvas);
+      thumbnailHtml = `<img src="${thumbUrl}" class="layer-thumbnail" alt="${layer.name}" />`;
+    }
+
+    const checkedAttr = layer.hidden ? "" : "checked";
+
+    item.innerHTML = `
+      <label class="psd-layer-label-wrapper">
+        <input type="checkbox" class="psd-layer-checkbox" data-index="${index}" ${checkedAttr} />
+        ${thumbnailHtml}
+        <div class="psd-layer-info-group">
+          <span class="psd-layer-name" title="${layer.name}">${layer.name}</span>
+          <span class="psd-layer-meta">${layer.width}x${layer.height}px (x:${layer.left}, y:${layer.top})</span>
+        </div>
+      </label>
+      <div class="psd-layer-input-group">
+        <input type="text" class="form-control psd-layer-rename-input" data-index="${index}" value="${layer.name}" placeholder="Nhan layer" />
+      </div>
+      <div class="psd-layer-status" id="psd-layer-status-${index}">
+        <span class="status-dot status-pending"></span>
+        <span class="status-label">Cho</span>
+      </div>
+    `;
+
+    layersList.appendChild(item);
+  });
+
+  const checkboxes = layersList.querySelectorAll(".psd-layer-checkbox");
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("change", updatePsdImportButtonState);
+  });
+
+  updatePsdImportButtonState();
+}
+
+function getLayerThumbnailUrl(canvas: HTMLCanvasElement): string {
+  const thumbCanvas = document.createElement("canvas");
+  const maxDim = 48;
+  const scale = Math.min(maxDim / canvas.width, maxDim / canvas.height, 1);
+  thumbCanvas.width = canvas.width * scale;
+  thumbCanvas.height = canvas.height * scale;
+  const ctx = thumbCanvas.getContext("2d");
+  if (ctx) {
+    ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+  }
+  return thumbCanvas.toDataURL("image/png");
+}
+
+function updatePsdImportButtonState() {
+  const importBtn = document.getElementById("psd-import-btn") as HTMLButtonElement | null;
+  if (!importBtn) return;
+
+  const checkedCount = document.querySelectorAll(".psd-layer-checkbox:checked").length;
+  importBtn.disabled = checkedCount === 0;
+  if (checkedCount === 0) {
+    importBtn.textContent = "Chon it nhat 1 layer";
+  } else {
+    importBtn.textContent = `Nhap & Vector hoa (${checkedCount} layers)`;
+  }
+}
+
+function setPsdLayersSelection(checked: boolean) {
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(".psd-layer-checkbox");
+  checkboxes.forEach((cb) => {
+    cb.checked = checked;
+  });
+  updatePsdImportButtonState();
+}
+
+async function handleBatchPsdTrace() {
+  const checkboxes = Array.from(document.querySelectorAll<HTMLInputElement>(".psd-layer-checkbox:checked"));
+  if (checkboxes.length === 0) return;
+
+  setPsdUiDisabled(true);
+
+  const progressContainer = document.getElementById("psd-progress-container");
+  const progressBar = document.getElementById("psd-progress-bar");
+  const progressText = document.getElementById("psd-progress-text");
+  const progressPercent = document.getElementById("psd-progress-percent");
+
+  if (progressContainer) progressContainer.style.display = "block";
+
+  const total = checkboxes.length;
+  let completed = 0;
+
+  const updateProgress = (text: string) => {
+    const percent = Math.round((completed / total) * 100);
+    if (progressBar) progressBar.style.width = `${percent}%`;
+    if (progressPercent) progressPercent.textContent = `${percent}%`;
+    if (progressText) progressText.textContent = text;
+  };
+
+  updateProgress("Dang chuan bi cac bo loc...");
+
+  const presetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
+  const preset = presetSelect?.value || "custom";
+  const params = getSliderParams();
+
+  const sortedCheckboxes = [...checkboxes].sort((a, b) => {
+    return Number(b.dataset.index) - Number(a.dataset.index);
+  });
+
+  for (const cb of sortedCheckboxes) {
+    const idx = Number(cb.dataset.index);
+    const layer = loadedPsdLayers[idx];
+    
+    const renameInput = document.querySelector(`.psd-layer-rename-input[data-index="${idx}"]`) as HTMLInputElement | null;
+    const label = sanitizeLayerLabel(renameInput?.value || layer.name);
+    const groupId = createLayerGroupId(label);
+
+    const statusEl = document.getElementById(`psd-layer-status-${idx}`);
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="status-dot status-loading"></span><span class="status-label">Dang trace...</span>`;
+    }
+
+    updateProgress(`Dang trace layer: ${label}...`);
+
+    try {
+      const imageDataUrl = createFullSizeLayerPng(layer.canvas, layer.left, layer.top, psdWidth, psdHeight);
+
+      const response = await fetch("/api/editor/trace-layer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageDataUrl,
+          preset,
+          params
+        })
+      });
+
+      if (!response.ok) {
+        const errorJson = await response.json();
+        throw new Error(errorJson.error || "VTracer failed");
+      }
+
+      const result = await response.json() as TraceResult;
+
+      let finalLabel = label;
+      let finalGroupId = groupId;
+      let suffix = 1;
+      while (layerTraceLayers.some(l => l.groupId === finalGroupId)) {
+        finalLabel = `${label}_${suffix}`;
+        finalGroupId = createLayerGroupId(finalLabel);
+        suffix++;
+      }
+
+      layerTraceLayers.push({
+        groupId: finalGroupId,
+        label: finalLabel,
+        svgText: result.optimizedSvg
+      });
+
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="status-dot status-success"></span><span class="status-label">Xong</span>`;
+      }
+    } catch (error: any) {
+      console.error(`Trace layer ${label} failed:`, error);
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="status-dot status-error"></span><span class="status-label" title="${error.message}">Loi</span>`;
+      }
+      showStatus("error", `Trace layer ${label} that bai: ${error.message}`);
+    }
+
+    completed++;
+    updateProgress(`Hoan thanh ${completed}/${total} layers`);
+  }
+
+  renderLayerTraceState();
+  showStatus("success", `Da nhap thanh cong ${completed} layers tu PSD vao stage.`);
+  
+  setPsdUiDisabled(false);
+  
+  setTimeout(() => {
+    if (progressContainer) progressContainer.style.display = "none";
+    if (progressBar) progressBar.style.width = "0%";
+  }, 3000);
+}
+
+function setPsdUiDisabled(disabled: boolean) {
+  const fileInput = document.getElementById("psd-file-input") as HTMLInputElement | null;
+  const importBtn = document.getElementById("psd-import-btn") as HTMLButtonElement | null;
+  const selectAllBtn = document.getElementById("psd-select-all-btn") as HTMLButtonElement | null;
+  const selectNoneBtn = document.getElementById("psd-select-none-btn") as HTMLButtonElement | null;
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(".psd-layer-checkbox");
+  const renameInputs = document.querySelectorAll<HTMLInputElement>(".psd-layer-rename-input");
+  const dropzone = document.getElementById("psd-dropzone");
+
+  if (fileInput) fileInput.disabled = disabled;
+  if (importBtn) importBtn.disabled = disabled;
+  if (selectAllBtn) selectAllBtn.disabled = disabled;
+  if (selectNoneBtn) selectNoneBtn.disabled = disabled;
+  checkboxes.forEach((cb) => cb.disabled = disabled);
+  renameInputs.forEach((inp) => inp.disabled = disabled);
+  
+  if (dropzone) {
+    if (disabled) {
+      dropzone.style.pointerEvents = "none";
+      dropzone.style.opacity = "0.5";
+    } else {
+      dropzone.style.pointerEvents = "auto";
+      dropzone.style.opacity = "1";
+    }
+  }
+}
+
 

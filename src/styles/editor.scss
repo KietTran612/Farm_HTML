@@ -38,7 +38,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5 {
+h1,
+h2,
+h3,
+h4,
+h5 {
   font-family: 'Outfit', sans-serif;
   color: $forest-dark;
   margin: 0;
@@ -69,6 +73,7 @@ h1, h2, h3, h4, h5 {
       letter-spacing: -0.5px;
       line-height: 1.2;
     }
+
     .editor-subtitle {
       font-size: 13px;
       color: $color-muted;
@@ -85,7 +90,7 @@ h1, h2, h3, h4, h5 {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      
+
       label {
         font-size: 11px;
         font-weight: 700;
@@ -131,6 +136,7 @@ h1, h2, h3, h4, h5 {
   .label {
     color: $forest-medium;
   }
+
   .value {
     color: $forest-dark;
     font-weight: 800;
@@ -272,9 +278,9 @@ h1, h2, h3, h4, h5 {
 // CONFIG STEP 1 & 2
 .config-panel {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) 1fr;
+  grid-template-columns: auto 1.2fr 1fr;
   gap: 16px;
-  align-items: start;
+  align-items: center;
   padding-bottom: 10px;
   padding-top: 10px;
 }
@@ -290,7 +296,7 @@ h1, h2, h3, h4, h5 {
     display: flex;
     flex-direction: row;
     gap: 8px;
-    
+
     select {
       flex: 1;
       min-width: 0;
@@ -306,29 +312,32 @@ h1, h2, h3, h4, h5 {
     margin-bottom: 12px;
     border-bottom: 1px solid $border-light;
     padding-bottom: 8px;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap; // Force everything on a single line
+    gap: 8px;
 
     h3 {
       border-bottom: none;
       margin-bottom: 0;
       padding-bottom: 0;
+      font-size: 12px; // Compact header font size
+      white-space: nowrap;
     }
 
     .preset-header-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
 
       .preset-select-control {
-        min-width: 200px;
-        padding: 4px 12px;
-        font-size: 13px;
+        min-width: 140px; // Shrunk minimum width
+        padding: 4px 8px;
+        font-size: 12px;
         font-weight: 700;
-        height: 32px;
+        height: 30px;
         color: $forest-dark;
         border-color: rgba(66, 139, 77, 0.3);
         background-color: $forest-pastel;
+
         &:focus {
           border-color: $forest-light;
         }
@@ -455,15 +464,15 @@ h1, h2, h3, h4, h5 {
     width: 0;
     height: 0;
 
-    &:checked + .slider {
+    &:checked+.slider {
       background-color: $forest-light;
     }
 
-    &:focus + .slider {
+    &:focus+.slider {
       box-shadow: 0 0 1px $forest-light;
     }
 
-    &:checked + .slider:before {
+    &:checked+.slider:before {
       transform: translateX(18px);
     }
   }
@@ -573,32 +582,94 @@ h1, h2, h3, h4, h5 {
   --layer-mask-display-height: auto;
 }
 
-.layer-zoom-controls {
+.layer-editor-toolbar {
   align-items: center;
-  background: rgba(255, 254, 251, 0.92);
+  background: rgba(255, 254, 251, 0.94);
   border: 1px solid rgba(66, 139, 77, 0.18);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(54, 39, 24, 0.08);
-  display: none;
-  gap: 4px;
-  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(54, 39, 24, 0.08);
+  display: none; // Controlled via has-image class in JS
+  gap: 6px;
+  padding: 4px 8px;
   position: absolute;
-  right: 10px;
-  top: 10px;
-  z-index: 2;
+  right: 12px;
+  top: 12px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .toolbar-separator {
+    width: 1px;
+    height: 16px;
+    background: rgba(66, 139, 77, 0.18);
+    margin: 0 4px;
+  }
 
   .btn-icon {
-    height: 24px;
+    height: 26px;
     padding: 0;
-    width: 24px;
+    width: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: $forest-dark;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: rgba(66, 139, 77, 0.08);
+    }
+
+    &.active {
+      background: $forest-light;
+      color: white;
+    }
   }
 
   .layer-zoom-reset {
     font-size: 11px;
     font-weight: 700;
-    height: 24px;
+    height: 26px;
     min-width: 46px;
-    padding: 0 8px;
+    padding: 0 6px;
+    border-radius: 4px;
+  }
+
+  .toolbar-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: $forest-dark;
+    margin-right: 4px;
+  }
+
+  .toolbar-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: $forest-dark;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .toolbar-slider {
+    width: 80px;
+    height: 4px;
+    accent-color: $forest-light;
+    cursor: pointer;
+  }
+}
+
+.layer-mask-editor.has-image {
+  .layer-editor-toolbar {
+    display: flex;
   }
 }
 
@@ -723,9 +794,11 @@ h1, h2, h3, h4, h5 {
       color: $color-muted;
       padding: 0 4px;
       user-select: none;
+
       &:hover {
         color: $forest-light;
       }
+
       &:active {
         cursor: grabbing;
       }
@@ -796,6 +869,7 @@ h1, h2, h3, h4, h5 {
       text-overflow: ellipsis;
       overflow: hidden;
       white-space: nowrap;
+
       &:hover {
         color: $forest-light;
         text-decoration: underline;
@@ -809,6 +883,7 @@ h1, h2, h3, h4, h5 {
       opacity: 0.5;
       padding: 2px;
       transition: opacity 0.2s ease, color 0.2s ease;
+
       &:hover {
         opacity: 1;
         color: $forest-light;
@@ -834,6 +909,7 @@ h1, h2, h3, h4, h5 {
       background-color: #ffffff;
       display: inline-block;
       outline: none;
+
       &:focus {
         border-color: $forest-light;
         box-shadow: 0 0 0 2px rgba(66, 139, 77, 0.12);
@@ -901,6 +977,7 @@ h1, h2, h3, h4, h5 {
       display: flex;
       align-items: center;
       justify-content: center;
+
       &:hover {
         background-color: color.adjust($error-bg, $lightness: -5%);
       }
@@ -925,18 +1002,20 @@ body.is-merge-mode {
     cursor: not-allowed;
     opacity: 0.85;
   }
-  
+
   .layer-list {
     .layer-row {
       cursor: pointer;
-      
+
       &:hover:not(.is-selected-for-merge) {
         background-color: color.adjust($forest-pastel, $lightness: -3%);
         border-color: rgba(66, 139, 77, 0.35);
       }
-      
+
       // Disable interaction of other child buttons during merge
-      button, .rename-icon, .drag-handle {
+      button,
+      .rename-icon,
+      .drag-handle {
         pointer-events: none;
         opacity: 0.35;
       }
@@ -949,7 +1028,7 @@ body.is-merge-mode {
   border-color: #ff922b !important;
   color: #d9480f !important;
   box-shadow: 0 0 0 2px rgba(253, 126, 20, 0.25);
-  
+
   .layer-index-indicator {
     color: #d9480f !important;
   }
@@ -989,6 +1068,7 @@ body.is-merge-mode {
   &.btn-primary {
     background-color: $forest-light;
     color: white;
+
     &:hover:not(:disabled) {
       background-color: $forest-medium;
     }
@@ -998,6 +1078,7 @@ body.is-merge-mode {
     background-color: $card-bg;
     border-color: $border-color;
     color: $color-text;
+
     &:hover:not(:disabled) {
       background-color: $bg-primary;
       border-color: color.adjust($border-color, $lightness: -10%);
@@ -1008,6 +1089,7 @@ body.is-merge-mode {
     background-color: #3b793f;
     color: white;
     box-shadow: 0 4px 10px rgba(59, 121, 63, 0.2);
+
     &:hover:not(:disabled) {
       background-color: color.adjust(#3b793f, $lightness: -5%);
     }
@@ -1113,6 +1195,46 @@ body.is-merge-mode {
   }
 }
 
+.editor-app.focus-mode {
+  .stages-sidebar {
+    display: none;
+  }
+
+  .config-panel {
+    display: none;
+  }
+
+  .layer-composite-preview {
+    display: none;
+  }
+
+  .editor-main {
+    grid-template-columns: 1fr; // Full width grid
+    height: calc(100vh - 60px - 40px); // Fill vertical viewport
+  }
+
+  .layer-trace-panel {
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    .layer-trace-layout {
+      grid-template-columns: 1fr 300px; // Maximum canvas size, fixed sidebar controls
+      height: calc(100% - 60px);
+    }
+  }
+
+  .layer-mask-editor {
+    height: 100%;
+
+    .layer-mask-scroll {
+      height: 100%;
+      max-height: none;
+    }
+  }
+}
+
 // RESPONSIVE STYLES
 @media (max-width: 900px) {
   .editor-main {
@@ -1171,5 +1293,380 @@ body.is-merge-mode {
     .btn-lg {
       width: 100%;
     }
+  }
+}
+
+// PSD IMPORTER STYLES
+.input-mode-switcher {
+  display: flex;
+  gap: 1px;
+  background-color: rgba(66, 139, 77, 0.08);
+  border: 1px solid rgba(66, 139, 77, 0.15);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 0; // Align perfectly on a single row without bottom spacing
+
+  .mode-btn {
+    flex: 0 0 auto;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px; // Compact padding
+    font-family: "Outfit", sans-serif;
+    font-size: 12px; // Compact font size
+    font-weight: 600;
+    color: $forest-dark;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: rgba(66, 139, 77, 0.06);
+    }
+
+    &.active {
+      background-color: $forest-light;
+      color: white;
+      box-shadow: 0 2px 6px rgba(66, 139, 77, 0.2);
+    }
+  }
+}
+
+.psd-workspace {
+  background-color: $card-bg;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 400px; // Match standard mask editor height
+  min-height: 400px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.psd-dropzone-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+}
+
+.psd-dropzone {
+  border: 2px dashed rgba(66, 139, 77, 0.35);
+  background-color: rgba(66, 139, 77, 0.02);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+  padding: 30px;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  .dropzone-icon {
+    color: $forest-light;
+    margin-bottom: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  .dropzone-text {
+    font-family: "Outfit", sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: $forest-dark;
+    margin: 0 0 4px 0;
+  }
+
+  .dropzone-subtext {
+    font-size: 12px;
+    color: $color-muted;
+  }
+
+  &:hover,
+  &.dragover {
+    border-color: $forest-light;
+    background-color: rgba(66, 139, 77, 0.06);
+
+    .dropzone-icon {
+      transform: translateY(-4px);
+    }
+  }
+}
+
+.psd-layers-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 16px;
+  gap: 12px;
+}
+
+.psd-file-info {
+  background-color: $bg-primary;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+
+  .info-item {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+
+    .info-label {
+      color: $color-muted;
+      font-weight: 500;
+    }
+
+    .info-value {
+      color: $color-text;
+      font-weight: 700;
+      word-break: break-all;
+    }
+  }
+}
+
+.psd-layers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h4 {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: $forest-dark;
+  }
+
+  .psd-layers-actions {
+    display: flex;
+    gap: 6px;
+  }
+}
+
+.psd-layers-list-wrapper {
+  flex: 1;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  background-color: #fffefb;
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.psd-layers-list {
+  display: flex;
+  flex-direction: column;
+
+  .psd-layer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid $border-light;
+    gap: 12px;
+    transition: background-color 0.15s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: rgba(66, 139, 77, 0.02);
+    }
+
+    &.is-hidden-layer {
+      opacity: 0.75;
+      background-color: rgba(0, 0, 0, 0.01);
+    }
+  }
+}
+
+.psd-layer-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+
+  .psd-layer-checkbox {
+    accent-color: $forest-light;
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+  }
+
+  .layer-thumbnail {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    background-color: #f1f0e8;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .layer-thumbnail-placeholder {
+    width: 36px;
+    height: 36px;
+    border: 1px solid $border-light;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+  }
+
+  .psd-layer-info-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .psd-layer-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: $color-text;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .psd-layer-meta {
+      font-size: 10px;
+      color: $color-muted;
+      margin-top: 2px;
+    }
+  }
+}
+
+.psd-layer-input-group {
+  width: 120px;
+
+  .psd-layer-rename-input {
+    height: 28px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+}
+
+.psd-layer-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+  justify-content: flex-end;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+
+    &.status-pending {
+      background-color: #adb5bd;
+    }
+
+    &.status-loading {
+      background-color: #fcc419;
+      animation: pulse-yellow 1.5s infinite ease-in-out;
+    }
+
+    &.status-success {
+      background-color: #37b24d;
+    }
+
+    &.status-error {
+      background-color: #f03e3e;
+    }
+  }
+
+  .status-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: $color-muted;
+  }
+}
+
+.psd-import-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.w-full {
+  width: 100% !important;
+}
+
+.psd-progress-container {
+  background-color: $bg-primary;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  padding: 10px 12px;
+
+  .progress-bar-bg {
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background-color: $forest-light;
+    border-radius: 3px;
+    transition: width 0.2s ease;
+    background-image: linear-gradient(45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent);
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: $color-text;
+    margin-top: 6px;
+
+    .progress-percent {
+      color: $forest-light;
+    }
+  }
+}
+
+// Keyframes
+@keyframes pulse-yellow {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 0.65;
+  }
+}
+
+@keyframes progress-bar-stripes {
+  0% {
+    background-position-x: 1rem;
   }
 }

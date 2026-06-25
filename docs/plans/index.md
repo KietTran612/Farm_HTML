@@ -4,12 +4,13 @@ Use this file as a routing map only. Do not read detailed plan files unless the 
 
 ## Current Context
 
-- **Active implementation plan:** `2026-06-23-crop-specific-soil-plots.md` - Mảnh đất riêng cho từng loại cây.
-- **Current workflow:** `crop-editor.html` uses lasso masked layer tracing to compose grouped SVG stages; `crop-animation-editor.html` tunes grouped SVG animation, pivots, motion variables, and layer preview.
+- **Active implementation plan:** `2026-06-25-psd-layer-importer.md` - Bộ nhập Layer Photoshop (PSD) trực tiếp trên trình duyệt.
+- **Current workflow:** `crop-editor.html` uses lasso masked layer tracing or PSD layer import to compose grouped SVG stages; `crop-animation-editor.html` tunes grouped SVG animation, pivots, motion variables, and layer preview.
 - **Superseded workflow:** Old full-PNG candidate review, inline candidate preparation, and auto-trace batch workflow are no longer the active path.
 
 ## Recently Relevant Plans
 
+- `2026-06-25-psd-layer-importer.md` - Bộ nhập Layer Photoshop (PSD) trực tiếp trên trình duyệt.
 - `2026-06-23-crop-specific-soil-plots.md` - Mảnh đất riêng cho từng loại cây trồng sử dụng Vite import.meta.glob.
 - `2026-06-23-animation-editor-css-variables.md` - CSS variable motion controls for SVG animation editor layers.
 - `2026-06-23-animation-editor-pivot-marker-alignment.md` - Pivot marker and selected layer bounds alignment context.
