@@ -2,6 +2,11 @@
 
 ## Latest Completed Work
 
+- **Implemented Task 139 (Fix Hidden Save, PSD Path Scope, and Bulk Select UI):**
+  - Animation Editor now keeps hidden groups in grouped SVG output with `display="none"` instead of dropping them, and reloads grouped SVG hidden state when selecting a stage.
+  - PSD refresh path resolution is restricted to `docs/Crops/<crop>/`, with recursive fallback still limited to that crop directory.
+  - PSD bulk "select all / select none" now updates the `.is-hidden-layer` visual class together with checkbox state.
+- **Implemented Task 138 (Keep Selected PSD Imports Visible):** Clarified PSD checkbox semantics in code: Photoshop hidden state only sets the initial checked/import selection state. If the user checks a PSD layer and imports it through VTracer, the generated SVG layer is visible regardless of the original PSD hidden flag.
 - **Implemented Task 137 (Reload PSD Visibility On Refresh):** Changed PSD refresh state restoration so checkbox visibility follows the newly parsed PSD `layer.hidden` value. Custom rename inputs are still preserved by matching layer name, but stale UI checked states no longer override Photoshop visibility changes.
 - **Implemented Task 136 (Add Selected PSD Refresh Fallback):** Stored the currently selected PSD `File` object in editor state, cleared it on workflow reset, and used it as a refresh fallback when the local disk reload endpoint cannot find/read the PSD path.
 - **Refined PSD Refresh Button & Local PSD Reloading (Task 135 Refinement):**
@@ -17,12 +22,23 @@
 
 - The crop-art workflow now supports two input modes:
   1. **Lasso Mask (PNG):** Draw custom shapes on single PNG assets (Lasso or Brush) to trace layer by layer.
-  2. **Photoshop (PSD):** Drag and drop a layered `.psd` file, select a target SVG resolution, select layers, and batch-trace them into perfectly aligned SVG layers instantly.
+  2. **Photoshop (PSD):** Drag and drop a layered `.psd` file, select a target SVG resolution, select layers, and batch-trace checked layers into visible, aligned SVG layers. PSD hidden state only controls the initial checked state.
 - The PSD Refresh button is now fully robust, state-preserving, immune to browser caching, and capable of auto-locating PSD files in crop subfolders.
 - The Animation Editor now supports a broader scale motion adjustment up to 2.0x.
 
 ## Verification
 
+- **For Task 139 (Fix Hidden Save, PSD Path Scope, and Bulk Select UI):**
+  - Red tests first failed for hidden grouped SVG preservation, missing grouped-SVG hidden parser helper, missing PSD path resolver, and missing PSD bulk visual sync helper.
+  - Focused tests passed: `npx vitest run src/animation-editor/groupEditor.test.ts src/animation-editor/groupVisibility.test.ts src/layer-trace/psdImportSelection.test.ts scripts/vite-plugins/editorMiddleware.test.ts` (20 tests).
+  - Typecheck passed: `npx tsc --noEmit`.
+  - Build check passed: `npm run build`.
+  - Browser smoke passed for `crop-editor.html` and `crop-animation-editor.html?crop=carrot`, with no console errors.
+- **For Task 138 (Keep Selected PSD Imports Visible):**
+  - Red test first confirmed missing helper behavior: `npx vitest run src/layer-trace/psdImportSelection.test.ts`.
+  - Focused unit test passed: `npx vitest run src/layer-trace/psdImportSelection.test.ts`.
+  - Typecheck passed: `npx tsc --noEmit`.
+  - Build check passed: `npm run build`.
 - **For Task 137 (Reload PSD Visibility On Refresh):**
   - Typecheck passed: `npx tsc --noEmit`.
   - Build check passed: `npm run build`.
@@ -35,12 +51,21 @@
 
 ## Known Warnings Or Blockers
 
-- None. The client-side decoder is extremely fast, and the backend reloader is fully secure, cache-free, and self-locating.
+- Focused middleware tests still print Node `[DEP0190]` from the existing VTracer `spawnSync(..., shell: true)` path. The tests pass; this warning is not from Task 139.
 
 ## Current Uncommitted Scope
 
 - PSD visibility refresh behavior:
+  - `src/animation-editor.ts`
+  - `src/animation-editor/groupEditor.ts`
+  - `src/animation-editor/groupEditor.test.ts`
+  - `src/animation-editor/groupVisibility.ts`
+  - `src/animation-editor/groupVisibility.test.ts`
+  - `scripts/vite-plugins/editorMiddleware.ts`
+  - `scripts/vite-plugins/editorMiddleware.test.ts`
   - `src/editor.ts`
+  - `src/layer-trace/psdImportSelection.ts`
+  - `src/layer-trace/psdImportSelection.test.ts`
   - `docs/plans/task.md`
   - `docs/plans/current-handoff.md`
 - Selected PSD refresh fallback:

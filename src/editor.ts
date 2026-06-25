@@ -4,6 +4,7 @@ import { parseLayeredSvg } from "./layer-trace/layerParser";
 import { toUnscaledCanvasPoint } from "./layer-trace/layerViewport";
 import { drawStrokeOnMask, clearMask } from "./layer-trace/brushMask";
 import { parsePsdFile, createFullSizeLayerPng, type FlatPsdLayer } from "./layer-trace/psdParser";
+import { getInitialPsdLayerSelectedState, getImportedPsdLayerHiddenState, setPsdLayerCheckboxSelection } from "./layer-trace/psdImportSelection";
 
 
 interface CropFolder {
@@ -1842,7 +1843,7 @@ function renderPsdWorkspaceState(preservedStates?: Map<string, { rename: string 
     const preserved = preservedStates?.get(layer.name);
     
     // Checked state always follows the freshly parsed PSD visibility on refresh.
-    const isChecked = !layer.hidden;
+    const isChecked = getInitialPsdLayerSelectedState({ sourceHidden: layer.hidden });
     const checkedAttr = isChecked ? "checked" : "";
     
     // Rename value: if preserved exists, use it. Otherwise, default to layer.name
@@ -1929,7 +1930,7 @@ function updatePsdImportButtonState() {
 function setPsdLayersSelection(checked: boolean) {
   const checkboxes = document.querySelectorAll<HTMLInputElement>(".psd-layer-checkbox");
   checkboxes.forEach((cb) => {
-    cb.checked = checked;
+    setPsdLayerCheckboxSelection(cb, checked);
   });
   updatePsdImportButtonState();
 }
@@ -2044,7 +2045,10 @@ async function handleBatchPsdTrace() {
         groupId: finalGroupId,
         label: finalLabel,
         svgText: result.optimizedSvg,
-        hidden: layer.hidden
+        hidden: getImportedPsdLayerHiddenState({
+          selectedForImport: cb.checked,
+          sourceHidden: layer.hidden
+        })
       });
 
       if (statusEl) {

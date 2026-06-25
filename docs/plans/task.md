@@ -40,5 +40,5 @@
 | **Task 135: Add PSD Refresh Button & Refine Reloading** | [x] | Added and refined PSD refresh button with state-preservation, cache-busting, and clipboard-based directory guidance. |
 | **Task 136: Add Selected PSD Refresh Fallback** | [x] | Retained the selected PSD File object and used it as a refresh fallback when disk lookup cannot read the current PSD. |
 | **Task 137: Reload PSD Visibility On Refresh** | [x] | Updated PSD refresh so layer checkbox visibility follows the freshly parsed PSD instead of preserving stale UI checked states. |
-
-
+| **Task 138: Keep Selected PSD Imports Visible** | [x] | PSD hidden state now only seeds initial layer selection, while checked/imported PSD layers are visible in generated SVG output. |
+| **Task 139: Fix Hidden Save, PSD Path Scope, and Bulk Select UI** | [x] | Preserved hidden animation groups on save/load, restricted PSD refresh paths to the crop folder, and synced PSD bulk select row visuals. |

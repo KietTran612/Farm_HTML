@@ -10,7 +10,8 @@
   },
   "groupedStages": {
     "dead": "dead.grouped.svg",
-    "stage00": "stage00.grouped.svg"
+    "stage00": "stage00.grouped.svg",
+    "stage01": "stage01.grouped.svg"
   },
   "animations": "animations.json"
 }

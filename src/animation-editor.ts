@@ -5,6 +5,7 @@ import { relabelGroup, serializeGroupedSvg } from "./animation-editor/groupEdito
 import { createSelectionBoundsRect } from "./animation-editor/selectionOverlay";
 import { calculatePivotFromSvgPoint } from "./animation-editor/pivotDrag";
 import { validateStageAnimationData } from "./animation-editor/stageValidation";
+import { isSvgGroupHidden } from "./animation-editor/groupVisibility";
 import {
   buildAnimationPartsConfig,
   getDefaultMotionForAnimation,
@@ -262,7 +263,7 @@ function selectStage(stageId: string) {
         colorFamily: "unknown" as any,
         regionX: "center" as any,
         regionY: "middle" as any,
-        hidden: false,
+        hidden: isSvgGroupHidden(gEl),
         paths
       };
     });

@@ -5,6 +5,7 @@ import {
   handleCleanupRequest,
   handleCropStageAssetsRequest,
   handleCropsRequest,
+  resolveLocalPsdPath,
   handleSaveRequest,
   handleSaveStageAnimationRequest,
   handleTraceLayerRequest
@@ -12,16 +13,30 @@ import {
 
 describe("Editor Middleware API", () => {
   const testAssetsDir = resolve("src/assets/crops/test-crop");
+  const testDocsPsdCropDir = resolve("docs/Crops/TestPsdSecurity");
+  const testDocsOutsidePsd = resolve("docs/Crops/outside-security.psd");
 
   beforeEach(() => {
     if (existsSync(testAssetsDir)) {
       rmSync(testAssetsDir, { recursive: true, force: true });
+    }
+    if (existsSync(testDocsPsdCropDir)) {
+      rmSync(testDocsPsdCropDir, { recursive: true, force: true });
+    }
+    if (existsSync(testDocsOutsidePsd)) {
+      rmSync(testDocsOutsidePsd, { force: true });
     }
   });
 
   afterEach(() => {
     if (existsSync(testAssetsDir)) {
       rmSync(testAssetsDir, { recursive: true, force: true });
+    }
+    if (existsSync(testDocsPsdCropDir)) {
+      rmSync(testDocsPsdCropDir, { recursive: true, force: true });
+    }
+    if (existsSync(testDocsOutsidePsd)) {
+      rmSync(testDocsOutsidePsd, { force: true });
     }
   });
 
@@ -187,6 +202,27 @@ describe("Editor Middleware API", () => {
 
   it("rejects unsafe crop names when loading stage assets", () => {
     expect(() => handleCropStageAssetsRequest({ cropName: "../corn" })).toThrow("Invalid crop name");
+  });
+
+  it("resolves local PSD refresh paths only inside the requested crop folder", () => {
+    const nestedDir = join(testDocsPsdCropDir, "V2");
+    mkdirSync(nestedDir, { recursive: true });
+    const nestedPsd = join(nestedDir, "dead.psd");
+    writeFileSync(nestedPsd, "psd bytes", "utf8");
+    writeFileSync(testDocsOutsidePsd, "outside psd bytes", "utf8");
+
+    const fallbackResult = resolveLocalPsdPath({
+      filePath: join(testDocsPsdCropDir, "dead.psd"),
+      crop: "TestPsdSecurity",
+      filename: "dead.psd"
+    });
+
+    expect(fallbackResult).toBe(nestedPsd);
+    expect(() => resolveLocalPsdPath({
+      filePath: testDocsOutsidePsd,
+      crop: "TestPsdSecurity",
+      filename: "outside-security.psd"
+    })).toThrow("inside the requested crop folder");
   });
 
   it("saves grouped SVGs, sanitizes unsafe markup, and merges animation metadata", () => {

@@ -1,7 +1,7 @@
 import type { Plugin } from "vite";
 import { existsSync, readdirSync, writeFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { Buffer } from "node:buffer";
-import { resolve, join } from "node:path";
+import { resolve, join, relative, isAbsolute } from "node:path";
 import { spawnSync } from "node:child_process";
 import { optimize } from "svgo";
 import { sanitizeSvgText } from "../../src/animation-editor/groupEditor";
@@ -648,6 +648,47 @@ function findFileRecursively(dir: string, filename: string): string | null {
   return null;
 }
 
+function normalizeDocsCropName(cropName: string): string {
+  if (!cropName || !/^[a-zA-Z0-9_-]+$/.test(cropName)) {
+    throw new Error("Invalid crop name.");
+  }
+  return cropName;
+}
+
+function normalizePsdFileName(filename: string): string {
+  if (!filename || /[\\/]/.test(filename) || !filename.toLowerCase().endsWith(".psd")) {
+    throw new Error("Invalid PSD file name.");
+  }
+  return filename;
+}
+
+function isPathInsideDirectory(candidatePath: string, parentDir: string): boolean {
+  const relation = relative(parentDir, candidatePath);
+  return relation === "" || (relation !== "" && !relation.startsWith("..") && !isAbsolute(relation));
+}
+
+export function resolveLocalPsdPath(input: { filePath: string; crop: string; filename: string }): string {
+  if (!input.filePath || !input.filePath.toLowerCase().endsWith(".psd")) {
+    throw new Error("Invalid file path. Must be a PSD file.");
+  }
+
+  const crop = normalizeDocsCropName(input.crop);
+  const filename = normalizePsdFileName(input.filename);
+  const cropDir = resolve("docs/Crops", crop);
+  const primaryPath = resolve(input.filePath);
+
+  if (!isPathInsideDirectory(primaryPath, cropDir)) {
+    throw new Error("PSD path must stay inside the requested crop folder.");
+  }
+
+  if (existsSync(primaryPath)) {
+    return primaryPath;
+  }
+
+  const foundPath = findFileRecursively(cropDir, filename);
+  return foundPath || primaryPath;
+}
+
 export function cropEditorPlugin(): Plugin {
   return {
     name: "crop-editor-middleware",
@@ -728,25 +769,16 @@ export function cropEditorPlugin(): Plugin {
              const filePath = url.searchParams.get("path") || "";
              const crop = url.searchParams.get("crop") || "";
              const filename = url.searchParams.get("filename") || "";
-             
-             if (!filePath || !filePath.toLowerCase().endsWith(".psd")) {
+
+             let resolvedPath = "";
+             try {
+               resolvedPath = resolveLocalPsdPath({ filePath, crop, filename });
+             } catch (error: any) {
                res.statusCode = 400;
-               res.end(JSON.stringify({ error: "Invalid file path. Must be a PSD file." }));
+               res.end(JSON.stringify({ error: error.message || "Invalid PSD refresh request." }));
                return;
              }
-             
-             let resolvedPath = filePath;
-             if (!existsSync(resolvedPath)) {
-               // Try recursive search inside the crop directory as a fallback
-               if (crop && filename) {
-                 const cropDir = resolve("docs/Crops", crop);
-                 const foundPath = findFileRecursively(cropDir, filename);
-                 if (foundPath) {
-                   resolvedPath = foundPath;
-                 }
-               }
-             }
-             
+              
              if (!existsSync(resolvedPath)) {
                res.statusCode = 404;
                res.end(JSON.stringify({ error: `File not found: ${filePath}` }));

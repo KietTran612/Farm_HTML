@@ -1,4 +1,5 @@
 import { parseSvgPathBounds, type ClassifiedPath, type ColorFamily, type CropGroup, type RegionX, type RegionY } from "./groupClassifier";
+import { getSvgGroupHiddenAttribute } from "./groupVisibility";
 
 export type SplitMode = "left-right" | "top-bottom" | "fill-color";
 
@@ -130,9 +131,10 @@ export function serializeGroupedSvg(svgText: string, groups: CropGroup[], cropId
   const sortedGroups = finalGroups.sort((a, b) => getMinPathIndex(a) - getMinPathIndex(b));
 
   const body = sortedGroups
-    .filter((group) => !group.hidden && group.paths.length > 0)
+    .filter((group) => group.paths.length > 0)
     .map((group) => {
       const label = sanitizeClassToken(group.label);
+      const hiddenAttr = getSvgGroupHiddenAttribute(group.hidden);
       const paths = group.paths
         .sort((a, b) => a.pathIndex - b.pathIndex)
         .map((path) => {
@@ -144,7 +146,7 @@ export function serializeGroupedSvg(svgText: string, groups: CropGroup[], cropId
         })
         .join("\n    ");
 
-      return `  <g class="crop-part crop-part--${label}" data-group-id="${escapeHtml(group.id)}">\n    ${paths}\n  </g>`;
+      return `  <g class="crop-part crop-part--${label}" data-group-id="${escapeHtml(group.id)}"${hiddenAttr}>\n    ${paths}\n  </g>`;
     })
     .join("\n");
 

@@ -88,6 +88,22 @@ describe("groupEditor operations", () => {
     expect(result).not.toContain("onclick");
   });
 
+  it("keeps hidden groups in grouped SVG output with display none", () => {
+    const hiddenGroup = makeGroup("hidden-leaves", [0], "leaves");
+    hiddenGroup.hidden = true;
+
+    const result = serializeGroupedSvg(
+      `<svg viewBox="0 0 100 100"><path d="M0 0" /></svg>`,
+      [hiddenGroup],
+      "carrot",
+      "stage01"
+    );
+
+    expect(result).toContain('data-group-id="hidden-leaves"');
+    expect(result).toContain('display="none"');
+    expect(result).toContain('crop-part--leaves');
+  });
+
   it("preserves unassigned paths, defs, stable data-original-index, and sorts groups by minimum pathIndex", () => {
     const originalSvg = `<svg viewBox="0 0 100 100">
       <defs>

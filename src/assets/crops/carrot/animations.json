@@ -80,6 +80,58 @@
           }
         }
       }
+    },
+    "stage01": {
+      "sourceFile": "stage01.svg",
+      "groupedFile": "stage01.grouped.svg",
+      "parts": {
+        "layer-2-1782372779397-7lj1bh": {
+          "label": "layer-2",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "other-1782372785557-8do8p0": {
+          "label": "other",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "leaf_right-1782372785909-xd2ukz": {
+          "label": "leaf_right",
+          "animation": "sway-right",
+          "pivot": {
+            "x": 14,
+            "y": 97
+          },
+          "motion": {
+            "durationMs": 3500,
+            "delayMs": 0,
+            "angleDeg": 4,
+            "yPx": 2,
+            "scale": 1.05
+          }
+        },
+        "leaf_left-1782372786462-sc7r49": {
+          "label": "leaf_left",
+          "animation": "soft-sway",
+          "pivot": {
+            "x": 96,
+            "y": 82
+          },
+          "motion": {
+            "durationMs": 2800,
+            "delayMs": 0,
+            "angleDeg": 1.2,
+            "yPx": 0,
+            "scale": 1.02
+          }
+        }
+      }
     }
   }
 }
