@@ -37,7 +37,7 @@
 | **Task 132: Implement PSD Downscale Ratio Selector** | [x] | Added resolution ratio selector (default 1024x1024) and client-side canvas scaling to optimize SVG output size. |
 | **Task 133: Implement PSD Layer Visibility Syncing** | [x] | Map PSD layer visibility to the editor's workspace layer hidden state and preserve it in the compiled SVG markup. |
 | **Task 134: Correct PSD Layer Stacking and Rendering Order** | [x] | Render PSD checklist top-to-bottom to match Photoshop, and sort imports bottom-to-top to match SVG DOM order. |
-| **Task 135: Add PSD Refresh Button** | [x] | Add a refresh button next to 'Chọn file khác' to instantly reload and re-parse the active PSD file directly from local disk via Vite backend. |
+| **Task 135: Add PSD Refresh Button & Refine Reloading** | [x] | Added and refined PSD refresh button with state-preservation, cache-busting, and clipboard-based directory guidance. |
 
 
 

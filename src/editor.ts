@@ -105,7 +105,6 @@ let loadedPsdLayers: FlatPsdLayer[] = [];
 let psdWidth = 0;
 let psdHeight = 0;
 let psdFileName = "";
-let currentPsdFile: File | null = null;
 let projectPath = "";
 
 const layerTraceZoomMin = 1;
@@ -1216,7 +1215,6 @@ function resetLayerWorkflow() {
   psdWidth = 0;
   psdHeight = 0;
   psdFileName = "";
-  currentPsdFile = null;
   const psdFileInput = document.getElementById("psd-file-input") as HTMLInputElement | null;
   if (psdFileInput) psdFileInput.value = "";
   renderPsdWorkspaceState();
@@ -1658,17 +1656,40 @@ function setupPsdEventListeners() {
 
     showStatus("loading", "Dang doc lai file PSD tu o dia...");
 
+    // Capture current UI states to preserve selections and custom renames
+    const preservedStates = capturePsdUiStates();
+
     try {
-      const response = await fetch(`/api/editor/read-local-psd?path=${encodeURIComponent(absolutePath)}`);
+      // Append t=timestamp to bust browser cache
+      const response = await fetch(`/api/editor/read-local-psd?path=${encodeURIComponent(absolutePath)}&t=${Date.now()}`);
       if (!response.ok) {
-        // Fallback to browser File object if backend read fails
-        if (currentPsdFile) {
-          showStatus("info", "Khong the doc tu o dia. Dang dung tep cache tu trinh duyet...");
-          void handlePsdFileSelect(currentPsdFile);
-          return;
+        const errJson = await response.json().catch(() => ({ error: "Khong the doc file tu o dia." }));
+        const errorMessage = errJson.error || `Loi HTTP ${response.status}`;
+        
+        showStatus("error", `Khong the tu dong tai lai PSD: ${errorMessage}`);
+        
+        let expectedFolder = `${baseDir}\\docs\\Crops\\${selectedCropName}`;
+        if (selectedFolder && selectedFolder !== "[Gốc]") {
+          expectedFolder += `\\${selectedFolder}`;
         }
-        const errJson = await response.json();
-        throw new Error(errJson.error || "Khong the doc file tu o dia.");
+        
+        navigator.clipboard.writeText(expectedFolder).then(() => {
+          alert(
+            `Khong the tu dong tai lai file tu o dia!\n\n` +
+            `Duong dan tim kiem: ${absolutePath}\n\n` +
+            `De tinh nang tu dong tai lai hoat dong, ban hay luu file PSD cua minh vao dung thu muc crop cua du an:\n` +
+            `${expectedFolder}\n\n` +
+            `(Duong dan thu muc nay da duoc tu dong sao chep vao Clipboard. Ban chi can Save As PSD vao day trong Photoshop, sau do nhan nut Refresh trong editor de tai lai!)`
+          );
+        }).catch(() => {
+          alert(
+            `Khong the tu dong tai lai file tu o dia!\n\n` +
+            `Duong dan tim kiem: ${absolutePath}\n\n` +
+            `De tinh nang tu dong tai lai hoat dong, ban hay luu file PSD cua minh vao dung thu muc crop cua du an:\n` +
+            `${expectedFolder}`
+          );
+        });
+        return;
       }
 
       const buffer = await response.arrayBuffer();
@@ -1680,7 +1701,7 @@ function setupPsdEventListeners() {
       psdHeight = result.height;
       layerTraceSize = getPsdTargetDimensions();
 
-      renderPsdWorkspaceState();
+      renderPsdWorkspaceState(preservedStates);
       showStatus("success", `Da nap lai file PSD tu o dia thanh cong (${psdWidth}x${psdHeight}px, ${loadedPsdLayers.length} layers).`);
     } catch (error: any) {
       showStatus("error", `Loi khi tai lai file PSD: ${error.message}`);
@@ -1721,7 +1742,6 @@ async function handlePsdFileSelect(file: File) {
 
   showStatus("loading", "Dang phan tich file PSD...");
   psdFileName = file.name;
-  currentPsdFile = file;
 
   try {
     const buffer = await file.arrayBuffer();
@@ -1745,7 +1765,27 @@ async function handlePsdFileSelect(file: File) {
   }
 }
 
-function renderPsdWorkspaceState() {
+function capturePsdUiStates(): Map<string, { checked: boolean; rename: string }> {
+  const states = new Map<string, { checked: boolean; rename: string }>();
+  const items = document.querySelectorAll(".psd-layer-item");
+  items.forEach((item) => {
+    const idx = Number((item as HTMLElement).dataset.index);
+    const layer = loadedPsdLayers[idx];
+    if (layer) {
+      const cb = item.querySelector(".psd-layer-checkbox") as HTMLInputElement | null;
+      const inp = item.querySelector(".psd-layer-rename-input") as HTMLInputElement | null;
+      if (cb && inp) {
+        states.set(layer.name, {
+          checked: cb.checked,
+          rename: inp.value
+        });
+      }
+    }
+  });
+  return states;
+}
+
+function renderPsdWorkspaceState(preservedStates?: Map<string, { checked: boolean; rename: string }>) {
   const dropzoneWrapper = document.getElementById("psd-dropzone-wrapper");
   const panel = document.getElementById("psd-layers-panel");
   const layersList = document.getElementById("psd-layers-list");
@@ -1775,7 +1815,20 @@ function renderPsdWorkspaceState() {
   for (let i = loadedPsdLayers.length - 1; i >= 0; i--) {
     const layer = loadedPsdLayers[i];
     const item = document.createElement("div");
-    item.className = `psd-layer-item ${layer.hidden ? "is-hidden-layer" : ""}`;
+    
+    // Check if we have preserved states for this layer
+    const preserved = preservedStates?.get(layer.name);
+    
+    // Checked state: if preserved exists, use it. Otherwise, default to !layer.hidden
+    const isChecked = preserved ? preserved.checked : !layer.hidden;
+    const checkedAttr = isChecked ? "checked" : "";
+    
+    // Rename value: if preserved exists, use it. Otherwise, default to layer.name
+    const renameVal = preserved ? preserved.rename : layer.name;
+    
+    // UI hidden visual state class
+    const isHiddenInUi = !isChecked;
+    item.className = `psd-layer-item ${isHiddenInUi ? "is-hidden-layer" : ""}`;
     item.dataset.index = String(i);
 
     let thumbnailHtml = `<div class="layer-thumbnail-placeholder"></div>`;
@@ -1783,8 +1836,6 @@ function renderPsdWorkspaceState() {
       const thumbUrl = getLayerThumbnailUrl(layer.canvas);
       thumbnailHtml = `<img src="${thumbUrl}" class="layer-thumbnail" alt="${layer.name}" />`;
     }
-
-    const checkedAttr = layer.hidden ? "" : "checked";
 
     item.innerHTML = `
       <label class="psd-layer-label-wrapper">
@@ -1796,7 +1847,7 @@ function renderPsdWorkspaceState() {
         </div>
       </label>
       <div class="psd-layer-input-group">
-        <input type="text" class="form-control psd-layer-rename-input" data-index="${i}" value="${layer.name}" placeholder="Nhan layer" />
+        <input type="text" class="form-control psd-layer-rename-input" data-index="${i}" value="${renameVal}" placeholder="Nhan layer" />
       </div>
       <div class="psd-layer-status" id="psd-layer-status-${i}">
         <span class="status-dot status-pending"></span>
@@ -1809,7 +1860,19 @@ function renderPsdWorkspaceState() {
 
   const checkboxes = layersList.querySelectorAll(".psd-layer-checkbox");
   checkboxes.forEach((cb) => {
-    cb.addEventListener("change", updatePsdImportButtonState);
+    cb.addEventListener("change", (e) => {
+      // Toggle is-hidden-layer class on change
+      const target = e.target as HTMLInputElement;
+      const itemEl = target.closest(".psd-layer-item");
+      if (itemEl) {
+        if (target.checked) {
+          itemEl.classList.remove("is-hidden-layer");
+        } else {
+          itemEl.classList.add("is-hidden-layer");
+        }
+      }
+      updatePsdImportButtonState();
+    });
   });
 
   updatePsdImportButtonState();

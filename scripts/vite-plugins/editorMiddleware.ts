@@ -716,6 +716,9 @@ export function cropEditorPlugin(): Plugin {
              }
              const buffer = readFileSync(filePath);
              res.setHeader("Content-Type", "application/octet-stream");
+             res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+             res.setHeader("Pragma", "no-cache");
+             res.setHeader("Expires", "0");
              res.statusCode = 200;
              res.end(buffer);
              return;
