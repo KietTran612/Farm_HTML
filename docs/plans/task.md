@@ -38,8 +38,7 @@
 | **Task 133: Implement PSD Layer Visibility Syncing** | [x] | Map PSD layer visibility to the editor's workspace layer hidden state and preserve it in the compiled SVG markup. |
 | **Task 134: Correct PSD Layer Stacking and Rendering Order** | [x] | Render PSD checklist top-to-bottom to match Photoshop, and sort imports bottom-to-top to match SVG DOM order. |
 | **Task 135: Add PSD Refresh Button & Refine Reloading** | [x] | Added and refined PSD refresh button with state-preservation, cache-busting, and clipboard-based directory guidance. |
-
-
-
+| **Task 136: Add Selected PSD Refresh Fallback** | [x] | Retained the selected PSD File object and used it as a refresh fallback when disk lookup cannot read the current PSD. |
+| **Task 137: Reload PSD Visibility On Refresh** | [x] | Updated PSD refresh so layer checkbox visibility follows the freshly parsed PSD instead of preserving stale UI checked states. |
 
 

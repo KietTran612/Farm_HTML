@@ -626,6 +626,28 @@ function readCropAssetFile(cropDir: string, fileName: string): string {
   return readFileSync(fullPath, "utf8");
 }
 
+function findFileRecursively(dir: string, filename: string): string | null {
+  if (!existsSync(dir)) return null;
+  const entries = readdirSync(dir, { withFileTypes: true });
+  
+  // First check files in current directory
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name.toLowerCase() === filename.toLowerCase()) {
+      return join(dir, entry.name);
+    }
+  }
+  
+  // Then check subdirectories
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const found = findFileRecursively(join(dir, entry.name), filename);
+      if (found) return found;
+    }
+  }
+  
+  return null;
+}
+
 export function cropEditorPlugin(): Plugin {
   return {
     name: "crop-editor-middleware",
@@ -704,17 +726,34 @@ export function cropEditorPlugin(): Plugin {
 
            if (pathname === "/api/editor/read-local-psd" && req.method === "GET") {
              const filePath = url.searchParams.get("path") || "";
+             const crop = url.searchParams.get("crop") || "";
+             const filename = url.searchParams.get("filename") || "";
+             
              if (!filePath || !filePath.toLowerCase().endsWith(".psd")) {
                res.statusCode = 400;
                res.end(JSON.stringify({ error: "Invalid file path. Must be a PSD file." }));
                return;
              }
-             if (!existsSync(filePath)) {
+             
+             let resolvedPath = filePath;
+             if (!existsSync(resolvedPath)) {
+               // Try recursive search inside the crop directory as a fallback
+               if (crop && filename) {
+                 const cropDir = resolve("docs/Crops", crop);
+                 const foundPath = findFileRecursively(cropDir, filename);
+                 if (foundPath) {
+                   resolvedPath = foundPath;
+                 }
+               }
+             }
+             
+             if (!existsSync(resolvedPath)) {
                res.statusCode = 404;
                res.end(JSON.stringify({ error: `File not found: ${filePath}` }));
                return;
              }
-             const buffer = readFileSync(filePath);
+             
+             const buffer = readFileSync(resolvedPath);
              res.setHeader("Content-Type", "application/octet-stream");
              res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
              res.setHeader("Pragma", "no-cache");

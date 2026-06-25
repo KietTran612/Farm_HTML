@@ -1,0 +1,85 @@
+{
+  "crop": "carrot",
+  "stages": {
+    "dead": {
+      "sourceFile": "dead.svg",
+      "groupedFile": "dead.grouped.svg",
+      "parts": {
+        "plot-1782384950727-y9o709": {
+          "label": "plot",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2800,
+            "delayMs": 0,
+            "angleDeg": 1.2,
+            "yPx": 0,
+            "scale": 1.02
+          }
+        },
+        "leaf_2-1782384961046-tth4ek": {
+          "label": "leaf_2",
+          "animation": "soft-sway",
+          "pivot": {
+            "x": 8,
+            "y": 95
+          },
+          "motion": {
+            "durationMs": 2800,
+            "delayMs": 0,
+            "angleDeg": 1.2,
+            "yPx": 0,
+            "scale": 1.02
+          }
+        },
+        "leaf_1-1782384961586-1u72p8": {
+          "label": "leaf_1",
+          "animation": "soft-sway",
+          "pivot": {
+            "x": 5,
+            "y": 65
+          },
+          "motion": {
+            "durationMs": 2800,
+            "delayMs": 0,
+            "angleDeg": 1.2,
+            "yPx": 0,
+            "scale": 1.02
+          }
+        }
+      }
+    },
+    "stage00": {
+      "sourceFile": "stage00.svg",
+      "groupedFile": "stage00.grouped.svg",
+      "parts": {
+        "plot-1782372994118-6zqpf8": {
+          "label": "plot",
+          "animation": "none",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          }
+        },
+        "seed-1782373000649-u62aqe": {
+          "label": "seed",
+          "animation": "leaf-breathe",
+          "pivot": {
+            "x": 50,
+            "y": 100
+          },
+          "motion": {
+            "durationMs": 2600,
+            "delayMs": 0,
+            "angleDeg": 1,
+            "yPx": 0,
+            "scale": 1.2
+          }
+        }
+      }
+    }
+  }
+}

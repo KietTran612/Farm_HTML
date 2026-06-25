@@ -558,7 +558,7 @@ function renderMotionControl(key: MotionConfigKey, value: number): string {
     delayMs: { label: "Delay", min: "0", max: "3000", step: "50" },
     angleDeg: { label: "Angle", min: "0", max: "10", step: "0.1" },
     yPx: { label: "Offset Y", min: "0", max: "10", step: "1" },
-    scale: { label: "Scale", min: "1", max: "1.15", step: "0.01" }
+    scale: { label: "Scale", min: "1", max: "2", step: "0.01" }
   };
   const control = controls[key];
 
