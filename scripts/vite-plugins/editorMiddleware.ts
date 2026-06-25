@@ -696,6 +696,11 @@ export function cropEditorPlugin(): Plugin {
             return;
           }
 
+          if (pathname === "/api/editor/project-path" && req.method === "GET") {
+            res.statusCode = 200;
+            res.end(JSON.stringify({ projectPath: process.cwd() }));
+            return;
+          }
 
           res.statusCode = 404;
           res.end(JSON.stringify({ error: "Endpoint not found" }));

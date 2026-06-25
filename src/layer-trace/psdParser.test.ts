@@ -125,4 +125,37 @@ describe("PSD Parser Utilities", () => {
     // Restore original createElement
     document.createElement = originalCreateElement;
   });
+
+  it("composes a scaled canvas when target dimensions are provided", () => {
+    const mockCtx = {
+      drawImage: vi.fn()
+    };
+    const mockCreatedCanvas = {
+      getContext: vi.fn().mockReturnValue(mockCtx),
+      toDataURL: vi.fn().mockReturnValue("data:image/png;base64,mockedScaledPngData"),
+      width: 0,
+      height: 0
+    };
+
+    const originalCreateElement = document.createElement;
+    document.createElement = vi.fn().mockImplementation((tagName) => {
+      if (tagName === "canvas") {
+        return mockCreatedCanvas as any;
+      }
+      return originalCreateElement(tagName);
+    });
+
+    const mockLayerCanvas = { width: 30, height: 30 } as HTMLCanvasElement;
+    // PSD is 100x100, Target is 50x50 (scale factor 0.5)
+    // Layer is at (10, 20) with size 30x30
+    const result = createFullSizeLayerPng(mockLayerCanvas, 10, 20, 100, 100, 50, 50);
+
+    expect(mockCreatedCanvas.width).toBe(50);
+    expect(mockCreatedCanvas.height).toBe(50);
+    // 10 * 0.5 = 5, 20 * 0.5 = 10, 30 * 0.5 = 15, 30 * 0.5 = 15
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockLayerCanvas, 5, 10, 15, 15);
+    expect(result).toBe("data:image/png;base64,mockedScaledPngData");
+
+    document.createElement = originalCreateElement;
+  });
 });

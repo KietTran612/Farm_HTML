@@ -33,6 +33,7 @@
 | **Task 128: Implement PSD UI and Batch Tracing Logic** | [x] | Implemented PSD file drops, downscaled 48px thumbnails, progress bars, and index-reversed batch VTracer API requests in src/editor.ts. |
 | **Task 129: Add PSD Importer CSS Styling** | [x] | Styled switcher tabs, dashed glassmorphic dropzones, layer rows, thumbnail frames, status indicators, and animated progress bars in editor.scss. |
 | **Task 130: Verify PSD Importer and Lasso/Brush Regression** | [x] | Verified zero typecheck errors, 5/5 passing layer-trace unit tests, successful production build, and added safety guards. |
-
+| **Task 131: Add Browser Debug Config** | [x] | Added VS Code debug configs that launch Crop Editor and Animation Editor through the Vite dev server instead of running TS files directly in Node. |
+| **Task 132: Implement PSD Downscale Ratio Selector** | [x] | Added resolution ratio selector (256, 512, 1024, original) and client-side canvas scaling to optimize SVG output size. |
 
 

@@ -200,7 +200,7 @@
 
             <!-- Photoshop PSD Workspace -->
             <div id="psd-workspace" class="psd-workspace" style="display: none;">
-              <div class="psd-dropzone-wrapper">
+              <div id="psd-dropzone-wrapper" class="psd-dropzone-wrapper">
                 <div id="psd-dropzone" class="psd-dropzone">
                   <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropzone-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <p class="dropzone-text">Kéo thả file Photoshop (.psd) vào đây</p>
@@ -219,6 +219,7 @@
                     <span class="info-label">Kích thước:</span>
                     <span id="psd-dimensions" class="info-value">512 x 512px</span>
                   </div>
+                  <button id="psd-change-file-btn" class="btn btn-secondary btn-xs" type="button" style="margin-left: auto; padding: 3px 8px; font-size: 11px;">Chọn file khác</button>
                 </div>
                 
                 <div class="psd-layers-header">
@@ -236,6 +237,16 @@
                 </div>
                 
                 <div class="psd-import-actions">
+                  <div class="psd-ratio-selector-group">
+                    <label for="psd-ratio-select" class="psd-ratio-label">Độ phân giải SVG:</label>
+                    <select id="psd-ratio-select" class="form-control psd-ratio-select">
+                      <option value="512" selected>512 x 512 (Khuyên dùng - Mượt & Nét)</option>
+                      <option value="256">256 x 256 (Tối ưu nhất - Siêu nhẹ)</option>
+                      <option value="1024">1024 x 1024 (Chất lượng cao)</option>
+                      <option value="original">1254 x 1254 (Giữ nguyên gốc)</option>
+                    </select>
+                  </div>
+                  
                   <button id="psd-import-btn" class="btn btn-primary w-full" type="button" disabled>Nhập & Vector hóa</button>
                   
                   <div id="psd-progress-container" class="psd-progress-container" style="display: none;">

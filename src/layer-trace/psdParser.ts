@@ -66,21 +66,39 @@ function traverseLayers(psdLayers: any[], result: FlatPsdLayer[]) {
 
 /**
  * Renders a cropped layer canvas onto a full PSD-sized transparent canvas at its correct relative coordinates,
- * and exports it as a base64 encoded PNG data URL.
+ * and exports it as a base64 encoded PNG data URL. Can optionally scale the canvas to a target width and height.
  */
 export function createFullSizeLayerPng(
   layerCanvas: HTMLCanvasElement,
   left: number,
   top: number,
   psdWidth: number,
-  psdHeight: number
+  psdHeight: number,
+  targetWidth?: number,
+  targetHeight?: number
 ): string {
+  const finalWidth = targetWidth || psdWidth;
+  const finalHeight = targetHeight || psdHeight;
+
   const canvas = document.createElement("canvas");
-  canvas.width = psdWidth;
-  canvas.height = psdHeight;
+  canvas.width = finalWidth;
+  canvas.height = finalHeight;
   const ctx = canvas.getContext("2d");
+
   if (ctx) {
-    ctx.drawImage(layerCanvas, left, top);
+    if (finalWidth === psdWidth && finalHeight === psdHeight) {
+      ctx.drawImage(layerCanvas, left, top);
+    } else {
+      const scaleX = finalWidth / psdWidth;
+      const scaleY = finalHeight / psdHeight;
+      ctx.drawImage(
+        layerCanvas,
+        left * scaleX,
+        top * scaleY,
+        layerCanvas.width * scaleX,
+        layerCanvas.height * scaleY
+      );
+    }
   }
   return canvas.toDataURL("image/png");
 }

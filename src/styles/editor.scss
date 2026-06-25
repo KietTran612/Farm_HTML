@@ -1595,6 +1595,31 @@ body.is-merge-mode {
   }
 }
 
+.psd-ratio-selector-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+
+  .psd-ratio-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: $color-muted;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .psd-ratio-select {
+    font-size: 11px;
+    padding: 4px 8px;
+    height: 28px;
+    line-height: 1.2;
+    flex: 1;
+    cursor: pointer;
+  }
+}
+
 .psd-import-actions {
   display: flex;
   flex-direction: column;

@@ -105,6 +105,7 @@ let loadedPsdLayers: FlatPsdLayer[] = [];
 let psdWidth = 0;
 let psdHeight = 0;
 let psdFileName = "";
+let projectPath = "";
 
 const layerTraceZoomMin = 1;
 const layerTraceZoomMax = 4;
@@ -119,6 +120,13 @@ async function initEditor() {
   showStatus("loading", "Dang tai danh sach crop...");
 
   try {
+    // Fetch the absolute project path dynamically from the server
+    const pathResponse = await fetch("/api/editor/project-path");
+    if (pathResponse.ok) {
+      const pathData = await pathResponse.json() as { projectPath: string };
+      projectPath = pathData.projectPath;
+    }
+
     const cropsResponse = await fetch("/api/editor/crops");
     if (!cropsResponse.ok) {
       throw new Error("Khong the tai danh sach crop.");
@@ -1274,9 +1282,13 @@ async function handleSavedStageSelection(stageId: string) {
   const mappedFile = mappedStages[stageId];
   if (!mappedFile) {
     layerTraceLayers = [];
-    layerTraceSize = layerTraceImage
-      ? { width: layerTraceImage.naturalWidth, height: layerTraceImage.naturalHeight }
-      : null;
+    if (activeInputMode === "psd" && psdWidth > 0 && psdHeight > 0) {
+      layerTraceSize = getPsdTargetDimensions();
+    } else {
+      layerTraceSize = layerTraceImage
+        ? { width: layerTraceImage.naturalWidth, height: layerTraceImage.naturalHeight }
+        : null;
+    }
     clearLayerMask();
     renderLayerTraceState();
     showStatus("info", `${formatStageName(stageId)} chua co SVG da luu. Trace layer moi roi save vao stage nay.`);
@@ -1293,10 +1305,14 @@ async function handleSavedStageSelection(stageId: string) {
 
     const parsed = parseLayeredSvg(await response.text());
     layerTraceLayers = parsed.layers;
-    layerTraceSize = {
-      width: parsed.width,
-      height: parsed.height
-    };
+    if (activeInputMode === "psd" && psdWidth > 0 && psdHeight > 0) {
+      layerTraceSize = getPsdTargetDimensions();
+    } else {
+      layerTraceSize = {
+        width: parsed.width,
+        height: parsed.height
+      };
+    }
     layerLassoPoints = [];
     isDrawingLayerMask = false;
     layerTraceZoom = 1;
@@ -1518,7 +1534,7 @@ function setInputMode(mode: "png" | "psd") {
     maskEditor.style.display = mode === "png" ? "block" : "none";
   }
   if (psdWorkspace) {
-    psdWorkspace.style.display = mode === "psd" ? "block" : "none";
+    psdWorkspace.style.display = mode === "psd" ? "flex" : "none";
   }
 
   if (traceLayerBtn) {
@@ -1529,11 +1545,18 @@ function setInputMode(mode: "png" | "psd") {
   }
 
   if (mode === "png") {
+    layerTraceSize = layerTraceImage
+      ? { width: layerTraceImage.naturalWidth, height: layerTraceImage.naturalHeight }
+      : null;
     showStatus("info", "Chon crop va PNG nguon, sau do dung lasso de trace tung layer.");
   } else {
+    if (psdWidth > 0 && psdHeight > 0) {
+      layerTraceSize = getPsdTargetDimensions();
+    }
     showStatus("info", "Keo tha file PSD de giai nen va nhap layer tu dong.");
     renderPsdWorkspaceState();
   }
+  renderLayerTraceState();
 }
 
 function setupPsdEventListeners() {
@@ -1542,8 +1565,36 @@ function setupPsdEventListeners() {
   const importBtn = document.getElementById("psd-import-btn") as HTMLButtonElement | null;
   const selectAllBtn = document.getElementById("psd-select-all-btn");
   const selectNoneBtn = document.getElementById("psd-select-none-btn");
+  const ratioSelect = document.getElementById("psd-ratio-select") as HTMLSelectElement | null;
+
+  ratioSelect?.addEventListener("change", () => {
+    if (activeInputMode === "psd" && psdWidth > 0 && psdHeight > 0) {
+      layerTraceSize = getPsdTargetDimensions();
+      renderLayerTraceState();
+    }
+  });
 
   dropzone?.addEventListener("click", () => {
+    // Auto-copy the selected crop path to clipboard for fast navigation in file dialog
+    const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
+    const selectedCropName = cropSelect?.options[cropSelect.selectedIndex]?.text || "";
+    const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+    const selectedFolder = folderSelect?.value || "";
+
+    if (selectedCropName) {
+      const baseDir = projectPath || "d:\\soflware\\Unity\\Source\\Farm_HTML";
+      let absolutePath = `${baseDir}\\docs\\Crops\\${selectedCropName}`;
+      if (selectedFolder && selectedFolder !== "[Gốc]") {
+        absolutePath += `\\${selectedFolder}`;
+      }
+
+      navigator.clipboard.writeText(absolutePath).then(() => {
+        showStatus("success", `Da sao chep duong dan vao Clipboard! Nhan Ctrl+V vao thanh dia chi cua hop thoai de mo nhanh.`);
+      }).catch(err => {
+        console.error("Failed to copy path:", err);
+      });
+    }
+
     fileInput?.click();
   });
 
@@ -1583,6 +1634,31 @@ function setupPsdEventListeners() {
   importBtn?.addEventListener("click", () => {
     void handleBatchPsdTrace();
   });
+
+  const changeFileBtn = document.getElementById("psd-change-file-btn");
+  changeFileBtn?.addEventListener("click", () => {
+    // Also auto-copy the path when selecting a different file
+    const cropSelect = document.getElementById("crop-select") as HTMLSelectElement | null;
+    const selectedCropName = cropSelect?.options[cropSelect.selectedIndex]?.text || "";
+    const folderSelect = document.getElementById("folder-select") as HTMLSelectElement | null;
+    const selectedFolder = folderSelect?.value || "";
+
+    if (selectedCropName) {
+      const baseDir = projectPath || "d:\\soflware\\Unity\\Source\\Farm_HTML";
+      let absolutePath = `${baseDir}\\docs\\Crops\\${selectedCropName}`;
+      if (selectedFolder && selectedFolder !== "[Gốc]") {
+        absolutePath += `\\${selectedFolder}`;
+      }
+
+      navigator.clipboard.writeText(absolutePath).then(() => {
+        showStatus("success", `Da sao chep duong dan vao Clipboard! Nhan Ctrl+V vao thanh dia chi cua hop thoai de mo nhanh.`);
+      }).catch(err => {
+        console.error("Failed to copy path:", err);
+      });
+    }
+
+    fileInput?.click();
+  });
 }
 
 async function handlePsdFileSelect(file: File) {
@@ -1602,7 +1678,7 @@ async function handlePsdFileSelect(file: File) {
     psdWidth = result.width;
     psdHeight = result.height;
 
-    layerTraceSize = { width: psdWidth, height: psdHeight };
+    layerTraceSize = getPsdTargetDimensions();
 
     if (!activeCrop) {
       showStatus("error", "Vui long chon Crop truoc khi nhap PSD.");
@@ -1626,13 +1702,13 @@ function renderPsdWorkspaceState() {
   if (!panel || !dropzoneWrapper || !layersList) return;
 
   if (loadedPsdLayers.length === 0) {
-    dropzoneWrapper.style.display = "block";
+    dropzoneWrapper.style.display = "flex";
     panel.style.display = "none";
     return;
   }
 
   dropzoneWrapper.style.display = "none";
-  panel.style.display = "block";
+  panel.style.display = "flex";
 
   if (filename) filename.textContent = psdFileName;
   if (dimensions) dimensions.textContent = `${psdWidth} x ${psdHeight}px`;
@@ -1715,11 +1791,31 @@ function setPsdLayersSelection(checked: boolean) {
   updatePsdImportButtonState();
 }
 
+function getPsdTargetDimensions(): { width: number; height: number } {
+  if (psdWidth <= 0 || psdHeight <= 0) {
+    return { width: 1254, height: 1254 };
+  }
+  const ratioSelect = document.getElementById("psd-ratio-select") as HTMLSelectElement | null;
+  const ratioVal = ratioSelect?.value || "512";
+  if (ratioVal === "original") {
+    return { width: psdWidth, height: psdHeight };
+  }
+  const size = parseInt(ratioVal, 10);
+  if (!isNaN(size)) {
+    return { width: size, height: size };
+  }
+  return { width: psdWidth, height: psdHeight };
+}
+
 async function handleBatchPsdTrace() {
   const checkboxes = Array.from(document.querySelectorAll<HTMLInputElement>(".psd-layer-checkbox:checked"));
   if (checkboxes.length === 0) return;
 
   setPsdUiDisabled(true);
+
+  // Read target dimensions
+  const targetDims = getPsdTargetDimensions();
+  layerTraceSize = targetDims;
 
   const progressContainer = document.getElementById("psd-progress-container");
   const progressBar = document.getElementById("psd-progress-bar");
@@ -1764,7 +1860,15 @@ async function handleBatchPsdTrace() {
     updateProgress(`Dang trace layer: ${label}...`);
 
     try {
-      const imageDataUrl = createFullSizeLayerPng(layer.canvas, layer.left, layer.top, psdWidth, psdHeight);
+      const imageDataUrl = createFullSizeLayerPng(
+        layer.canvas,
+        layer.left,
+        layer.top,
+        psdWidth,
+        psdHeight,
+        targetDims.width,
+        targetDims.height
+      );
 
       const response = await fetch("/api/editor/trace-layer", {
         method: "POST",
